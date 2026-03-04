@@ -5,9 +5,9 @@ steps:
       [
         "build",
         "-t",
-        "southamerica-east1-docker.pkg.dev/$PROJECT_ID/petrocarga/petrocarga-image:$COMMIT_SHA",
+        "us-central1-docker.pkg.dev/$PROJECT_ID/back-repo/petrocarga-image:$COMMIT_SHA",
         "-t",
-        "southamerica-east1-docker.pkg.dev/$PROJECT_ID/petrocarga/petrocarga-image:latest",
+        "us-central1-docker.pkg.dev/$PROJECT_ID/back-repo/petrocarga-image:latest",
         "-f",
         "petrocarga/Dockerfile",
         "petrocarga",
@@ -15,8 +15,8 @@ steps:
 
 # ==== Enviar imagem para o Artifact Registry ====
 images:
-  - "southamerica-east1-docker.pkg.dev/$PROJECT_ID/petrocarga/petrocarga-image:$COMMIT_SHA"
-  - "southamerica-east1-docker.pkg.dev/$PROJECT_ID/petrocarga/petrocarga-image:latest"
+  - "us-central1-docker.pkg.dev/$PROJECT_ID/back-repo/petrocarga-image:$COMMIT_SHA"
+  - "us-central1-docker.pkg.dev/$PROJECT_ID/back-repo/petrocarga-image:latest"
 
 options:
   logging: CLOUD_LOGGING_ONLY
