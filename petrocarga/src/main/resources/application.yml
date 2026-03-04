@@ -1,17 +1,17 @@
 spring:
     application:
         name: petrocarga
-    
+
     jackson:
         time-zone: America/Sao_Paulo
         date-format: dd-MM-yyyy
-    
+
     jpa:
         hibernate:
             ddl-auto: validate
         show-sql: false
         open-in-view: true
-    
+
     flyway:
         enabled: true
         locations: classpath:db/migration
@@ -20,7 +20,7 @@ spring:
         ignore-migration-patterns: "*:missing"
         connect-retries: 3
         clean-disabled: true
-        
+
     # SMTP configuration centralized and sourced exclusively from environment variables.
     # Set these env vars in Railway project settings (recommended):
     # - SMTP_HOST (e.g., smtp.gmail.com)
@@ -74,8 +74,8 @@ logging:
                         sql: off
 
 jwt:
-  secret: ${JWT_SECRET:72f9a128dd6f4c4a9c82e36df3ba62a9d12f1c3b9475a1f0e9d54d7e1b2a3c4d}
-  expiration: 86400000
+    secret: ${JWT_SECRET:72f9a128dd6f4c4a9c82e36df3ba62a9d12f1c3b9475a1f0e9d54d7e1b2a3c4d}
+    expiration: 86400000
 
 app:
     reservas:
@@ -91,3 +91,5 @@ app:
         same-site: None
     frontend:
         base-url: ${FRONTEND_URL:http://localhost:3000}
+    cors:
+        allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}

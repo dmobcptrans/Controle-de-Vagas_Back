@@ -2,6 +2,7 @@ package com.cptrans.petrocarga.security;
 
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -26,6 +27,9 @@ public class SecurityConfig {
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
+
+    @Value("${app.cors.allowed-origins}")
+    private List<String> allowedOrigins;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -69,10 +73,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration corsConfig = new CorsConfiguration();
-        corsConfig.setAllowedOriginPatterns(List.of(
-            "http://localhost:3000",
-            "https://cp-trans-petrocarga-front.vercel.app"
-        ));
+        corsConfig.setAllowedOriginPatterns(allowedOrigins);
         corsConfig.setAllowedMethods(java.util.List.of("GET", "PATCH", "POST", "PUT", "DELETE", "OPTIONS"));
         corsConfig.setAllowedHeaders(java.util.List.of( 
             "Authorization",
