@@ -89,6 +89,11 @@ public class UsuarioService {
             password = String.format("%06d", randomPassword.nextInt(1_000_000));
             novoUsuario.setSenha(passwordEncoder.encode(password));
         }
+        if(novoUsuario.getPermissao().equals(PermissaoEnum.ADMIN)){
+            novoUsuario.setAtivo(true);
+            novoUsuario.setVerificationCode(null);
+            novoUsuario.setVerificationCodeExpiresAt(null);
+        }
 
         Usuario saved = usuarioRepository.save(novoUsuario);
 
