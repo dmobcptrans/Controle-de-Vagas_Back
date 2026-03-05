@@ -33,7 +33,7 @@ public class EmailService implements EmailSender {
 
     private final JavaMailSender mailSender;
 
-    @Value("${SMTP_FROM:${SMTP_USERNAME:no-reply@petrocarga.test}}")
+    @Value("${SMTP_FROM:}")
     private String from;
 
     @Value("${SMTP_USERNAME:}")
@@ -41,6 +41,10 @@ public class EmailService implements EmailSender {
 
     @Value("${FRONTEND_URL:http://localhost:3000}")
     private String frontendBaseUrl;
+
+    @Value("${app.mailSender.enabled:true}")
+    private Boolean enabled;
+
 
     public EmailService(JavaMailSender mailSender) {
         this.mailSender = mailSender;
@@ -52,6 +56,10 @@ public class EmailService implements EmailSender {
     }
 
     private void logMailEndpointInfo() {
+        if(enabled.equals(Boolean.FALSE)){
+            LOGGER.info("Mail sender is not enabled");
+            return;
+        }
         try {
             if (mailSender instanceof JavaMailSenderImpl) {
                 JavaMailSenderImpl impl = (JavaMailSenderImpl) mailSender;
@@ -70,6 +78,10 @@ public class EmailService implements EmailSender {
     @Override
     @Async("taskExecutor")
     public void sendActivationCode(String to, String code, String randomPassword) {
+        if(enabled.equals(Boolean.FALSE)){
+            LOGGER.info("Mail sender is not enabled");
+            return;
+        }
         // Ensure 'from' uses configured username when available
         if ((from == null || from.isBlank()) && mailUsername != null && !mailUsername.isBlank()) {
             from = mailUsername;
@@ -100,6 +112,7 @@ public class EmailService implements EmailSender {
             message.setTo(to);
             message.setSubject("Código de Ativação - PetroCarga");
             message.setText(text);
+            mailSender.send(message);
             LOGGER.info("[{}] Email de ativação enviado com sucesso para: {}", Thread.currentThread().getName(), to);
         } catch (MailException e) {
             LOGGER.error("[{}] MailException ao enviar ativação para {}: {}", Thread.currentThread().getName(), to, e.getMessage(), e);
@@ -114,6 +127,10 @@ public class EmailService implements EmailSender {
     @Override
     @Async("taskExecutor")
     public void sendPasswordResetCode(String to, String code) {
+        if(enabled.equals(Boolean.FALSE)){
+            LOGGER.info("Mail sender is not enabled");
+            return;
+        }
         if ((from == null || from.isBlank()) && mailUsername != null && !mailUsername.isBlank()) {
             from = mailUsername;
         }

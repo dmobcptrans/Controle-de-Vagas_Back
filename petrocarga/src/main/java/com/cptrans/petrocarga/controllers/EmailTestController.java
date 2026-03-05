@@ -5,6 +5,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -43,6 +44,9 @@ public class EmailTestController {
     @Autowired
     private EmailSender emailSender;
 
+    @Value("${app.mailSender.enabled:true}")
+    private Boolean enabled;
+
     /**
      * Testa envio de email de ativação.
      * 
@@ -55,6 +59,10 @@ public class EmailTestController {
                description = "Envia um email de teste de ativação para o endereço especificado")
     public ResponseEntity<Map<String, String>> testSendActivation(
             @RequestBody Map<String, String> request) {
+        if(enabled.equals(Boolean.FALSE)){
+            LOGGER.info("Mail sender is not enabled");
+            return ResponseEntity.badRequest().body(Map.of("error","mailSender isn't enabled"));
+        }
         
         String email = request.get("email");
         
@@ -96,6 +104,11 @@ public class EmailTestController {
                description = "Envia um email de teste de recuperação de senha para o endereço especificado")
     public ResponseEntity<Map<String, String>> testSendReset(
             @RequestBody Map<String, String> request) {
+                
+        if(enabled.equals(Boolean.FALSE)){
+            LOGGER.info("Mail sender is not enabled");
+            return ResponseEntity.badRequest().body(Map.of("error","mailSender isn't enabled"));
+        }
         
         String email = request.get("email");
         
