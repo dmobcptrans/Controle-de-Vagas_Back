@@ -16,21 +16,3 @@ spring:
         url: jdbc:postgresql://google/${DATABASE_NAME}?socketFactory=com.google.cloud.sql.postgres.SocketFactory&cloudSqlInstance=${CLOUD_SQL_CONNECTION_NAME}&useSSL=false
         user: ${DATABASE_USER}
         password: ${DATABASE_PASSWORD}
-
-    # Configuração SMTP para envio de emails em produção
-    mail:
-        host: ${MAIL_HOST:smtp.gmail.com}
-        port: ${MAIL_PORT:587}
-        username: ${MAIL_USERNAME}
-        password: ${MAIL_PASSWORD}
-        properties:
-            mail:
-                smtp:
-                    auth: true
-                    starttls:
-                        enable: true
-                        required: true
-                    connectiontimeout: 5000
-                    timeout: 5000
-                    writetimeout: 5000
-        from: ${MAIL_FROM:${MAIL_USERNAME}}
