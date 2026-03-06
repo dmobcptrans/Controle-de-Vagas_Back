@@ -12,6 +12,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import com.cptrans.petrocarga.dto.UsuarioResponseDTO;
 import com.cptrans.petrocarga.enums.PermissaoEnum;
+import com.cptrans.petrocarga.utils.UsuarioUtils;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -65,10 +66,21 @@ public class Usuario implements UserDetails{
     @Column(name = "verification_code_expires_at", columnDefinition = "TIMESTAMP")
     private LocalDateTime verificationCodeExpiresAt;
 
+    @Column(name = "aceitar_termos", nullable = false)
+    private Boolean aceitarTermos;
+
+    @Column(name = "aceitou_termos_em", nullable = true)
+    private OffsetDateTime aceitouTermosEm;
+
+    @Column(name = "versao_termos", nullable = false)
+    private String versaoTermos;
+
     // Constructors
     public Usuario() {
         this.criadoEm = OffsetDateTime.now();
         this.ativo = false;
+        this.aceitarTermos = false;
+        this.versaoTermos = UsuarioUtils.VERSAO_ATUAL_TERMOS;
     }
     public Usuario(String nome, String cpf, String telefone, String email, String senha, PermissaoEnum permissao) {
         this.nome = nome;
@@ -79,6 +91,8 @@ public class Usuario implements UserDetails{
         this.permissao = permissao;
         this.criadoEm = OffsetDateTime.now();
         this.ativo = false;
+        this.aceitarTermos=false;
+        this.versaoTermos=UsuarioUtils.VERSAO_ATUAL_TERMOS;
     }
 
     // Getters and Setters
@@ -176,6 +190,30 @@ public class Usuario implements UserDetails{
 
     public void setVerificationCodeExpiresAt(LocalDateTime verificationCodeExpiresAt) {
         this.verificationCodeExpiresAt = verificationCodeExpiresAt;
+    }
+
+    public Boolean isAceitarTermos() {
+        return aceitarTermos;
+    }
+
+    public void setAceitarTermos(Boolean aceitarTermos) {
+        this.aceitarTermos = aceitarTermos;
+    }
+
+    public OffsetDateTime getAceitouTermosEm() {
+        return aceitouTermosEm;
+    }
+
+    public void setAceitouTermosEm(OffsetDateTime aceitouTermosEm) {
+        this.aceitouTermosEm = aceitouTermosEm;
+    }
+
+    public String getVersaoTermos() {
+        return versaoTermos;
+    }
+
+    public void setVersaoTermos(String versaoTermos) {
+        this.versaoTermos = versaoTermos;
     }
 
     public UsuarioResponseDTO toResponseDTO() {

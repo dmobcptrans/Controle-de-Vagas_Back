@@ -45,6 +45,9 @@ public class VagaRequestDTO {
     @Valid
     private Set<OperacaoVagaRequestDTO> operacoesVaga;
 
+    @Valid
+    private StatusVagaEnum status;
+
 
     public Vaga toEntity() {
         Vaga vaga = new Vaga();
@@ -54,7 +57,7 @@ public class VagaRequestDTO {
         vaga.setReferenciaEndereco(this.referenciaEndereco);
         vaga.setReferenciaGeoFim(this.referenciaGeoFim);
         vaga.setReferenciaGeoInicio(this.referenciaGeoInicio);
-        vaga.setStatus(StatusVagaEnum.INDISPONIVEL);
+        vaga.setStatus(this.status != null ? this.status : StatusVagaEnum.INDISPONIVEL );
         vaga.setTipoVaga(this.tipoVaga);
         vaga.setEndereco(this.endereco.toEntity());
 
@@ -141,5 +144,13 @@ public class VagaRequestDTO {
 
     public void setOperacoesVaga(Set<OperacaoVagaRequestDTO> operacoesVaga) {
         this.operacoesVaga = operacoesVaga;
+    }
+
+    public StatusVagaEnum getStatus(){
+        return status;
+    }
+
+    public void setStatus(StatusVagaEnum status){
+        this.status = status;
     }
 }

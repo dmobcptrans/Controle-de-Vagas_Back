@@ -105,24 +105,22 @@ public class UsuarioService {
     }
 
     @Transactional
-    public Usuario activateAccount(String email, String cpf, String code) {
-        if((email == null && cpf == null) || (email != null && cpf != null)) {
-            throw new IllegalArgumentException("Informe um email OU CPF.");
-        }
-        Usuario usuario = usuarioRepository.findByEmailOrCpf(email, cpf).orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado."));
+    public Usuario activateAccount(Boolean aceitarTermos, String cpf, String code) {
+        if (aceitarTermos.equals(Boolean.FALSE)) throw new IllegalArgumentException("É necessário aceitar os termos de uso e política de privacidade para ativar a conta");
+        if (cpf == null) throw new IllegalArgumentException("É necessário informar o CPF.");
+        
+        Usuario usuario = usuarioRepository.findByCpf(cpf).orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado."));
 
-        if (usuario.getVerificationCode() == null || !usuario.getVerificationCode().equals(code)) {
-            throw new IllegalArgumentException("Código inválido.");
-        }
+        if (usuario.getVerificationCode() == null || !usuario.getVerificationCode().equals(code)) throw new IllegalArgumentException("Código inválido.");
 
         if (usuario.getVerificationCodeExpiresAt() == null || usuario.getVerificationCodeExpiresAt().isBefore(LocalDateTime.now())) {
             throw new IllegalArgumentException("Código expirado.");
         }
 
-        if(usuario.getDesativadoEm() != null) {
-            usuario.setDesativadoEm(null);
-        }
+        if (usuario.getDesativadoEm() != null) usuario.setDesativadoEm(null);
 
+        usuario.setAceitarTermos(aceitarTermos);
+        usuario.setAceitouTermosEm(OffsetDateTime.now(DateUtils.FUSO_BRASIL));
         usuario.setAtivo(true);
         usuario.setVerificationCode(null);
         usuario.setVerificationCodeExpiresAt(null);
