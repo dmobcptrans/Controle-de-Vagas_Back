@@ -175,6 +175,7 @@ public class VagaController {
         }
     )
     public ResponseEntity<VagaResponseDTO> updateById(@Valid @PathVariable UUID id,@Valid @RequestBody VagaRequestDTO vagaRequest) {
+        System.out.println(vagaRequest.getStatus());
         Vaga vagaAtualizada = vagaService.updateById(id, vagaRequest.toEntity());
         return ResponseEntity.ok(new VagaResponseDTO(vagaAtualizada));
     }
