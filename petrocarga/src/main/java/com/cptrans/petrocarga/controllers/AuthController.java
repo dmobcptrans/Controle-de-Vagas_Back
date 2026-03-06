@@ -103,7 +103,7 @@ public class AuthController {
         @PostMapping("/activate")
         public ResponseEntity<ApiResponse> activateAccount(@RequestBody @Valid AccountActivationRequest request) {
             try {
-                usuarioService.activateAccount(request.email(), request.cpf(), request.codigo());
+                usuarioService.activateAccount(request.aceitarTermos(), request.cpf(), request.codigo());
                 return ResponseEntity.ok(ApiResponse.success(
                     "Conta ativada com sucesso! Você já pode fazer login.",
                     "ACCOUNT_ACTIVATED"
