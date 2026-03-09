@@ -49,8 +49,17 @@ public class Veiculo {
     @JoinColumn(name = "usuario_id", nullable = false)
     private Usuario usuario;
 
-    @Column(name = "cpf_proprietario", length = 11)
-    private String cpfProprietario;
+    @Column(name = "cpf_proprietario_hash")
+    private String cpfProprietarioHash;
+
+    @Column(name = "cpf_proprietario_cripto")
+    private String cpfProprietarioCripto;
+
+    @Column(name = "cpf_proprietario_key_version")
+    private Integer cpfProprietarioKeyVersion;
+
+    @Column(name = "cpf_proprietario_last5")
+    private String cpfProprietarioLast5;
 
     @Column(name = "cnpj_proprietario", length = 14)
     private String cnpjProprietario;
@@ -123,12 +132,36 @@ public class Veiculo {
         this.usuario = usuario;
     }
 
-    public String getCpfProprietario() {
-        return cpfProprietario;
+    public String getCpfProprietarioHash() {
+        return cpfProprietarioHash;
     }
 
-    public void setCpfProprietario(String cpfProprietario) {
-        this.cpfProprietario = cpfProprietario;
+    public void setCpfProprietarioHash(String cpfProprietarioHash) {
+        this.cpfProprietarioHash = cpfProprietarioHash;
+    }
+
+     public String getCpfProprietarioCripto() {
+        return cpfProprietarioCripto;
+    }
+
+    public void setCpfProprietarioCripto(String cpfProprietarioCripto) {
+        this.cpfProprietarioCripto = cpfProprietarioCripto;
+    }
+
+    public Integer getCpfProprietarioKeyVersion() {
+        return cpfProprietarioKeyVersion;
+    }
+
+    public void setCpfProprietarioKeyVersion(Integer cpfProprietarioKeyVersion) {
+        this.cpfProprietarioKeyVersion = cpfProprietarioKeyVersion;
+    }
+
+    public String getCpfProprietarioLast5() {
+        return cpfProprietarioLast5;
+    }
+
+    public void setCpfProprietarioLast5(String cpfProprietarioLast5) {
+        this.cpfProprietarioLast5 = cpfProprietarioLast5;
     }
 
     public String getCnpjProprietario() {

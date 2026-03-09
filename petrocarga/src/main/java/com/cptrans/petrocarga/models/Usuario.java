@@ -35,8 +35,20 @@ public class Usuario implements UserDetails{
     @Column(nullable = false)
     private String nome;
 
-    @Column(nullable = false, unique = true, length = 11)
-    private String cpf;
+    // @Column(nullable = false, unique = true, length = 11)
+    // private String cpf;
+
+    @Column(name = "cpf_hash", nullable = false)
+    private String cpfHash;
+
+    @Column(name = "cpf_cripto", nullable = false)
+    private String cpfCripto;
+
+    @Column(name = "cpf_key_version", nullable = false)
+    private Integer cpfKeyVersion;
+
+    @Column(name = "cpf_last5", nullable = false)
+    private String cpfLast5;
 
     @Column(length = 11)
     private String telefone;
@@ -82,9 +94,10 @@ public class Usuario implements UserDetails{
         this.aceitarTermos = false;
         this.versaoTermos = UsuarioUtils.VERSAO_ATUAL_TERMOS;
     }
+
     public Usuario(String nome, String cpf, String telefone, String email, String senha, PermissaoEnum permissao) {
         this.nome = nome;
-        this.cpf = cpf;
+        this.cpfHash = cpf;
         this.telefone = telefone;
         this.email = email;
         this.senha = senha;
@@ -112,13 +125,13 @@ public class Usuario implements UserDetails{
         this.nome = nome;
     }
 
-    public String getCpf() {
-        return cpf;
-    }
+    // public String getCpf() {
+    //     return cpf;
+    // }
 
-    public void setCpf(String cpf) {
-        this.cpf = cpf;
-    }
+    // public void setCpf(String cpf) {
+    //     this.cpf = cpf;
+    // }
 
     public String getTelefone() {
         return telefone;
@@ -216,8 +229,44 @@ public class Usuario implements UserDetails{
         this.versaoTermos = versaoTermos;
     }
 
+    public String getCpfHash() {
+        return cpfHash;
+    }
+
+    public void setCpfHash(String cpfHash) {
+        this.cpfHash = cpfHash;
+    }
+
+    public String getCpfCripto() {
+        return cpfCripto;
+    }
+
+    public void setCpfCripto(String cpfCripto) {
+        this.cpfCripto = cpfCripto;
+    }
+
+    public Integer getCpfKeyVersion() {
+        return cpfKeyVersion;
+    }
+
+    public void setCpfKeyVersion(Integer cpfKeyVersion) {
+        this.cpfKeyVersion = cpfKeyVersion;
+    }
+
+    public String getCpfLast5() {
+        return cpfLast5;
+    }
+
+    public void setCpfLast5(String cpfLast5) {
+        this.cpfLast5 = cpfLast5;
+    }
+
+    public Boolean getAceitarTermos() {
+        return aceitarTermos;
+    }
+
     public UsuarioResponseDTO toResponseDTO() {
-        return new UsuarioResponseDTO(id, nome, cpf, telefone, email, permissao, criadoEm, ativo, desativadoEm);
+        return new UsuarioResponseDTO(id, nome, cpfLast5, telefone, email, permissao, criadoEm, ativo, desativadoEm);
     }
 
     @Override

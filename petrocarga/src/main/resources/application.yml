@@ -95,3 +95,10 @@ app:
         allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
     mailSender:
         enabled: true
+    security:
+        cpf:
+            active-key-version: ${CPF_KEY_VERSION:1}
+            keys:
+                1: ${CPF_AES_KEY_V1:8uKfN5TgB6R1pJ3xY9aZcQ0dW4sH7kLm2nOqP8rS1tU=}
+            pepper: ${CPF_PEPPER:super_secret}
+

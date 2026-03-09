@@ -29,7 +29,7 @@ public class GestorRequestDTO {
         Usuario usuario = new Usuario();
         usuario.setNome(this.nome);
         usuario.setEmail(this.email);
-        usuario.setCpf(this.cpf);
+        usuario.setCpfHash(this.cpf);
         usuario.setSenha(this.cpf);
         usuario.setTelefone(this.telefone);
         usuario.setPermissao(PermissaoEnum.GESTOR);

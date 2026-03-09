@@ -8,6 +8,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,6 +45,15 @@ public class UsuarioService {
     @Autowired
     private ReservaUtils reservaUtils;
 
+    @Autowired
+    private CpfHashService cpfHashService;
+
+    @Autowired
+    private CpfCriptoService cpfCriptoService;
+
+    @Value("${app.security.cpf.active-key-version}")
+    private Integer activeCpfKeyVersion;
+
     
     public List<Usuario> findAll() {
         return usuarioRepository.findAll();
@@ -66,11 +76,11 @@ public class UsuarioService {
     }
 
     @Transactional
-    public Usuario createUsuario(Usuario novoUsuario, PermissaoEnum permissao) {
+    public Usuario createUsuario(Usuario novoUsuario, PermissaoEnum permissao, String cpf_string) {
         if(usuarioRepository.findByEmail(novoUsuario.getEmail()).isPresent()) {
             throw new IllegalArgumentException("Email já cadastrado");
         }
-        if(usuarioRepository.findByCpf(novoUsuario.getCpf()).isPresent()) {
+        if(usuarioRepository.findByCpfHash(cpfHashService.hash(cpf_string)).isPresent()) {
             throw new IllegalArgumentException("CPF já cadastrado");
         }
         novoUsuario.setPermissao(permissao);
@@ -94,7 +104,16 @@ public class UsuarioService {
             novoUsuario.setVerificationCode(null);
             novoUsuario.setVerificationCodeExpiresAt(null);
         }
-
+        novoUsuario.setCpfHash(cpfHashService.hash(cpf_string));
+        novoUsuario.setCpfCripto(cpfCriptoService.encrypt(cpf_string));
+        novoUsuario.setCpfKeyVersion(activeCpfKeyVersion);
+        novoUsuario.setCpfLast5(cpf_string.substring((cpf_string.length() - 5)));
+        
+        System.out.println("cpf_string: " + cpf_string);
+        System.out.println("cpf_hash: " + novoUsuario.getCpfHash());
+        System.out.println("cpf_cripto: " + novoUsuario.getCpfCripto());
+        System.out.println("cpf_key_version: " + novoUsuario.getCpfKeyVersion());
+        System.out.println("cpf_last5: " + novoUsuario.getCpfLast5());
         Usuario saved = usuarioRepository.save(novoUsuario);
 
         // Envia código de ativação via email (assíncrono)
@@ -109,7 +128,7 @@ public class UsuarioService {
         if (aceitarTermos.equals(Boolean.FALSE)) throw new IllegalArgumentException("É necessário aceitar os termos de uso e política de privacidade para ativar a conta");
         if (cpf == null) throw new IllegalArgumentException("É necessário informar o CPF.");
         
-        Usuario usuario = usuarioRepository.findByCpf(cpf).orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado."));
+        Usuario usuario = usuarioRepository.findByCpfHash(cpfHashService.hash(cpf)).orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado."));
 
         if (usuario.getVerificationCode() == null || !usuario.getVerificationCode().equals(code)) throw new IllegalArgumentException("Código inválido.");
 
@@ -133,7 +152,7 @@ public class UsuarioService {
         if ((email == null && cpf == null) || (email != null && cpf != null)) {
             throw new IllegalArgumentException("Informe um email OU CPF.");
         }
-        Usuario usuario = usuarioRepository.findByEmailOrCpf(email, cpf).orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado."));
+        Usuario usuario = usuarioRepository.findByEmailOrCpfHash(email, cpf == null ? null : cpfHashService.hash(cpf)).orElseThrow(() -> new IllegalArgumentException("Credenciais inválidas."));
 
         if (usuario.getAtivo() != null && usuario.getAtivo()) {
             throw new IllegalArgumentException("Usuário já ativado.");
@@ -159,7 +178,7 @@ public class UsuarioService {
             throw new IllegalArgumentException("Informe um email OU CPF.");
         }
         // Busca usuário pelo email (silenciosamente ignora se não existir por segurança)
-        Optional<Usuario> optUsuario = usuarioRepository.findByEmailOrCpfAndAtivo(email, cpf, true);
+        Optional<Usuario> optUsuario = usuarioRepository.findByEmailOrCpfHashAndAtivo(email, cpf == null ? null : cpfHashService.hash(cpf), true);
         
         if (optUsuario.isEmpty()) {
             // Por segurança, não revelamos se o email/cpf existe ou não
@@ -189,8 +208,8 @@ public class UsuarioService {
             throw new IllegalArgumentException("Informe um email OU CPF.");
         }
 
-        Usuario usuario = usuarioRepository.findByEmailOrCpf(email, cpf)
-                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado."));
+        Usuario usuario = usuarioRepository.findByEmailOrCpfHash(email, cpf == null ? null : cpfHashService.hash(cpf)).orElseThrow(() -> new IllegalArgumentException("Credenciais inválidas."));
+
 
         if (!usuario.getAtivo()) {
             throw new IllegalArgumentException("Usuário desativado.");
@@ -217,34 +236,35 @@ public class UsuarioService {
         usuarioRepository.save(usuario);
     }
 
-    public Usuario updateUsuario(UUID id, Usuario novoUsuario, PermissaoEnum permissao) {
-        Usuario usuarioExistente = findByIdAndAtivo(id, true);
+    // public Usuario updateUsuario(UUID id, Usuario novoUsuario, PermissaoEnum permissao) {
+    //     Usuario usuarioExistente = findByIdAndAtivo(id, true);
 
-        if(!usuarioExistente.getEmail().equals(novoUsuario.getEmail())) {
-            Optional<Usuario> usuarioByEmail = usuarioRepository.findByEmail(novoUsuario.getEmail());
-            if (usuarioByEmail.isPresent() && !usuarioByEmail.get().getId().equals(id)) {
-                throw new IllegalArgumentException("Email já cadastrado");
-            }
-            usuarioExistente.setEmail(novoUsuario.getEmail());
-        }
+    //     if(!usuarioExistente.getEmail().equals(novoUsuario.getEmail())) {
+    //         Optional<Usuario> usuarioByEmail = usuarioRepository.findByEmail(novoUsuario.getEmail());
+    //         if (usuarioByEmail.isPresent() && !usuarioByEmail.get().getId().equals(id)) {
+    //             throw new IllegalArgumentException("Email já cadastrado");
+    //         }
+    //         usuarioExistente.setEmail(novoUsuario.getEmail());
+    //     }
+    //     String cpfDecoded = cpfCriptoService.decrypt(usuarioExistente.getCpfCripto(), usuarioExistente.getCpfKeyVersion());
+        
+    //     if (!cpfDecoded.equals(novoUsuario.getCpfHash())) {
+    //         Optional<Usuario> usuarioByCpf = usuarioRepository.findByCpfHash(cpfHashService.hash(novoUsuario.getCpfHash()));
+    //         if (usuarioByCpf.isPresent() && !usuarioByCpf.get().getId().equals(id)) {
+    //             throw new IllegalArgumentException("CPF já cadastrado");
+    //         }
+    //         usuarioExistente.setCpfHash(cpfHashService.hash(novoUsuario.getCpfHash()));
+    //     }
 
-        if (!usuarioExistente.getCpf().equals(novoUsuario.getCpf())) {
-            Optional<Usuario> usuarioByCpf = usuarioRepository.findByCpf(novoUsuario.getCpf());
-            if (usuarioByCpf.isPresent() && !usuarioByCpf.get().getId().equals(id)) {
-                throw new IllegalArgumentException("CPF já cadastrado");
-            }
-            usuarioExistente.setCpf(novoUsuario.getCpf());
-        }
+    //     usuarioExistente.setNome(novoUsuario.getNome());
+    //     usuarioExistente.setTelefone(novoUsuario.getTelefone());
 
-        usuarioExistente.setNome(novoUsuario.getNome());
-        usuarioExistente.setTelefone(novoUsuario.getTelefone());
-
-        if (novoUsuario.getSenha() != null && !novoUsuario.getSenha().isEmpty()) {
-            usuarioExistente.setSenha(passwordEncoder.encode(novoUsuario.getSenha()));
-        }
-        usuarioExistente.setPermissao(permissao);
-        return usuarioRepository.save(usuarioExistente);
-    }
+    //     if (novoUsuario.getSenha() != null && !novoUsuario.getSenha().isEmpty()) {
+    //         usuarioExistente.setSenha(passwordEncoder.encode(novoUsuario.getSenha()));
+    //     }
+    //     usuarioExistente.setPermissao(permissao);
+    //     return usuarioRepository.save(usuarioExistente);
+    // }
 
     public Usuario patchUpdate(UUID id, PermissaoEnum permissao, UsuarioPATCHRequestDTO patchRequestDTO) {
         Usuario usuarioExistente = findByIdAndAtivo(id, true);
@@ -259,9 +279,9 @@ public class UsuarioService {
             usuarioExistente.setEmail(patchRequestDTO.getEmail());
         }
         if (patchRequestDTO.getCpf() != null) {
-            Optional<Usuario> usuarioByCpf = usuarioRepository.findByCpf(patchRequestDTO.getCpf());
+            Optional<Usuario> usuarioByCpf = usuarioRepository.findByCpfHash(cpfHashService.hash(patchRequestDTO.getCpf()));
             if (usuarioByCpf.isPresent() && !usuarioByCpf.get().getId().equals(id)) throw new IllegalArgumentException("CPF já cadastrado");
-            usuarioExistente.setCpf(patchRequestDTO.getCpf());
+            usuarioExistente.setCpfHash(cpfHashService.hash(patchRequestDTO.getCpf()));
         }
         if (patchRequestDTO.getSenha() != null) {
             usuarioExistente.setSenha(passwordEncoder.encode(patchRequestDTO.getSenha()));

@@ -61,7 +61,7 @@ public class MotoristaService {
             if(novoMotorista.getDataValidadeCnh().isBefore(LocalDate.now())) {
                 throw new IllegalArgumentException("CNH vencida");
             }
-            Usuario usuario = usuarioService.createUsuario(novoMotorista.getUsuario(), PermissaoEnum.MOTORISTA);
+            Usuario usuario = usuarioService.createUsuario(novoMotorista.getUsuario(), PermissaoEnum.MOTORISTA, novoMotorista.getUsuario().getCpfHash());
             novoMotorista.setUsuario(usuario);
             if(motoristaRepository.existsByNumeroCnh(novoMotorista.getNumeroCnh())) {
                 throw new IllegalArgumentException("Número da CNH já cadastrado");

@@ -37,7 +37,7 @@ public class UsuarioRequestDTO {
     public Usuario toEntity() {
         Usuario usuario = new Usuario();
         usuario.setNome(this.nome);
-        usuario.setCpf(this.cpf);
+        usuario.setCpfHash(this.cpf);
         usuario.setTelefone(this.telefone);
         usuario.setEmail(this.email);
         usuario.setSenha(this.senha);

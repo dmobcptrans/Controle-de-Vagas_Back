@@ -16,13 +16,13 @@ import com.cptrans.petrocarga.models.Usuario;
 @Repository
 public interface UsuarioRepository extends JpaRepository<Usuario, UUID>, JpaSpecificationExecutor<Usuario> {
     public Optional<Usuario> findByEmail(String email);
-    public Optional<Usuario> findByEmailOrCpf(String email, String cpf);
-    public Optional<Usuario> findByCpf(String cpf);
+    public Optional<Usuario> findByEmailOrCpfHash(String email, String cpfHash);
+    public Optional<Usuario> findByCpfHash(String cpfHash);
     public Boolean existsByEmail(String email);
-    public Boolean existsByCpf(String cpf);
+    public Boolean existsByCpfHash(String cpfHash);
     public List<Usuario> findByPermissao(PermissaoEnum permissao);
     public List<Usuario> findByPermissaoAndAtivo(PermissaoEnum permissao, Boolean ativo);
     public Optional<Usuario> findByIdAndAtivo(UUID id, Boolean ativo);
-    @Query("SELECT u FROM Usuario u WHERE (u.email = :email OR u.cpf = :cpf) AND u.ativo = :ativo")
-    public Optional<Usuario> findByEmailOrCpfAndAtivo(@Param("email") String email, @Param("cpf") String cpf, @Param("ativo") Boolean ativo);
+    @Query("SELECT u FROM Usuario u WHERE (u.email = :email OR u.cpfHash = :cpfHash) AND u.ativo = :ativo")
+    public Optional<Usuario> findByEmailOrCpfHashAndAtivo(@Param("email") String email, @Param("cpfHash") String cpfHash, @Param("ativo") Boolean ativo);
 }
