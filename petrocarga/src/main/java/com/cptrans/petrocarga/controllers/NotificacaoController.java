@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.cptrans.petrocarga.dto.PushTokenStatusDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -139,4 +140,12 @@ public class NotificacaoController {
         pushTokenService.salvar(novaPushToken);
         return ResponseEntity.ok().body(Map.of("message", "Token registrado com sucesso!"));
     }
+
+    @PreAuthorize("#usuarioId == authentication.principal.id")
+    @PatchMapping("/pushToken/{usuarioId}")
+    public ResponseEntity<Map<String, String>> atualizarStatus(@PathVariable UUID usuarioId, @AuthenticationPrincipal UserAuthenticated userAuthenticated, @RequestBody PushTokenStatusDTO pushTokenStatusDTO) {
+        pushTokenService.atualizarStatus(usuarioId, pushTokenStatusDTO.getAtivo());
+        return ResponseEntity.ok().body(Map.of("message", "Status do token atualizado com sucesso!"));
+    }
+
 }
