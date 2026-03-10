@@ -13,4 +13,5 @@ import com.cptrans.petrocarga.models.PushToken;
 public interface PushTokenRepository extends JpaRepository<PushToken, UUID> {
     List<PushToken> findByUsuarioId(UUID usuarioId);
     Optional<PushToken> findByTokenAndUsuarioId(String token, UUID usuarioId);
+    List<PushToken> findByUsuarioIdAndAtivo(UUID usuarioid, boolean ativo);
 }
