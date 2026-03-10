@@ -1,6 +1,8 @@
 package com.cptrans.petrocarga.services;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -25,5 +27,18 @@ public class PushTokenService {
             return pushTokenRepository.save(novoPushToken);
         }
 
+    }
+
+    public List<PushToken> atualizarStatus(UUID usuarioId, boolean ativo) {
+
+        List<PushToken> tokens = pushTokenRepository.findByUsuarioId(usuarioId);
+
+        if(tokens.isEmpty()){
+            throw new IllegalArgumentException("Nenhum token encontrado para o usuário");
+        }
+
+        tokens.forEach(token -> token.setAtivo(ativo));
+
+        return pushTokenRepository.saveAll(tokens);
     }
 }
