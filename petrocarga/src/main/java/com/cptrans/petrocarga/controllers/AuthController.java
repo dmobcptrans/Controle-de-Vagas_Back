@@ -71,7 +71,7 @@ public class AuthController {
     //TODO: Remover rota depois de cadastrar o primeiro admin em deploy
     @PostMapping("/admin")
     public ResponseEntity<UsuarioResponseDTO> createAdmin(@RequestBody @Valid UsuarioRequestDTO usuario) {
-        Usuario novoUsuario = usuarioService.createUsuario(usuario.toEntity(), PermissaoEnum.ADMIN);
+        Usuario novoUsuario = usuarioService.createUsuario(usuario.toEntity(), PermissaoEnum.ADMIN, usuario.getCpf());
         return ResponseEntity.ok(novoUsuario.toResponseDTO());
     }
 

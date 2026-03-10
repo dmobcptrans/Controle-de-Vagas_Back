@@ -47,7 +47,7 @@ public class AgenteService {
         if(agenteRepository.existsByMatricula(novoAgente.getMatricula())) {
             throw new IllegalArgumentException("Matrícula já cadastrada");
         }
-        Usuario usuario = usuarioService.createUsuario(novoAgente.getUsuario(), PermissaoEnum.AGENTE);
+        Usuario usuario = usuarioService.createUsuario(novoAgente.getUsuario(), PermissaoEnum.AGENTE,novoAgente.getUsuario().getCpfHash());
         novoAgente.setUsuario(usuario);
         novoAgente.setMatricula(novoAgente.getMatricula());
         return agenteRepository.save(novoAgente);

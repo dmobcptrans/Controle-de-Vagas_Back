@@ -6,6 +6,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -31,6 +32,15 @@ public class VeiculoService {
 
     @Autowired
     private UsuarioService usuarioService;
+
+    @Autowired
+    private CpfHashService cpfHashService;
+
+    @Autowired
+    private CpfCriptoService cpfCriptoService;
+
+    @Value("${app.security.cpf.active-key-version}")
+    private Integer cpfActiveKeyVersion;
 
     public List<Veiculo> findAll() {
         return veiculoRepository.findAll();
@@ -84,6 +94,14 @@ public class VeiculoService {
             throw new IllegalArgumentException("Voce já possui um veículo cadastrado com essa placa.");
         }
 
+        if(novoVeiculo.getCpfProprietarioHash() != null){
+            String cpfString= novoVeiculo.getCpfProprietarioHash();
+            novoVeiculo.setCpfProprietarioHash(cpfHashService.hash(cpfString));
+            novoVeiculo.setCpfProprietarioCripto(cpfCriptoService.encrypt(cpfString));
+            novoVeiculo.setCpfProprietarioLast5(cpfString.substring(cpfString.length() - 5));
+            novoVeiculo.setCpfProprietarioKeyVersion(cpfActiveKeyVersion);
+        }
+
         novoVeiculo.setUsuario(usuarioVeiculo);
         return veiculoRepository.save(novoVeiculo);
     }
@@ -121,7 +139,12 @@ public class VeiculoService {
         }
         if (novoVeiculo.getMarca() != null) veiculoRegistrado.setMarca(novoVeiculo.getMarca());
         if (novoVeiculo.getModelo() != null) veiculoRegistrado.setModelo(novoVeiculo.getModelo());
-        if (novoVeiculo.getCpfProprietario() != null) veiculoRegistrado.setCpfProprietario(novoVeiculo.getCpfProprietario());
+        if (novoVeiculo.getCpfProprietario() != null) {
+            veiculoRegistrado.setCpfProprietarioHash(cpfHashService.hash(novoVeiculo.getCpfProprietario()));
+            veiculoRegistrado.setCpfProprietarioCripto(cpfCriptoService.encrypt(novoVeiculo.getCpfProprietario()));
+            veiculoRegistrado.setCpfProprietarioLast5(novoVeiculo.getCpfProprietario().substring(novoVeiculo.getCpfProprietario().length() - 5));
+            veiculoRegistrado.setCpfProprietarioKeyVersion(cpfActiveKeyVersion);
+        }
         if (novoVeiculo.getCnpjProprietario() != null) veiculoRegistrado.setCnpjProprietario(novoVeiculo.getCnpjProprietario());
      
         return veiculoRepository.save(veiculoRegistrado);

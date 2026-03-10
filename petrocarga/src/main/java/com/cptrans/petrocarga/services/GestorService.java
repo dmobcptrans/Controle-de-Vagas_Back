@@ -29,7 +29,7 @@ public class GestorService {
     }
 
     public Usuario createGestor(Usuario novoGestor) {
-        return usuarioService.createUsuario(novoGestor, PermissaoEnum.GESTOR);
+        return usuarioService.createUsuario(novoGestor, PermissaoEnum.GESTOR, novoGestor.getCpfHash());
     }
 
     public Usuario updateGestor(UUID id, UsuarioPATCHRequestDTO novoGestor) {

@@ -42,7 +42,7 @@ public class VeiculoRequestDTO {
         veiculo.setModelo(this.modelo);
         veiculo.setTipo(this.tipo);
         veiculo.setComprimento(this.tipo.getComprimento());
-        veiculo.setCpfProprietario(this.cpfProprietario);
+        veiculo.setCpfProprietarioHash(this.cpfProprietario);
         veiculo.setCnpjProprietario(this.cnpjProprietario);
         return veiculo;
     }

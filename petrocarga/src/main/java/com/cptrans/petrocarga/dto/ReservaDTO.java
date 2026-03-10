@@ -63,7 +63,7 @@ public class ReservaDTO {
         this.vagaId = vaga.getId();
         this.motoristaId = motorista.getId();
         this.motoristaNome = motorista.getUsuario().getNome();
-        this.motoristaCpf = motorista.getUsuario().getCpf();
+        this.motoristaCpf = motorista.getUsuario().getCpfLast5();
         this.numeroEndereco = vaga.getNumeroEndereco();
         this.referenciaEndereco = vaga.getReferenciaEndereco();
         this.enderecoVaga = vaga.getEndereco().toResponseDTO();
@@ -73,7 +73,7 @@ public class ReservaDTO {
         this.placaVeiculo = veiculo.getPlaca();
         this.modeloVeiculo = veiculo.getModelo();
         this.marcaVeiculo = veiculo.getMarca();
-        this.cpfProprietarioVeiculo = veiculo.getCpfProprietario();
+        this.cpfProprietarioVeiculo = veiculo.getCpfProprietarioLast5();
         this.cnpjProprietarioVeiculo = veiculo.getCnpjProprietario();
         this.cidadeOrigem = cidadeOrigem;
         this.entradaCidade = entradaCidade;
@@ -90,7 +90,7 @@ public class ReservaDTO {
         this.vagaId = reserva.getVaga().getId();
         this.motoristaId = reserva.getMotorista().getId();
         this.motoristaNome = reserva.getMotorista().getUsuario().getNome();        
-        this.motoristaCpf = reserva.getMotorista().getUsuario().getCpf();
+        this.motoristaCpf = reserva.getMotorista().getUsuario().getCpfLast5();
         this.numeroEndereco = reserva.getVaga().getNumeroEndereco();
         this.referenciaEndereco = reserva.getVaga().getReferenciaEndereco();
         this.enderecoVaga = reserva.getVaga().getEndereco().toResponseDTO();
@@ -100,7 +100,7 @@ public class ReservaDTO {
         this.placaVeiculo = reserva.getVeiculo().getPlaca();
         this.modeloVeiculo = reserva.getVeiculo().getModelo();
         this.marcaVeiculo = reserva.getVeiculo().getMarca();
-        this.cpfProprietarioVeiculo = reserva.getVeiculo().getCpfProprietario();
+        this.cpfProprietarioVeiculo = reserva.getVeiculo().getCpfProprietarioLast5();
         this.cnpjProprietarioVeiculo = reserva.getVeiculo().getCnpjProprietario();
         this.cidadeOrigem = reserva.getCidadeOrigem();
         this.entradaCidade = reserva.getEntradaCidade();
