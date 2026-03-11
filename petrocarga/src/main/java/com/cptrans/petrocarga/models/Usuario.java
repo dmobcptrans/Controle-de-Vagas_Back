@@ -1,7 +1,7 @@
 package com.cptrans.petrocarga.models;
 
-import java.time.OffsetDateTime;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
@@ -170,7 +170,7 @@ public class Usuario implements UserDetails{
         this.criadoEm = criadoEm;
     }
 
-    public Boolean getAtivo() {
+    public Boolean isAtivo() {
         return ativo;
     }
 

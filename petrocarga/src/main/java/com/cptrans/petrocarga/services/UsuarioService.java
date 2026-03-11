@@ -12,9 +12,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.xbill.DNS.TSIG.StreamGenerator;
 
 import com.cptrans.petrocarga.domain.event.UsuarioCriadoEvent;
+import com.cptrans.petrocarga.dto.CompletarCadastroDTO;
 import com.cptrans.petrocarga.dto.GestorFiltrosDTO;
 import com.cptrans.petrocarga.dto.UsuarioPATCHRequestDTO;
 import com.cptrans.petrocarga.enums.PermissaoEnum;
@@ -29,6 +29,7 @@ import com.cptrans.petrocarga.utils.ReservaUtils;
 import com.cptrans.petrocarga.utils.UsuarioUtils;
 
 import jakarta.persistence.EntityNotFoundException;
+
 
 @Service
 public class UsuarioService {
@@ -157,7 +158,7 @@ public class UsuarioService {
         }
         Usuario usuario = usuarioRepository.findByEmailOrCpfHash(email, cpf == null ? null : cpfHashService.hash(cpf)).orElseThrow(() -> new IllegalArgumentException("Credenciais inválidas."));
 
-        if (usuario.getAtivo() != null && usuario.getAtivo()) {
+        if (usuario.isAtivo() != null && usuario.isAtivo()) {
             throw new IllegalArgumentException("Usuário já ativado.");
         }
 
@@ -214,7 +215,7 @@ public class UsuarioService {
         Usuario usuario = usuarioRepository.findByEmailOrCpfHash(email, cpf == null ? null : cpfHashService.hash(cpf)).orElseThrow(() -> new IllegalArgumentException("Credenciais inválidas."));
 
 
-        if (!usuario.getAtivo()) {
+        if (!usuario.isAtivo()) {
             throw new IllegalArgumentException("Usuário desativado.");
         }
 
@@ -239,35 +240,6 @@ public class UsuarioService {
         usuarioRepository.save(usuario);
     }
 
-    // public Usuario updateUsuario(UUID id, Usuario novoUsuario, PermissaoEnum permissao) {
-    //     Usuario usuarioExistente = findByIdAndAtivo(id, true);
-
-    //     if(!usuarioExistente.getEmail().equals(novoUsuario.getEmail())) {
-    //         Optional<Usuario> usuarioByEmail = usuarioRepository.findByEmail(novoUsuario.getEmail());
-    //         if (usuarioByEmail.isPresent() && !usuarioByEmail.get().getId().equals(id)) {
-    //             throw new IllegalArgumentException("Email já cadastrado");
-    //         }
-    //         usuarioExistente.setEmail(novoUsuario.getEmail());
-    //     }
-    //     String cpfDecoded = cpfCriptoService.decrypt(usuarioExistente.getCpfCripto(), usuarioExistente.getCpfKeyVersion());
-        
-    //     if (!cpfDecoded.equals(novoUsuario.getCpfHash())) {
-    //         Optional<Usuario> usuarioByCpf = usuarioRepository.findByCpfHash(cpfHashService.hash(novoUsuario.getCpfHash()));
-    //         if (usuarioByCpf.isPresent() && !usuarioByCpf.get().getId().equals(id)) {
-    //             throw new IllegalArgumentException("CPF já cadastrado");
-    //         }
-    //         usuarioExistente.setCpfHash(cpfHashService.hash(novoUsuario.getCpfHash()));
-    //     }
-
-    //     usuarioExistente.setNome(novoUsuario.getNome());
-    //     usuarioExistente.setTelefone(novoUsuario.getTelefone());
-
-    //     if (novoUsuario.getSenha() != null && !novoUsuario.getSenha().isEmpty()) {
-    //         usuarioExistente.setSenha(passwordEncoder.encode(novoUsuario.getSenha()));
-    //     }
-    //     usuarioExistente.setPermissao(permissao);
-    //     return usuarioRepository.save(usuarioExistente);
-    // }
 
     public Usuario patchUpdate(UUID id, PermissaoEnum permissao, UsuarioPATCHRequestDTO patchRequestDTO) {
         Usuario usuarioExistente = findByIdAndAtivo(id, true);
@@ -289,24 +261,6 @@ public class UsuarioService {
         if (patchRequestDTO.getSenha() != null) {
             usuarioExistente.setSenha(passwordEncoder.encode(patchRequestDTO.getSenha()));
         }
-        // if(permissao.equals(PermissaoEnum.MOTORISTA)) {
-        //     Motorista motorista = motoristaRepository.findByUsuario(usuarioExistente).orElseThrow(() -> new IllegalArgumentException("Motorista não encontrado."));
-        //     if(patchRequestDTO.getNumeroCnh().isPresent()) {
-        //        Motorista motoristaByCnh = motoristaRepository.findByNumeroCnh(patchRequestDTO.getNumeroCnh().get()).get();
-        //        if(!motoristaByCnh.getId().equals(motorista.getId())) throw new IllegalArgumentException("CNH já cadastrada");
-        //         motorista.setNumeroCNH(patchRequestDTO.getNumeroCnh().get());
-        //     }
-        //     if(patchRequestDTO.getTipoCnh().isPresent()) {
-        //         motorista.setTipoCNH(patchRequestDTO.getTipoCnh().get());
-        //     }
-        //     if(patchRequestDTO.getDataValidadeCnh().isPresent()) {
-        //         if(patchRequestDTO.getDataValidadeCnh().get().isBefore(LocalDate.now())) {
-        //             throw new IllegalArgumentException("Data de validade da CNH nao pode ser menor que a data atual.");
-        //         }
-        //         motorista.setDataValidadeCNH(patchRequestDTO.getDataValidadeCnh().get());
-        //     }
-        //     return motoristaRepository.save(motorista).getUsuario();
-        // }
         return usuarioRepository.save(usuarioExistente);
     }
     public void deleteById(UUID id) {
@@ -324,8 +278,7 @@ public class UsuarioService {
     }
 
     @Transactional
-    public Usuario createUsuarioByGoogleAccount(String name, String email, String googleId){
-        System.out.println("aqui, versao dos termos: " + UsuarioUtils.VERSAO_ATUAL_TERMOS);
+    public Usuario createMotoristaByGoogleAccount(String name, String email, String googleId){
         Usuario novoUsuario = new Usuario();
         novoUsuario.setAtivo(true);
         novoUsuario.setEmail(email);
@@ -339,4 +292,38 @@ public class UsuarioService {
         return usuarioRepository.save(novoUsuario);
 
     }
+
+    public Usuario completarCadastro(CompletarCadastroDTO request, UUID usuarioId){
+        if(request.getAceitarTermos().equals(Boolean.FALSE)) throw new IllegalArgumentException("Usuário não aceitou os termmos de uso e privacidade dos dados.");
+
+        Usuario usuarioCadastrado = usuarioRepository.findByIdAndAtivo(usuarioId, true).orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado ou desativado"));
+        
+        if (usuarioCadastrado.getCpfHash() != null && 
+        !usuarioCadastrado.getCpfHash().isEmpty() &&
+        usuarioCadastrado.getCpfCripto() != null &&
+        !usuarioCadastrado.getCpfCripto().isEmpty() &&
+        usuarioCadastrado.getCpfLast5() != null &&
+        !usuarioCadastrado.getCpfLast5().isEmpty() &&
+        usuarioCadastrado.getAceitouTermosEm() != null &&
+        usuarioCadastrado.getVersaoTermos().equals(UsuarioUtils.VERSAO_ATUAL_TERMOS))
+            throw new IllegalArgumentException("Cadastro já completo.");
+
+        String cpfHash = cpfHashService.hash(request.getCpf());
+        Optional<Usuario> usuarioByCpf = usuarioRepository.findByCpfHash(cpfHash);
+
+        if (usuarioByCpf.isPresent() && !usuarioByCpf.get().getId().equals(usuarioCadastrado.getId())) throw new IllegalArgumentException("CPF já cadastrado.");
+
+        usuarioCadastrado.setCpfHash(cpfHash);
+        usuarioCadastrado.setCpfCripto(cpfCriptoService.encrypt(request.getCpf()));
+        usuarioCadastrado.setCpfLast5(UsuarioUtils.gerarLast5(request.getCpf()));
+        usuarioCadastrado.setAceitarTermos(request.getAceitarTermos());
+        usuarioCadastrado.setAceitouTermosEm(OffsetDateTime.now(DateUtils.FUSO_BRASIL));
+        usuarioCadastrado.setCpfKeyVersion(activeCpfKeyVersion);
+        usuarioCadastrado.setVersaoTermos(UsuarioUtils.VERSAO_ATUAL_TERMOS);
+        usuarioCadastrado.setTelefone(request.getTelefone());
+        usuarioCadastrado.setSenha((request.getSenha() != null ? passwordEncoder.encode(request.getSenha()) : null));
+
+        return usuarioRepository.save(usuarioCadastrado);
+
+    }  
 }
