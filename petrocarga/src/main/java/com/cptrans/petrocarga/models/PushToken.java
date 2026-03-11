@@ -26,7 +26,7 @@ public class PushToken {
     @Column(name = "usuario_id", nullable = false)
     private UUID usuarioId;
 
-    @Column(name = "token", nullable = false, columnDefinition="TEXT")
+    @Column(name = "token", nullable = false, unique = true, columnDefinition="TEXT")
     private String token;
 
     @Enumerated(EnumType.STRING)
