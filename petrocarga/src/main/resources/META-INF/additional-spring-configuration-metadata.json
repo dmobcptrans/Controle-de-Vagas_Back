@@ -54,6 +54,36 @@
             "name": "app.frontend.base-url",
             "type": "java.lang.String",
             "description": "A description for 'app.frontend.base-url'"
+        },
+        {
+            "name": "app.cors.allowed-origins",
+            "type": "java.lang.String",
+            "description": "A description for 'app.cors.allowed-origins'"
+        },
+        {
+            "name": "app.mailSender.enabled",
+            "type": "java.lang.String",
+            "description": "A description for 'app.mailSender.enabled'"
+        },
+        {
+            "name": "app.security.cpf.active-key-version",
+            "type": "java.lang.String",
+            "description": "A description for 'app.security.cpf.active-key-version'"
+        },
+        {
+            "name": "app.security.cpf.keys.1",
+            "type": "java.lang.String",
+            "description": "A description for 'app.security.cpf.keys.1'"
+        },
+        {
+            "name": "app.security.cpf.pepper",
+            "type": "java.lang.String",
+            "description": "A description for 'app.security.cpf.pepper'"
+        },
+        {
+            "name": "google.client-id",
+            "type": "java.lang.String",
+            "description": "A description for 'google.client-id'"
         }
     ]
 }

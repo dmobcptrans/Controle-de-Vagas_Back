@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import com.cptrans.petrocarga.dto.MotoristaFiltrosDTO;
 import com.cptrans.petrocarga.dto.UsuarioPATCHRequestDTO;
 import com.cptrans.petrocarga.enums.PermissaoEnum;
+import com.cptrans.petrocarga.enums.TipoCnhEnum;
 import com.cptrans.petrocarga.models.Motorista;
 import com.cptrans.petrocarga.models.Usuario;
 import com.cptrans.petrocarga.repositories.MotoristaRepository;
@@ -107,5 +108,29 @@ public class MotoristaService {
     public void deleteByUsuarioId(UUID usuarioId) {
         Motorista motorista = findByUsuarioIdAndAtivo(usuarioId, true);
         usuarioService.deleteById(motorista.getUsuario().getId());
+    }
+
+    public Motorista completarCadastro(Usuario usuario, String numeroCnh, LocalDate dataValidadeCnh, TipoCnhEnum tipoCnh){
+        Optional<Motorista> motorista = motoristaRepository.findByUsuarioId(usuario.getId());
+        
+        if(motorista.isPresent()){
+            Optional<Motorista> motoristaByCnh = motoristaRepository.findByNumeroCnh(numeroCnh);
+            if(motoristaByCnh.isPresent() && !motoristaByCnh.get().getUsuario().getId().equals(usuario.getId())){
+                throw new IllegalArgumentException("CNH já cadastrada");
+            }
+            else{
+                motorista.get().setDataValidadeCnh(dataValidadeCnh);
+                motorista.get().setNumeroCnh(numeroCnh);
+                motorista.get().setTipoCnh(tipoCnh);
+                return motoristaRepository.save(motorista.get());
+            }
+        }else{
+            Motorista novoMotorista = new Motorista();
+            novoMotorista.setDataValidadeCnh(dataValidadeCnh);
+            novoMotorista.setNumeroCnh(numeroCnh);
+            novoMotorista.setTipoCnh(tipoCnh);
+            novoMotorista.setUsuario(usuario);
+            return motoristaRepository.save(novoMotorista);
+        }
     }
 }

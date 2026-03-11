@@ -42,7 +42,7 @@ public class UsuarioResponseDTO {
         this.email = usuario.getEmail();
         this.permissao = usuario.getPermissao();
         this.criadoEm = usuario.getCriadoEm();
-        this.ativo = usuario.getAtivo();
+        this.ativo = usuario.isAtivo();
         this.desativadoEm = usuario.getDesativadoEm();
     }
 

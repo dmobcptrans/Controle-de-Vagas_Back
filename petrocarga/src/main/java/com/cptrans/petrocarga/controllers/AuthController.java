@@ -17,16 +17,16 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.cptrans.petrocarga.dto.AccountActivationRequest;
+import com.cptrans.petrocarga.dto.ApiResponse;
 import com.cptrans.petrocarga.dto.AuthRequestDTO;
 import com.cptrans.petrocarga.dto.AuthResponseDTO;
+import com.cptrans.petrocarga.dto.CompletarCadastroDTO;
+import com.cptrans.petrocarga.dto.ForgotPasswordRequest;
+import com.cptrans.petrocarga.dto.ResendCodeRequest;
+import com.cptrans.petrocarga.dto.ResetPasswordRequest;
 import com.cptrans.petrocarga.dto.UsuarioRequestDTO;
 import com.cptrans.petrocarga.dto.UsuarioResponseDTO;
-import com.cptrans.petrocarga.dto.AccountActivationRequest;
-import com.cptrans.petrocarga.dto.ResendCodeRequest;
-import com.cptrans.petrocarga.dto.ForgotPasswordRequest;
-import com.cptrans.petrocarga.dto.GoogleAuthRequestDTO;
-import com.cptrans.petrocarga.dto.ResetPasswordRequest;
-import com.cptrans.petrocarga.dto.ApiResponse;
 import com.cptrans.petrocarga.enums.PermissaoEnum;
 import com.cptrans.petrocarga.models.Usuario;
 import com.cptrans.petrocarga.security.UserAuthenticated;
@@ -86,6 +86,13 @@ public class AuthController {
 
         return ResponseEntity.ok(auth);
     }
+
+    @PostMapping("/completarCadastro")
+    public ResponseEntity<UsuarioResponseDTO> completarCadastro(@AuthenticationPrincipal UserAuthenticated userAuthenticated, @RequestBody @Valid CompletarCadastroDTO request) {
+        Usuario usuarioCompleto = authService.completarCadastro(request, userAuthenticated.id());
+        return ResponseEntity.ok(usuarioCompleto.toResponseDTO());
+    }
+    
 
     //TODO: Remover rota depois de cadastrar o primeiro admin em deploy
     @PostMapping("/admin")
