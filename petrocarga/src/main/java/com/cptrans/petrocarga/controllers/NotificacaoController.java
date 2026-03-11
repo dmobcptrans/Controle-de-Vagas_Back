@@ -141,6 +141,17 @@ public class NotificacaoController {
         return ResponseEntity.ok().body(Map.of("message", "Token registrado com sucesso!"));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR', 'AGENTE', 'EMPRESA', 'MOTORISTA')")
+    @GetMapping("/pushToken")
+    public ResponseEntity<PushTokenStatusDTO> visualizarStatus(@AuthenticationPrincipal UserAuthenticated userAuthenticated) {
+        PushToken pushToken = pushTokenService.visualizarStatus(userAuthenticated.id());
+
+        PushTokenStatusDTO dto = new PushTokenStatusDTO();
+        dto.setAtivo(pushToken.isAtivo());
+
+        return ResponseEntity.ok(dto);
+    }
+
     @PreAuthorize("#usuarioId == authentication.principal.id")
     @PatchMapping("/pushToken/{usuarioId}")
     public ResponseEntity<Map<String, String>> atualizarStatus(@PathVariable UUID usuarioId, @AuthenticationPrincipal UserAuthenticated userAuthenticated, @RequestBody PushTokenStatusDTO pushTokenStatusDTO) {
@@ -148,4 +159,10 @@ public class NotificacaoController {
         return ResponseEntity.ok().body(Map.of("message", "Status do token atualizado com sucesso!"));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR', 'AGENTE', 'EMPRESA', 'MOTORISTA')")
+    @PatchMapping("/pushToken/desativar/{pushToken}")
+    public ResponseEntity<Void> desativarPush(@PathVariable String pushToken) {
+        pushTokenService.desativarPush(pushToken);
+        return ResponseEntity.noContent().build();
+    }
 }
