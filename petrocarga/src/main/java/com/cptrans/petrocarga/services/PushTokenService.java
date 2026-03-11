@@ -41,4 +41,13 @@ public class PushTokenService {
 
         return pushTokenRepository.saveAll(tokens);
     }
+
+    public PushToken visualizarStatus(UUID usuarioId) {
+        List<PushToken> push = pushTokenRepository.findByUsuarioId(usuarioId);
+
+        if(push.isEmpty()){
+            throw new IllegalArgumentException("Nenhum token encontrado ou vínculado ao usuário");
+        }
+        return push.getFirst();
+    }
 }
