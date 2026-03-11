@@ -159,4 +159,10 @@ public class NotificacaoController {
         return ResponseEntity.ok().body(Map.of("message", "Status do token atualizado com sucesso!"));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR', 'AGENTE', 'EMPRESA', 'MOTORISTA')")
+    @PatchMapping("/pushToken/desativar/{pushToken}")
+    public ResponseEntity<Void> desativarPush(@PathVariable String pushToken) {
+        pushTokenService.desativarPush(pushToken);
+        return ResponseEntity.noContent().build();
+    }
 }
