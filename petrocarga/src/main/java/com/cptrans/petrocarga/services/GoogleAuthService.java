@@ -20,6 +20,11 @@ public class GoogleAuthService {
     private String googleClientId;
 
     public Payload verifyGoogleToken(String idTokenString)  {
+        System.out.println("cheguei");
+
+        if(googleClientId == null || googleClientId.isEmpty()) {
+            throw new IllegalStateException("Google Client ID não configurado");
+        }
 
         GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(
                 new NetHttpTransport(),
@@ -51,7 +56,7 @@ public class GoogleAuthService {
         if (payload.getEmailVerified() == null || !payload.getEmailVerified()) {
             throw new AuthorizationDeniedException("Token Google inválido");
         }
-
+        System.out.println("Token Google verificado com sucesso para email: " + payload.getEmail());
         return payload;
     }
 }

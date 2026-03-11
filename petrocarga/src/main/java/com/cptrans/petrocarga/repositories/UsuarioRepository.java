@@ -16,6 +16,7 @@ import com.cptrans.petrocarga.models.Usuario;
 @Repository
 public interface UsuarioRepository extends JpaRepository<Usuario, UUID>, JpaSpecificationExecutor<Usuario> {
     public Optional<Usuario> findByEmail(String email);
+    public Optional<Usuario> findByEmailOrGoogleId(String email, String google_id);
     public Optional<Usuario> findByEmailOrCpfHash(String email, String cpfHash);
     public Optional<Usuario> findByCpfHash(String cpfHash);
     public Boolean existsByEmail(String email);

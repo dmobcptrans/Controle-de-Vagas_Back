@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.cptrans.petrocarga.dto.AuthRequestDTO;
@@ -56,6 +57,23 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<AuthResponseDTO> login(@RequestBody @Valid AuthRequestDTO request, HttpServletResponse response) {
         AuthResponseDTO auth = authService.login(request);
+        ResponseCookie cookie = ResponseCookie.from("auth-token", auth.getToken())
+            .httpOnly(true)
+            .secure(secure)
+            .sameSite(sameSite)
+            .path("/")
+            .maxAge(java.time.Duration.ofHours(2))
+            .build();
+        
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+
+        return ResponseEntity.ok(auth);
+    }
+
+    @PostMapping("/loginWithGoogle")
+    public ResponseEntity<AuthResponseDTO> loginWithGoogle(@RequestParam(required = true) String token, HttpServletResponse response) {
+        System.out.println("Recebido token do cliente: " + token);
+        AuthResponseDTO auth = authService.loginWithGoogle(token);
         ResponseCookie cookie = ResponseCookie.from("auth-token", auth.getToken())
             .httpOnly(true)
             .secure(secure)
@@ -172,9 +190,4 @@ public class AuthController {
         }
     }
 
-    @PostMapping("/auth/google")
-    public ResponseEntity<AuthResponseDTO> googleLogin(@RequestBody GoogleAuthRequestDTO dto) {
-        AuthResponseDTO response = authService.loginWithGoogle(dto.token());
-        return ResponseEntity.ok(response);
-    }
 }
