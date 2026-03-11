@@ -15,18 +15,26 @@ public class PushTokenService {
     @Autowired
     private PushTokenRepository pushTokenRepository;
     
-    public PushToken salvar(PushToken novoPushToken){ 
-        Optional<PushToken> pushTokenExistente = pushTokenRepository.findByTokenAndUsuarioId(novoPushToken.getToken(), novoPushToken.getUsuarioId());
+    public PushToken salvar(PushToken novoPushToken){
+        Optional<PushToken> pushTokenExistente = pushTokenRepository.findByToken(novoPushToken.getToken());
         
         if (pushTokenExistente.isPresent()) {
-            if(!pushTokenExistente.get().getUsuarioId().equals(novoPushToken.getUsuarioId())) throw new IllegalArgumentException("Proibido duplicar token para usuários diferentes.");
-            pushTokenExistente.get().setAtivo(true);
-            pushTokenExistente.get().setPlataforma(novoPushToken.getPlataforma());
-            return pushTokenRepository.save(pushTokenExistente.get());
+            PushToken tokenAtual = pushTokenExistente.get();
+            tokenAtual.setUsuarioId(novoPushToken.getUsuarioId());
+            tokenAtual.setAtivo(true);
+            tokenAtual.setPlataforma(novoPushToken.getPlataforma());
+            return pushTokenRepository.save(tokenAtual);
         } else {
             return pushTokenRepository.save(novoPushToken);
         }
 
+    }
+
+    public void desativarPush(String token){
+        pushTokenRepository.findByToken(token).ifPresent(pushToken -> {
+            pushToken.setAtivo(false);
+            pushTokenRepository.save(pushToken);
+        });
     }
 
     public List<PushToken> atualizarStatus(UUID usuarioId, boolean ativo) {
@@ -50,4 +58,5 @@ public class PushTokenService {
         }
         return push.getFirst();
     }
+
 }
