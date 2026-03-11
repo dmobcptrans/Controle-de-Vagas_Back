@@ -12,11 +12,13 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.xbill.DNS.TSIG.StreamGenerator;
 
 import com.cptrans.petrocarga.domain.event.UsuarioCriadoEvent;
 import com.cptrans.petrocarga.dto.GestorFiltrosDTO;
 import com.cptrans.petrocarga.dto.UsuarioPATCHRequestDTO;
 import com.cptrans.petrocarga.enums.PermissaoEnum;
+import com.cptrans.petrocarga.enums.UsuarioProviderEnum;
 import com.cptrans.petrocarga.infrastructure.email.EmailSender;
 import com.cptrans.petrocarga.infrastructure.event.SpringDomainEventPublisher;
 import com.cptrans.petrocarga.models.Usuario;
@@ -24,6 +26,7 @@ import com.cptrans.petrocarga.repositories.UsuarioRepository;
 import com.cptrans.petrocarga.specification.GestorSpecification;
 import com.cptrans.petrocarga.utils.DateUtils;
 import com.cptrans.petrocarga.utils.ReservaUtils;
+import com.cptrans.petrocarga.utils.UsuarioUtils;
 
 import jakarta.persistence.EntityNotFoundException;
 
@@ -318,5 +321,22 @@ public class UsuarioService {
 
     public List<Usuario> findAllGestoresWithFiltros(GestorFiltrosDTO filtros) {
         return usuarioRepository.findAll(GestorSpecification.filtrar(filtros));
+    }
+
+    @Transactional
+    public Usuario createUsuarioByGoogleAccount(String name, String email, String googleId){
+        System.out.println("aqui, versao dos termos: " + UsuarioUtils.VERSAO_ATUAL_TERMOS);
+        Usuario novoUsuario = new Usuario();
+        novoUsuario.setAtivo(true);
+        novoUsuario.setEmail(email);
+        novoUsuario.setNome(name);
+        novoUsuario.setGoogleId(googleId);
+        novoUsuario.setProvider(UsuarioProviderEnum.GOOGLE);
+        novoUsuario.setPermissao(PermissaoEnum.MOTORISTA);
+        novoUsuario.setVersaoTermos(UsuarioUtils.VERSAO_ATUAL_TERMOS);
+        novoUsuario.setCpfKeyVersion(activeCpfKeyVersion);
+
+        return usuarioRepository.save(novoUsuario);
+
     }
 }

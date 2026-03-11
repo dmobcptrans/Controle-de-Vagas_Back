@@ -53,6 +53,8 @@ public class SecurityConfig {
                     "/auth/admin",
                     "/auth/me/",
                     "/auth/me",
+                    "auth/loginWithGoogle",
+                    "auth/loginWithGoogle/",
                     "/swagger-ui/**",
                     "/swagger-ui.html",
                     "/v3/api-docs/**",

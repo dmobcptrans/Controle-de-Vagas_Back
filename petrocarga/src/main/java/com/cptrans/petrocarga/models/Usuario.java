@@ -12,6 +12,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import com.cptrans.petrocarga.dto.UsuarioResponseDTO;
 import com.cptrans.petrocarga.enums.PermissaoEnum;
+import com.cptrans.petrocarga.enums.UsuarioProviderEnum;
 import com.cptrans.petrocarga.utils.UsuarioUtils;
 
 import jakarta.persistence.Column;
@@ -34,9 +35,6 @@ public class Usuario implements UserDetails{
 
     @Column(nullable = false)
     private String nome;
-
-    // @Column(nullable = false, unique = true, length = 11)
-    // private String cpf;
 
     @Column(name = "cpf_hash", nullable = false)
     private String cpfHash;
@@ -87,6 +85,13 @@ public class Usuario implements UserDetails{
     @Column(name = "versao_termos", nullable = false)
     private String versaoTermos;
 
+    @Column(name = "google_id", nullable = true, unique = true)
+    private String googleId;
+
+    @Column(name="provider", nullable = false)
+    @Enumerated(EnumType.STRING)
+    private UsuarioProviderEnum provider;
+
     // Constructors
     public Usuario() {
         this.criadoEm = OffsetDateTime.now();
@@ -124,14 +129,6 @@ public class Usuario implements UserDetails{
     public void setNome(String nome) {
         this.nome = nome;
     }
-
-    // public String getCpf() {
-    //     return cpf;
-    // }
-
-    // public void setCpf(String cpf) {
-    //     this.cpf = cpf;
-    // }
 
     public String getTelefone() {
         return telefone;
@@ -263,6 +260,22 @@ public class Usuario implements UserDetails{
 
     public Boolean getAceitarTermos() {
         return aceitarTermos;
+    }
+
+    public String getGoogleId() {
+        return googleId;
+    }
+
+    public void setGoogleId(String googleId) {
+        this.googleId = googleId;
+    }
+
+    public UsuarioProviderEnum getProvider() {
+        return provider;
+    }
+
+    public void setProvider(UsuarioProviderEnum provider) {
+        this.provider = provider;
     }
 
     public UsuarioResponseDTO toResponseDTO() {

@@ -3,6 +3,7 @@ package com.cptrans.petrocarga.models;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
+import com.cptrans.petrocarga.dto.PushTokenResponseDTO;
 import com.cptrans.petrocarga.enums.PlataformaEnum;
 import com.cptrans.petrocarga.utils.DateUtils;
 
@@ -91,6 +92,10 @@ public class PushToken {
 
     public OffsetDateTime getCRIADO_EM() {
         return CRIADO_EM;
+    }
+
+    public PushTokenResponseDTO toResponseDTO(){
+        return new PushTokenResponseDTO(this.usuarioId, this.token, this.plataforma, this.ativo);
     }
     
 }

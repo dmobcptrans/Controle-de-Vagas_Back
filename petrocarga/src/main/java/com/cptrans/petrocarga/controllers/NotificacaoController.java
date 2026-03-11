@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import com.cptrans.petrocarga.dto.PushTokenStatusDTO;
+import com.cptrans.petrocarga.dto.PushTokenResponseDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import com.cptrans.petrocarga.dto.NotificacaoRequestDTO;
+import com.cptrans.petrocarga.dto.PushTokenPatchDTO;
 import com.cptrans.petrocarga.dto.PushTokenRequestDTO;
 import com.cptrans.petrocarga.enums.PermissaoEnum;
 import com.cptrans.petrocarga.infrastructure.realtime.SseNotficationService;
@@ -142,27 +143,23 @@ public class NotificacaoController {
     }
 
     @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR', 'AGENTE', 'EMPRESA', 'MOTORISTA')")
-    @GetMapping("/pushToken")
-    public ResponseEntity<PushTokenStatusDTO> visualizarStatus(@AuthenticationPrincipal UserAuthenticated userAuthenticated) {
-        PushToken pushToken = pushTokenService.visualizarStatus(userAuthenticated.id());
+    @GetMapping("/pushToken/byToken")
+    public ResponseEntity<PushTokenResponseDTO> visualizarStatusByTokenAndUsuario(@AuthenticationPrincipal UserAuthenticated userAuthenticated, @RequestParam(required = true) String token) {
+        PushToken pushToken = pushTokenService.visualizarStatusByTokenAndUsuario(token, userAuthenticated.id());
+        return ResponseEntity.ok(pushToken.toResponseDTO());
+    }
 
-        PushTokenStatusDTO dto = new PushTokenStatusDTO();
-        dto.setAtivo(pushToken.isAtivo());
-
-        return ResponseEntity.ok(dto);
+    @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR', 'AGENTE', 'EMPRESA', 'MOTORISTA')")
+    @GetMapping("/pushToken/byUsuarioId")
+    public ResponseEntity<List<PushTokenResponseDTO>> visualizarStatusByUsuario(@AuthenticationPrincipal UserAuthenticated userAuthenticated) {
+        List<PushToken> pushTokenList = pushTokenService.visualizarStatusByUsuario(userAuthenticated.id());
+        return ResponseEntity.ok(pushTokenList.stream().map(pushToken -> pushToken.toResponseDTO()).toList());
     }
 
     @PreAuthorize("#usuarioId == authentication.principal.id")
     @PatchMapping("/pushToken/{usuarioId}")
-    public ResponseEntity<Map<String, String>> atualizarStatus(@PathVariable UUID usuarioId, @AuthenticationPrincipal UserAuthenticated userAuthenticated, @RequestBody PushTokenStatusDTO pushTokenStatusDTO) {
-        pushTokenService.atualizarStatus(usuarioId, pushTokenStatusDTO.getAtivo());
-        return ResponseEntity.ok().body(Map.of("message", "Status do token atualizado com sucesso!"));
-    }
-
-    @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR', 'AGENTE', 'EMPRESA', 'MOTORISTA')")
-    @PatchMapping("/pushToken/desativar/{pushToken}")
-    public ResponseEntity<Void> desativarPush(@PathVariable String pushToken) {
-        pushTokenService.desativarPush(pushToken);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<PushTokenResponseDTO> atualizarStatus(@PathVariable UUID usuarioId, @AuthenticationPrincipal UserAuthenticated userAuthenticated, @RequestBody PushTokenPatchDTO request) {
+        PushToken tokenAtualizado = pushTokenService.atualizarStatus(usuarioId,request.token(), request.ativo());
+        return ResponseEntity.ok().body(tokenAtualizado.toResponseDTO());
     }
 }

@@ -10,6 +10,8 @@ import org.springframework.stereotype.Service;
 import com.cptrans.petrocarga.models.PushToken;
 import com.cptrans.petrocarga.repositories.PushTokenRepository;
 
+import jakarta.persistence.EntityNotFoundException;
+
 @Service
 public class PushTokenService {
     @Autowired
@@ -30,33 +32,32 @@ public class PushTokenService {
 
     }
 
-    public void desativarPush(String token){
-        pushTokenRepository.findByToken(token).ifPresent(pushToken -> {
-            pushToken.setAtivo(false);
-            pushTokenRepository.save(pushToken);
-        });
+    public PushToken atualizarStatus(UUID usuarioId, String token, Boolean ativo) {
+        PushToken pushToken = pushTokenRepository.findByTokenAndUsuarioId(token, usuarioId).orElseThrow(() -> new EntityNotFoundException("Nenhum token encontrado para o usuário"));
+        
+        pushToken.setAtivo(ativo);
+
+        return pushTokenRepository.save(pushToken);
     }
 
-    public List<PushToken> atualizarStatus(UUID usuarioId, boolean ativo) {
-
-        List<PushToken> tokens = pushTokenRepository.findByUsuarioId(usuarioId);
-
-        if(tokens.isEmpty()){
-            throw new IllegalArgumentException("Nenhum token encontrado para o usuário");
-        }
-
-        tokens.forEach(token -> token.setAtivo(ativo));
-
-        return pushTokenRepository.saveAll(tokens);
-    }
-
-    public PushToken visualizarStatus(UUID usuarioId) {
-        List<PushToken> push = pushTokenRepository.findByUsuarioId(usuarioId);
+    public PushToken visualizarStatusByTokenAndUsuario(String token, UUID usuarioId) {
+        Optional<PushToken> push = pushTokenRepository.findByTokenAndUsuarioId(token, usuarioId);
 
         if(push.isEmpty()){
-            throw new IllegalArgumentException("Nenhum token encontrado ou vínculado ao usuário");
+            throw new EntityNotFoundException("Nenhum token encontrado ou vínculado ao usuário");
         }
-        return push.getFirst();
+
+        return push.get();
+    }
+
+    public List<PushToken> visualizarStatusByUsuario( UUID usuarioId) {
+        List<PushToken> pushList = pushTokenRepository.findByUsuarioId(usuarioId);
+
+        if(pushList.isEmpty()){
+            throw new EntityNotFoundException("Nenhum token encontrado ou vínculado ao usuário");
+        }
+
+        return pushList;
     }
 
 }
