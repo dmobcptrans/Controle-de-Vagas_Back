@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import com.cptrans.petrocarga.dto.AuthRequestDTO;
 import com.cptrans.petrocarga.dto.AuthResponseDTO;
 import com.cptrans.petrocarga.dto.CompletarCadastroDTO;
+import com.cptrans.petrocarga.enums.PermissaoEnum;
 import com.cptrans.petrocarga.enums.UsuarioProviderEnum;
 import com.cptrans.petrocarga.models.Usuario;
 import com.cptrans.petrocarga.repositories.UsuarioRepository;
@@ -109,7 +110,9 @@ public class AuthService {
         if(usuario == null){
             throw new EntityNotFoundException("Usuário não encontrado para completar cadastro.");
         }
-        motoristaService.completarCadastro(usuario, request.getNumeroCnh(), request.getDataValidadeCnh(), request.getTipoCnh());
+        if(usuario.getPermissao().equals(PermissaoEnum.MOTORISTA)){
+            motoristaService.completarCadastro(usuario, request.getNumeroCnh(), request.getDataValidadeCnh(), request.getTipoCnh());
+        }
         return usuario;
     }
 }
