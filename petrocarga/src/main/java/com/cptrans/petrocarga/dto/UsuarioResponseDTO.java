@@ -21,12 +21,12 @@ public class UsuarioResponseDTO {
     public UsuarioResponseDTO() {
     }
 
-    public UsuarioResponseDTO(UUID id, String nome, String cpfLast5, String telefone, String email, PermissaoEnum permissao,
+    public UsuarioResponseDTO(UUID id, String nome, String cpfLast5, String telefoneLast4, String email, PermissaoEnum permissao,
             OffsetDateTime criadoEm, Boolean ativo, OffsetDateTime desativadoEm) {
         this.id = id;
         this.nome = nome;
         this.cpf = cpfLast5;
-        this.telefone = telefone;
+        this.telefone = telefoneLast4;
         this.email = email;
         this.permissao = permissao;
         this.criadoEm = criadoEm;
@@ -38,7 +38,7 @@ public class UsuarioResponseDTO {
         this.id = usuario.getId();
         this.nome = usuario.getNome();
         this.cpf = usuario.getCpfLast5();
-        this.telefone = usuario.getTelefone();
+        this.telefone = usuario.getTelefoneLast4();
         this.email = usuario.getEmail();
         this.permissao = usuario.getPermissao();
         this.criadoEm = usuario.getCriadoEm();

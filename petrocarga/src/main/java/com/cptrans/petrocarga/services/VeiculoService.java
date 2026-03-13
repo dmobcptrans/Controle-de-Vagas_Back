@@ -20,6 +20,7 @@ import com.cptrans.petrocarga.repositories.ReservaRepository;
 import com.cptrans.petrocarga.repositories.VeiculoRepository;
 import com.cptrans.petrocarga.security.UserAuthenticated;
 import com.cptrans.petrocarga.utils.DateUtils;
+import com.cptrans.petrocarga.utils.UsuarioUtils;
 
 @Service
 public class VeiculoService {
@@ -34,13 +35,13 @@ public class VeiculoService {
     private UsuarioService usuarioService;
 
     @Autowired
-    private CpfHashService cpfHashService;
+    private HashService cpfHashService;
 
     @Autowired
-    private CpfCriptoService cpfCriptoService;
+    private CriptoService cpfCriptoService;
 
-    @Value("${app.security.cpf.active-key-version}")
-    private Integer cpfActiveKeyVersion;
+    @Value("${app.security.aes-criptography.active-key-version}")
+    private Integer activeKeyVersion;
 
     public List<Veiculo> findAll() {
         return veiculoRepository.findAll();
@@ -98,8 +99,8 @@ public class VeiculoService {
             String cpfString= novoVeiculo.getCpfProprietarioHash();
             novoVeiculo.setCpfProprietarioHash(cpfHashService.hash(cpfString));
             novoVeiculo.setCpfProprietarioCripto(cpfCriptoService.encrypt(cpfString));
-            novoVeiculo.setCpfProprietarioLast5(cpfString.substring(cpfString.length() - 5));
-            novoVeiculo.setCpfProprietarioKeyVersion(cpfActiveKeyVersion);
+            novoVeiculo.setCpfProprietarioLast5(UsuarioUtils.gerarLastN(cpfString, 5));
+            novoVeiculo.setCpfProprietarioKeyVersion(activeKeyVersion);
         }
 
         novoVeiculo.setUsuario(usuarioVeiculo);
@@ -142,8 +143,8 @@ public class VeiculoService {
         if (novoVeiculo.getCpfProprietario() != null) {
             veiculoRegistrado.setCpfProprietarioHash(cpfHashService.hash(novoVeiculo.getCpfProprietario()));
             veiculoRegistrado.setCpfProprietarioCripto(cpfCriptoService.encrypt(novoVeiculo.getCpfProprietario()));
-            veiculoRegistrado.setCpfProprietarioLast5(novoVeiculo.getCpfProprietario().substring(novoVeiculo.getCpfProprietario().length() - 5));
-            veiculoRegistrado.setCpfProprietarioKeyVersion(cpfActiveKeyVersion);
+            veiculoRegistrado.setCpfProprietarioLast5(UsuarioUtils.gerarLastN(novoVeiculo.getCpfProprietario(), 5));
+            veiculoRegistrado.setCpfProprietarioKeyVersion(activeKeyVersion);
         }
         if (novoVeiculo.getCnpjProprietario() != null) veiculoRegistrado.setCnpjProprietario(novoVeiculo.getCnpjProprietario());
      

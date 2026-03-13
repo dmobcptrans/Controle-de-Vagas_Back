@@ -25,7 +25,7 @@ app:
         secure: false
         same-site: Lax
     mailSender:
-        enabled: true
+        enabled: false
 
 logging:
     level:

@@ -6,6 +6,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.cptrans.petrocarga.dto.MotoristaFiltrosDTO;
@@ -16,6 +17,7 @@ import com.cptrans.petrocarga.models.Motorista;
 import com.cptrans.petrocarga.models.Usuario;
 import com.cptrans.petrocarga.repositories.MotoristaRepository;
 import com.cptrans.petrocarga.specification.MotoristaSpecification;
+import com.cptrans.petrocarga.utils.UsuarioUtils;
 
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
@@ -29,8 +31,17 @@ public class MotoristaService {
     @Autowired
     private UsuarioService usuarioService;
 
+    @Autowired
+    private HashService hashService;
+
+    @Autowired
+    private CriptoService criptoService;
+
     // @Autowired
     // private EmpresaService empresaService;
+
+    @Value("${app.security.aes-criptography.active-key-version}")
+    private Integer activeKeyVersion;
 
     public List<Motorista> findAll() {
         return motoristaRepository.findAll();
@@ -64,9 +75,14 @@ public class MotoristaService {
             }
             Usuario usuario = usuarioService.createUsuario(novoMotorista.getUsuario(), PermissaoEnum.MOTORISTA, novoMotorista.getUsuario().getCpfHash());
             novoMotorista.setUsuario(usuario);
-            if(motoristaRepository.existsByNumeroCnh(novoMotorista.getNumeroCnh())) {
+            if(motoristaRepository.existsByCnhHash(novoMotorista.getCnhHash())) {
                 throw new IllegalArgumentException("Número da CNH já cadastrado");
             }
+            String numero_cnh = novoMotorista.getCnhHash();
+            novoMotorista.setCnhHash(hashService.hash(numero_cnh));
+            novoMotorista.setCnhCripto(criptoService.encrypt(numero_cnh));
+            novoMotorista.setCnhLast4(UsuarioUtils.gerarLastN(numero_cnh, 4));
+            novoMotorista.setCnhKeyVersion(activeKeyVersion);
         return  motoristaRepository.save(novoMotorista);
     }
 
@@ -79,11 +95,14 @@ public class MotoristaService {
             motoristaCadastrado.setDataValidadeCnh(motoristaRequest.getDataValidadeCnh());
         }
         if (motoristaRequest.getNumeroCnh() != null) {
-            Optional<Motorista> motoristaByCnh = motoristaRepository.findByNumeroCnh(motoristaRequest.getNumeroCnh());
+            Optional<Motorista> motoristaByCnh = motoristaRepository.findByCnhHash(hashService.hash(motoristaRequest.getNumeroCnh()));
             if(motoristaByCnh.isPresent() && !motoristaByCnh.get().getId().equals(motoristaCadastrado.getId())){
                 throw new IllegalArgumentException("Número da Cnh já cadastrado");
             }
-            motoristaCadastrado.setNumeroCnh(motoristaRequest.getNumeroCnh());
+            motoristaCadastrado.setCnhHash(hashService.hash(motoristaRequest.getNumeroCnh()));
+            motoristaCadastrado.setCnhCripto(criptoService.encrypt(motoristaRequest.getNumeroCnh()));
+            motoristaCadastrado.setCnhLast4(UsuarioUtils.gerarLastN(motoristaRequest.getNumeroCnh(), 4));
+            motoristaCadastrado.setCnhKeyVersion(activeKeyVersion);
         }
         if (motoristaRequest.getTipoCnh() != null) {
             motoristaCadastrado.setTipoCnh(motoristaRequest.getTipoCnh());
@@ -114,20 +133,26 @@ public class MotoristaService {
         Optional<Motorista> motorista = motoristaRepository.findByUsuarioId(usuario.getId());
         
         if(motorista.isPresent()){
-            Optional<Motorista> motoristaByCnh = motoristaRepository.findByNumeroCnh(numeroCnh);
+            Optional<Motorista> motoristaByCnh = motoristaRepository.findByCnhHash(hashService.hash(numeroCnh));
             if(motoristaByCnh.isPresent() && !motoristaByCnh.get().getUsuario().getId().equals(usuario.getId())){
                 throw new IllegalArgumentException("CNH já cadastrada");
             }
             else{
                 motorista.get().setDataValidadeCnh(dataValidadeCnh);
-                motorista.get().setNumeroCnh(numeroCnh);
+                motorista.get().setCnhHash(hashService.hash(numeroCnh));
+                motorista.get().setCnhCripto(criptoService.encrypt(numeroCnh));
+                motorista.get().setCnhLast4(UsuarioUtils.gerarLastN(numeroCnh, 4));
+                motorista.get().setCnhKeyVersion(activeKeyVersion);
                 motorista.get().setTipoCnh(tipoCnh);
                 return motoristaRepository.save(motorista.get());
             }
         }else{
             Motorista novoMotorista = new Motorista();
             novoMotorista.setDataValidadeCnh(dataValidadeCnh);
-            novoMotorista.setNumeroCnh(numeroCnh);
+            novoMotorista.setCnhHash(hashService.hash(numeroCnh));
+            novoMotorista.setCnhCripto(criptoService.encrypt(numeroCnh));
+            novoMotorista.setCnhLast4(UsuarioUtils.gerarLastN(numeroCnh, 4));
+            novoMotorista.setCnhKeyVersion(activeKeyVersion);
             novoMotorista.setTipoCnh(tipoCnh);
             novoMotorista.setUsuario(usuario);
             return motoristaRepository.save(novoMotorista);

@@ -41,7 +41,7 @@ public class MotoristaRequestDTO {
         }
         motorista.setUsuario(this.usuario.toEntity());
         motorista.setTipoCnh(this.tipoCnh);
-        motorista.setNumeroCnh(this.numeroCnh);
+        motorista.setCnhHash(this.numeroCnh);
         motorista.setDataValidadeCnh(this.dataValidadeCnh);
         return motorista;
     }

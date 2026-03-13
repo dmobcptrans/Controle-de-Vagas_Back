@@ -37,8 +37,17 @@ public class Motorista {
     @Column(name = "tipo_cnh", length=2, nullable = false)
     private TipoCnhEnum tipoCnh;
 
-    @Column(name = "numero_cnh", unique = true, length = 11, nullable = false)
-    private String numeroCnh;
+    @Column(name = "cnh_hash", unique = true, nullable = false)
+    private String cnhHash;
+
+    @Column(name = "cnh_cripto", unique = true, nullable = false)
+    private String cnhCripto;
+
+    @Column(name = "cnh_last4", nullable = false)
+    private String cnhLast4;
+
+    @Column(name = "cnh_key_version", nullable = false)
+    private Integer cnhKeyVersion;
 
     @Column(name = "data_validade_cnh")
     private LocalDate dataValidadeCnh;
@@ -75,13 +84,38 @@ public class Motorista {
         this.tipoCnh = tipoCnh;
     }
 
-    public String getNumeroCnh() {
-        return numeroCnh;
+    public String getCnhHash() {
+        return cnhHash;
     }
 
-    public void setNumeroCnh(String numeroCnh) {
-        this.numeroCnh = numeroCnh;
+    public void setCnhHash(String cnhHash) {
+        this.cnhHash = cnhHash;
     }
+
+    public String getCnhCripto() {
+        return cnhCripto;
+    }
+
+    public void setCnhCripto(String cnhCripto) {
+        this.cnhCripto = cnhCripto;
+    }
+
+    public String getCnhLast4() {
+        return cnhLast4;
+    }
+
+    public void setCnhLast4(String cnhLast4) {
+        this.cnhLast4 = cnhLast4;
+    }
+
+    public Integer getCnhKeyVersion() {
+        return cnhKeyVersion;
+    }
+
+    public void setCnhKeyVersion(Integer cnhKeyVersion) {
+        this.cnhKeyVersion = cnhKeyVersion;
+    }
+
 
     public LocalDate getDataValidadeCnh() {
         return dataValidadeCnh;

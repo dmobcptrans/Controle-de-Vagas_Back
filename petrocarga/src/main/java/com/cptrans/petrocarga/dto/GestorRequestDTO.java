@@ -31,7 +31,7 @@ public class GestorRequestDTO {
         usuario.setEmail(this.email);
         usuario.setCpfHash(this.cpf);
         usuario.setSenha(this.cpf);
-        usuario.setTelefone(this.telefone);
+        usuario.setTelefoneHash(this.telefone);
         usuario.setPermissao(PermissaoEnum.GESTOR);
         return usuario;
     }

@@ -79,10 +79,6 @@ jwt:
 
 app:
     reservas:
-        noshow:
-            enabled: false
-            grace-minutes: 10
-            scan-ms: 1800000
     firebase-push-notification:
         enabled: true
         credentials: "${FIREBASE_CREDENTIALS}"
@@ -96,10 +92,10 @@ app:
     mailSender:
         enabled: true
     security:
-        cpf:
-            active-key-version: ${CPF_KEY_VERSION:1}
+        aes-criptography:
+            active-key-version: ${ACTIVE_AES_KEY_VERSION:1}
             keys:
-                1: ${CPF_AES_KEY_V1:8uKfN5TgB6R1pJ3xY9aZcQ0dW4sH7kLm2nOqP8rS1tU=}
-            pepper: ${CPF_PEPPER:super_secret}
+                1: ${AES_KEY_V1:8uKfN5TgB6R1pJ3xY9aZcQ0dW4sH7kLm2nOqP8rS1tU=}
+            pepper: ${AES_PEPPER:super_secret}
 google:
-    client-id: ${GOOGLE_CLIENT_ID:}
+    client-id: ${GOOGLE_CLIENT_ID:702359142552-sk4jsc14lrc5s3qfjjidehdpf1rpeop6.apps.googleusercontent.com}

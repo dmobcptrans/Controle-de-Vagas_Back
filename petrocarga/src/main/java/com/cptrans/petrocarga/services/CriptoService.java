@@ -13,8 +13,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 @Component
-@ConfigurationProperties(prefix = "app.security.cpf")
-public class CpfCriptoService {
+@ConfigurationProperties(prefix = "app.security.aes-criptography")
+public class CriptoService {
 
     private static final String ALGORITHM = "AES/GCM/NoPadding";
     private static final int IV_LENGTH = 12;
@@ -23,7 +23,17 @@ public class CpfCriptoService {
     private Map<Integer, String> keys;
     private Integer activeKeyVersion;
 
-    public String encrypt(String cpf) {
+    /**
+     * Encripta uma string usando o algoritmo AES com uma chave fornecida.
+     * A string encriptada é retornada em formato Base64.
+     * A chave deve ser armazenada no mapa de chaves com a versão ativa como chave
+     * O IV é gerado aleatoriamente e armazenado nos primeiros 12 bytes do resultado.
+     * A string encriptada é armazenada nos bytes restantes do resultado.
+     * @param string a string a ser encriptada
+     * @return a string encriptada em formato Base64
+     * @throws RuntimeException se ocorrer um erro durante o processo de encriptação
+     */
+    public String encrypt(String string) {
         try {
             
             String key = keys.get(activeKeyVersion);
@@ -41,7 +51,7 @@ public class CpfCriptoService {
             
             cipher.init(Cipher.ENCRYPT_MODE, keySpec, spec);
             
-            byte[] encrypted = cipher.doFinal(cpf.getBytes(StandardCharsets.UTF_8));
+            byte[] encrypted = cipher.doFinal(string.getBytes(StandardCharsets.UTF_8));
 
             byte[] result = new byte[IV_LENGTH + encrypted.length];
 
@@ -52,16 +62,28 @@ public class CpfCriptoService {
             return Base64.getEncoder().encodeToString(result);
 
         } catch (Exception e) {
-            throw new RuntimeException("Erro ao criptografar CPF", e);
+            throw new RuntimeException("Erro ao criptografar String", e);
         }
     }
 
-    public String decrypt(String encryptedCpf, Integer version) {
+
+    /**
+     * Descriptografa uma string previamente encriptada com AES/GCM.
+     * A string encriptada é recebida como parâmetro.
+     * O IV é extraido dos primeiros 12 bytes da string encriptada.
+     * A chave de descriptografia é buscada no mapa de chaves com base no valor do parâmetro "version".
+     * A string descriptografada é retornada em formato String.
+     * @param encryptedString a string encriptada
+     * @param version a versão da chave de descriptografia
+     * @return a string descriptografada
+     * @throws RuntimeException se ocorrer um erro durante o processo de descriptografia
+     */
+    public String decrypt(String encryptedString, Integer version) {
         try {
 
             String key = keys.get(version);
 
-            byte[] decoded = Base64.getDecoder().decode(encryptedCpf);
+            byte[] decoded = Base64.getDecoder().decode(encryptedString);
 
             byte[] keyBytes = Base64.getDecoder().decode(key);
 
@@ -86,22 +108,43 @@ public class CpfCriptoService {
             return new String(decrypted);
 
         } catch (Exception e) {
-            throw new RuntimeException("Erro ao descriptografar CPF", e);
+            throw new RuntimeException("Erro ao descriptografar String", e);
         }
     }
 
+    /**
+     * Retorna um mapa contendo as chaves de descriptografia,
+     * onde a chave é a versão da chave e o valor é a chave
+     * em si mesma.
+     * @return um mapa contendo as chaves de descriptografia
+     */
     public Map<Integer, String> getKeys() {
         return keys;
     }
 
+    /**
+     * Define o mapa de chaves de criptografia, onde a chave
+     * é a versão da chave e o valor é a chave em si mesma.
+     * @param keys o mapa de chaves de criptografia
+     */
     public void setKeys(Map<Integer, String> keys) {
         this.keys = keys;
     }
 
+    /**
+     * Retorna a versão ativa da chave de criptografia.
+
+     * @return a versão ativa da chave de criptografia
+     */
     public Integer getActiveKeyVersion() {
         return activeKeyVersion;
     }
 
+    /**
+     * Define a versão ativa da chave de criptografia.
+     * 
+     * @param activeKeyVersion a versão ativa da chave de criptografia
+     */
     public void setActiveKeyVersion(Integer activeKeyVersion) {
         this.activeKeyVersion = activeKeyVersion;
     }
