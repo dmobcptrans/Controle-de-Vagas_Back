@@ -1,5 +1,9 @@
 package com.cptrans.petrocarga.infrastructure.configs;
 
+import java.lang.reflect.Method;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ThreadPoolExecutor;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.aop.interceptor.AsyncUncaughtExceptionHandler;
@@ -8,10 +12,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.AsyncConfigurer;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
-
-import java.lang.reflect.Method;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ThreadPoolExecutor;
 
 /**
  * Configuração de execução assíncrona otimizada para ambientes com pouca memória.
@@ -58,23 +58,31 @@ public class AsyncConfig implements AsyncConfigurer {
 		return executor;
 	}
 
+	/**
+	 * Retorna o executor de tarefas assíncronas configurado nesta classe.
+	 * 
+	 * @return o executor de tarefas assíncronas configurado
+	 */
 	@Override
 	public Executor getAsyncExecutor() {
 		return taskExecutor();
 	}
 
+	
+/**
+ * Retorna um handler de exceções assíncronas que imprime uma mensagem de erro completa no log.
+ * 
+ * @return um handler de exceções assíncronas que imprime uma mensagem de erro completa no log
+ */
 	@Override
 	public AsyncUncaughtExceptionHandler getAsyncUncaughtExceptionHandler() {
-		return new AsyncUncaughtExceptionHandler() {
-			@Override
-			public void handleUncaughtException(Throwable ex, Method method, Object... params) {
-				LOGGER.error("=== ASYNC UNCAUGHT EXCEPTION ===");
-				LOGGER.error("Method: {}.{}", method.getDeclaringClass().getSimpleName(), method.getName());
-				LOGGER.error("Parameters: {}", java.util.Arrays.toString(params));
-				LOGGER.error("Exception: {} - {}", ex.getClass().getSimpleName(), ex.getMessage());
-				LOGGER.error("Full stacktrace:", ex);
-				LOGGER.error("================================");
-			}
-		};
+		return (Throwable ex, Method method, Object... params) -> {
+                    LOGGER.error("=== ASYNC UNCAUGHT EXCEPTION ===");
+                    LOGGER.error("Method: {}.{}", method.getDeclaringClass().getSimpleName(), method.getName());
+                    LOGGER.error("Parameters: {}", java.util.Arrays.toString(params));
+                    LOGGER.error("Exception: {} - {}", ex.getClass().getSimpleName(), ex.getMessage());
+                    LOGGER.error("Full stacktrace:", ex);
+                    LOGGER.error("================================");
+                };
 	}
 }

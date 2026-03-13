@@ -34,6 +34,18 @@ public class MotoristaController {
     @Autowired
     private MotoristaService motoristaService;
 
+    /**
+     * Retorna uma lista de motoristas com base nos filtros passados.
+     *
+     * Os filtros são: nome, telefone, cnh, ativo.
+     * Se nenhum filtro for passado, então retorna uma lista com todos motoristas.
+     *
+     * @param nome o nome do motorista
+     * @param telefone o telefone do motorista
+     * @param cnh a cnh do motorista
+     * @param ativo se o motorista está ativo
+     * @return uma lista de motoristas com base nos filtros passados ou todos motoristas se nenhum filtro for passado.
+     */
     @PreAuthorize("hasAnyRole('ADMIN','GESTOR')")
     @GetMapping
     public ResponseEntity<List<MotoristaResponseDTO>> getAllMotoristas(
@@ -55,6 +67,14 @@ public class MotoristaController {
         return ResponseEntity.ok(motoristas);
     }
 
+    /**
+     * Retorna um motorista com base no seu id de usuario.
+     * Só permite que o motorista seja acessado pelo seu próprio dono ou por um usuário com permissão de ADMIN.
+     * 
+     * @param usuarioId o id do usuário do motorista
+     * @param ativo se o motorista está ativo
+     * @return o motorista com base no seu id de usuario
+     */
     @PreAuthorize("#usuarioId == authentication.principal.id or hasRole('ADMIN')")
     @GetMapping("/{usuarioId}")
     public ResponseEntity<MotoristaResponseDTO> getMotoristaById(@PathVariable UUID usuarioId, @RequestParam(required = false) Boolean ativo) {
@@ -62,12 +82,32 @@ public class MotoristaController {
         return ResponseEntity.ok(motorista.toResponseDTO());
     }
 
+
+/**
+ * Cria um novo motorista com base nos dados passados.
+ * 
+ * Retorna o motorista criado com status CREATED.
+ * 
+ * @param motoristaRequestDTO os dados do motorista a ser criado
+ * @return o motorista criado com status CREATED
+ */
     @PostMapping("/cadastro")
     public ResponseEntity<MotoristaResponseDTO> createMotorista(@RequestBody @Valid MotoristaRequestDTO motoristaRequestDTO) {
         Motorista savedMotorista = motoristaService.createMotorista(motoristaRequestDTO.toEntity(null));
         return ResponseEntity.status(HttpStatus.CREATED).body(savedMotorista.toResponseDTO());
     }
 
+/**
+ * Atualiza um motorista com base nos dados passados.
+ * 
+ * Só permite que o motorista seja atualizado pelo seu próprio dono ou por um usuário com permissão de ADMIN.
+ * 
+ * Retorna o motorista atualizado com status OK.
+ * 
+ * @param usuarioId o id do usuário do motorista
+ * @param motoristaRequestDTO os dados do motorista a ser atualizado
+ * @return o motorista atualizado com status OK
+ */
     @PreAuthorize("#usuarioId == authentication.principal.id or hasRole('ADMIN')")
     @PatchMapping("/{usuarioId}")
     public ResponseEntity<MotoristaResponseDTO> updateMotorista(@PathVariable UUID usuarioId,  @RequestBody @Valid UsuarioPATCHRequestDTO motoristaRequestDTO) {
@@ -75,6 +115,14 @@ public class MotoristaController {
         return ResponseEntity.ok(new MotoristaResponseDTO(updatedMotorista));
     }
 
+/**
+ * Deleta um motorista com base no seu id de usuário.
+ * Só permite que o motorista seja deletado pelo seu próprio dono ou por um usuário com permissão de ADMIN.
+ * O motorista é deletado logicamente, ou seja, o campo ativo é setado para false.
+ * O motorista só pode ser deletado se não tiver reservas com status 'ativa' ou 'reservada'.
+ * @param usuarioId o id do usuário do motorista
+ * @return uma resposta sem conteúdo caso a exclusão seja realizada com sucesso
+ */
     @PreAuthorize("#usuarioId == authentication.principal.id or hasRole('ADMIN')")
     @DeleteMapping("/{usuarioId}")
     public ResponseEntity<Void> deleteMotorista(@PathVariable UUID usuarioId) {

@@ -13,7 +13,12 @@ public class SpringDomainEventPublisher implements DomainEventPublisher {
     public SpringDomainEventPublisher(ApplicationEventPublisher publisher) {
         this.publisher = publisher;
     }
-    @Override
+/**
+* Publica um evento de domínio usando o ApplicationEventPublisher do Spring.
+* @param event O evento de domínio a ser publicado.
+*
+*/   
+@Override
     public void publish(DomainEvent event) {
         publisher.publishEvent(event);
     }

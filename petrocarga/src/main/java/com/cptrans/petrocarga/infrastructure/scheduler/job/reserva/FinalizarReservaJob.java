@@ -18,6 +18,12 @@ public class FinalizarReservaJob implements Job {
     @Autowired
     private ReservaService reservaService;
 
+    /**
+     * Executa o job de finalizar reserva.
+     * Este job finaliza uma reserva quando chega o horário de fim da reserva.
+     * @param context contexto do job
+     * @throws JobExecutionException se ocorrer algum erro durante a execução do job
+     */
     @Override
     public void execute(JobExecutionContext context) {
         UUID reservaId = UUID.fromString(

@@ -1,6 +1,8 @@
 
 package com.cptrans.petrocarga.config;
 
+import java.util.Properties;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -11,12 +13,9 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 
-import java.util.Properties;
-
 /**
  * Configuração do JavaMailSender real.
  * Ativada quando spring.mail.host OU SMTP_HOST está definido.
- * Caso contrário, o fallback NoOpMailConfig será usado.
  */
 @Configuration
 @ConditionalOnProperty(name = {"spring.mail.host", "SMTP_HOST"}, matchIfMissing = false)

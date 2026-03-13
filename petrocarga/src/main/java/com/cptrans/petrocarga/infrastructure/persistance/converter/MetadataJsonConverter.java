@@ -17,8 +17,16 @@ public class MetadataJsonConverter implements AttributeConverter<Map<String, Obj
     .build();
 
 
+/**
+ * Converte um mapa de metadata para uma string no formato JSON.
+ * 
+ * @param attribute o mapa de metadata a ser convertido
+ * @return a string no formato JSON representando o mapa de metadata
+ * @throws IllegalArgumentException se ocorrer um erro durante a conversão
+ */
     @Override
     public String convertToDatabaseColumn(Map<String, Object> attribute) {
+
         try {
             return attribute == null ? null : mapper.writeValueAsString(attribute);
         } catch (Exception e) {
@@ -26,6 +34,13 @@ public class MetadataJsonConverter implements AttributeConverter<Map<String, Obj
         }
     }
 
+    /**
+     * Converte uma string no formato JSON para um mapa de metadata.
+     * 
+     * @param dbData a string no formato JSON representando o mapa de metadata
+     * @return o mapa de metadata convertido
+     * @throws IllegalArgumentException se ocorrer um erro durante a convers o
+     */
     @Override
     public Map<String, Object> convertToEntityAttribute(String dbData) {
         try {

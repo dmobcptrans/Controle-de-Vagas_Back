@@ -19,6 +19,12 @@ public class FirebasePushService implements PushNotificationService {
     @Autowired
     private PushTokenRepository pushTokenRepository;
 
+    /**
+     * Envia uma notificação para todos os dispositivos de um usuário com base no seu id.
+     * Só permite que notificação seja enviada por um usuário com permissão de ADMIN ou GESTOR.
+     * 
+     * @param notificacao a notificação a ser enviada
+     */
     @Override
     public void enviarNotificacao(Notificacao notificacao) {
         List<PushToken> tokens = pushTokenRepository.findByUsuarioIdAndAtivo(notificacao.getUsuarioId(), true);

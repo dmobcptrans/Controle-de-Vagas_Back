@@ -11,6 +11,15 @@ import com.cptrans.petrocarga.models.Agente;
 import jakarta.persistence.criteria.Predicate;
 
 public class AgenteSpecification {
+    /**
+     * Cria uma Specification para filtrar agentes com base nos filtros passados.
+     *
+     * Os filtros são: nome, telefone, email, ativo e matricula.
+     * Se nenhum filtro for passado, então retorna uma Specification que não filtra nada.
+     *
+     * @param filtros o objeto com os filtros para a busca
+     * @return a Specification que filtra os agentes com base nos filtros passados
+    */
      public static Specification<Agente> filtrar(
         AgenteFiltrosDTO filtros
     ) {

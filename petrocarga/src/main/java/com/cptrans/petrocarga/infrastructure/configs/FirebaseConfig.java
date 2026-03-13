@@ -26,6 +26,12 @@ public class FirebaseConfig {
         this.firebasePushProperties = firebasePushProperties;
     }
 
+/*
+* Inicializa o FirebaseApp com as credenciais informadas no arquivo de propriedades.
+* Se as credenciais forem informadas, o FirebaseApp é inicializado com as credenciais informadas.
+* Se as credenciais forem informadas, mas não é possível inicializar o FirebaseApp, então é lançada exceção de que as credenciais não foram informadas.
+*
+*/
     @PostConstruct
     public void init() throws IOException {
         InputStream serviceAccount;

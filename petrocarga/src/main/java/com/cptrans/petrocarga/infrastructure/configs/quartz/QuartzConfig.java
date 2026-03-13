@@ -11,6 +11,14 @@ import org.springframework.scheduling.quartz.SchedulerFactoryBean;
 @Configuration
 public class QuartzConfig {
 
+/**
+ * Cria e configura o SchedulerFactoryBean para o Quartz, permitindo a integração com o Spring e a injeção de dependências em jobs do Quartz.
+ * 
+ * @param dataSource a fonte de dados para a conexão ao banco de dados e persistência dos jobs do Quartz
+ * @param jobFactory o jobFactory pra permitir a criação de jobs do Quartz
+ * 
+ * @return o SchedulerFactoryBean configurado
+ */
     @Bean
     public SchedulerFactoryBean schedulerFactoryBean(
             DataSource dataSource,

@@ -8,6 +8,13 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
 public class WebConfig {
+/**
+ * Configuração para permitir que todas as requisições 
+ * permitam accesso a partir de qualquer origem, permitam 
+ * todos os métodos (GET, POST, PUT, DELETE, OPTIONS) e 
+ * permitam que todas os headers sejam passadas.
+ * 
+ */
     @Bean
     public WebMvcConfigurer corsConfigurer() {
         return new WebMvcConfigurer() {

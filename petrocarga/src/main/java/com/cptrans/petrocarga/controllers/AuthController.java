@@ -54,6 +54,15 @@ public class AuthController {
     @Value("${app.cookie-settings.same-site:None}")
     private String sameSite;
 
+    /**
+     * Faz login com as credenciais informadas no corpo da requisição.
+     * Retorna um objeto AuthResponseDTO com o token de autenticação.
+     * O token será armazenado em um cookie chamado "auth-token" com validade de 2 horas.
+     *
+     * @param request O corpo da requisição AuthRequestDTO com as credenciais do usuário.
+     * @param response O objeto HttpServletResponse que será usado para adicionar o cookie com o token de autenticação.
+     * @return Um objeto ResponseEntity com o corpo AuthResponseDTO e o status de resposta HTTP OK.
+     */
     @PostMapping("/login")
     public ResponseEntity<AuthResponseDTO> login(@RequestBody @Valid AuthRequestDTO request, HttpServletResponse response) {
         AuthResponseDTO auth = authService.login(request);
@@ -70,6 +79,15 @@ public class AuthController {
         return ResponseEntity.ok(auth);
     }
 
+    /**
+     * Faz login com o token do Google informado no parâmetro da requisição.
+     * Retorna um objeto AuthResponseDTO com o token de autenticação.
+     * O token será armazenado em um cookie chamado "auth-token" com validade de 2 horas.
+     *
+     * @param token O token do Google recebido do cliente.
+     * @param response O objeto HttpServletResponse que será usado para adicionar o cookie com o token de autenticação.
+     * @return Um objeto ResponseEntity com o corpo AuthResponseDTO e o status de resposta HTTP OK.
+     */
     @PostMapping("/loginWithGoogle")
     public ResponseEntity<AuthResponseDTO> loginWithGoogle(@RequestParam(required = true) String token, HttpServletResponse response) {
         System.out.println("Recebido token do cliente: " + token);
@@ -87,6 +105,15 @@ public class AuthController {
         return ResponseEntity.ok(auth);
     }
 
+/**
+ * Completar cadastro de usuário com as informações informadas no corpo da requisição.
+ * Retorna um objeto UsuarioResponseDTO com as informações do usuário.
+ * O token de autenticação do usuário deve ser informado no header da requisição.
+ *
+ * @param userAuthenticated O objeto UserAuthenticated com o token de autenticação do usuário.
+ * @param request O corpo da requisição CompletarCadastroDTO com as informações do usuário.
+ * @return Um objeto ResponseEntity com o corpo UsuarioResponseDTO e o status de resposta HTTP OK.
+ */
     @PostMapping("/completarCadastro")
     public ResponseEntity<UsuarioResponseDTO> completarCadastro(@AuthenticationPrincipal UserAuthenticated userAuthenticated, @RequestBody @Valid CompletarCadastroDTO request) {
         Usuario usuarioCompleto = authService.completarCadastro(request, userAuthenticated.id());
@@ -101,6 +128,11 @@ public class AuthController {
         return ResponseEntity.ok(novoUsuario.toResponseDTO());
     }
 
+/**
+ * Retorna as informações do usuário logado.
+ * O token de autenticação do usuário deve ser informado no header da requisição.
+ * @return Um objeto ResponseEntity com o corpo UsuarioResponseDTO e o status de resposta HTTP OK.
+ */
     @GetMapping("/me")
     public ResponseEntity<UsuarioResponseDTO> getMe(@AuthenticationPrincipal UserAuthenticated userAuthenticated) {
         if(userAuthenticated == null) {
@@ -111,6 +143,13 @@ public class AuthController {
         return ResponseEntity.ok(usuarioLogado.toResponseDTO());
     }
 
+/**
+ * Realiza logout do usuário logado.
+ * O token de autenticação do usuário deve ser informado no header da requisição.
+ * Após a chamada dessa rota, o token de autenticação do usuário não será mais válido.
+ * @param response O objeto HttpServletResponse que será usado para remover o cookie com o token de autenticação.
+ * @return Um objeto ResponseEntity com o corpo Void e o status de resposta HTTP NO CONTENT.
+ */
     @PreAuthorize("isAuthenticated()")
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(HttpServletResponse response) {
@@ -126,6 +165,13 @@ public class AuthController {
         return ResponseEntity.noContent().build();
    }
 
+    /**
+     * Ativa a conta do usuário com base no código de ativação informado.
+     * 
+     * @param request o objeto AccountActivationRequest com os dados da ativação da conta
+     * @return uma resposta com o status de sucesso ou erro
+     * 
+     */
     @PostMapping("/activate")
     public ResponseEntity<ApiResponse> activateAccount(@RequestBody @Valid AccountActivationRequest request) {
         try {
@@ -147,6 +193,13 @@ public class AuthController {
         }
     }
 
+/**
+ * Reenvia o código de ativação para o email ou CPF informado.
+ * 
+ * @param request o objeto ResendCodeRequest com os dados do email ou CPF.
+ * @return uma resposta com o status de sucesso ou erro.
+ * 
+ */
     @PostMapping("/resend-code")
     public ResponseEntity<ApiResponse> resendCode(@RequestBody @Valid ResendCodeRequest request) {
         try {
@@ -163,6 +216,16 @@ public class AuthController {
         }
     }
 
+    /**
+     * Reenvia o código de recuperação de senha para o email ou CPF informado.
+     * Se o email ou CPF estiver cadastrado, o usuário receberá um código de recuperação para redefinir sua senha.
+     * A resposta será um objeto ApiResponse com o status de sucesso ou erro.
+     * Se o email ou CPF não estiver cadastrado, a resposta será um objeto ApiResponse com uma mensagem genérica para não expor se o email existe.
+     * 
+     * @param request o objeto ForgotPasswordRequest com os dados do email ou CPF.
+     * @return uma resposta com o status de sucesso ou erro.
+     * 
+     */
     @PostMapping("/forgot-password")
     public ResponseEntity<ApiResponse> forgotPassword(@RequestBody @Valid ForgotPasswordRequest request) {
         try {
@@ -180,6 +243,17 @@ public class AuthController {
         }
     }
 
+
+/**
+ * Reenvia o código de recuperação de senha para o email ou CPF informado.
+ * Se o email ou CPF estiver cadastrado, o usuário receberá um código de recuperação para redefinir sua senha.
+ * A resposta será um objeto ApiResponse com o status de sucesso ou erro.
+ * Se o email ou CPF não estiver cadastrado, a resposta será um objeto ApiResponse com uma mensagem genérica para não expor se o email existe.
+ * 
+ * @param request o objeto ResetPasswordRequest com os dados do email ou CPF e do código de recuperação.
+ * @return uma resposta com o status de sucesso ou erro.
+ * 
+ */
     @PostMapping("/reset-password")
     public ResponseEntity<ApiResponse> resetPassword(@RequestBody @Valid ResetPasswordRequest request) {
         try {

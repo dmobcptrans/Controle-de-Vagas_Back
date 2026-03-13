@@ -27,6 +27,13 @@ public class DisponibilidadeVagaScheduler {
         this.scheduler = scheduler;
     }
     
+    /**
+     * Agenda alteração da disponibilidade de vaga.
+     * @param disponibilidade DisponibilidadeVaga a ser alterada
+     * @param status StatusVagaEnum do status da disponibilidade
+     * @param dataAlteracao Data e hora da alteração
+     * @throws SchedulerException Se houver um erro ao agendar o job
+     */
     public void AgendarAlteracaoDisponibilidadeVaga(DisponibilidadeVaga disponibilidade, StatusVagaEnum status, OffsetDateTime dataAlteracao) throws SchedulerException {
         JobKey jobKey = JobKey.jobKey(
             "alterar-disponibilidade-vaga-" + disponibilidade.getId().toString() + "-status-" + status.name(),
@@ -52,6 +59,12 @@ public class DisponibilidadeVagaScheduler {
         scheduler.scheduleJob(jobDetail, trigger);
     }
 
+    /**
+     * Cancela o job de alterar a disponibilidade de vaga.
+     * @param disponibilidadeId id da disponibilidade a ser cancelada
+     * @param status StatusVagaEnum do status da disponibilidade a ser cancelada
+     * @throws SchedulerException Se houver um erro ao cancelar o job
+     */
     public void cancelarScheduler(UUID disponibilidadeId , StatusVagaEnum status) throws SchedulerException {
         JobKey jobKey = JobKey.jobKey(
             "alterar-disponibilidade-vaga-" + disponibilidadeId.toString() + "-status-" + status.name(),

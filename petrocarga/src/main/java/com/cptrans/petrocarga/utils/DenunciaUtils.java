@@ -19,6 +19,12 @@ public class DenunciaUtils {
     @Autowired
     private static MotoristaService motoristaService;
 
+    /**
+     * Valida se uma denúncia pode ser criada com base nos dados informados.
+     * 
+     * @param novaDenuncia Denúncia a ser validada.
+     * @throws IllegalArgumentException Se a denúncia não puder ser criada com base nos dados informados.
+     */
     public static void validarCriacaoDenuncia(Denuncia novaDenuncia) {
         
         if (!novaDenuncia.getReserva().getStatus().equals(StatusReservaEnum.RESERVADA) && !novaDenuncia.getReserva().getStatus().equals(StatusReservaEnum.ATIVA)) throw new IllegalArgumentException("Reserva nao pode ser diferente de 'reservada' ou 'ativa'.");

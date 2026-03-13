@@ -12,6 +12,15 @@ import com.cptrans.petrocarga.models.Usuario;
 import jakarta.persistence.criteria.Predicate;
 
 public class GestorSpecification {
+    /**
+     * Cria uma Specification para filtrar usu  rios com base nos filtros passados.
+     *
+     * Os filtros são: nome, telefone, email e ativo.
+     * Se nenhum filtro for passado, então retorna uma Specification que não filtra nada.
+     *
+     * @param filtros o objeto com os filtros para a busca
+     * @return a Specification que filtra os gestores com base nos filtros passados
+     */
      public static Specification<Usuario> filtrar(
         GestorFiltrosDTO filtros
     ) {

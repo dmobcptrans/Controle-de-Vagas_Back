@@ -19,6 +19,12 @@ public class NotificarFimProximoJob implements Job {
     @Autowired
     private NotificacaoService notificacaoService;
 
+    /**
+     * Executa o job de notificacao de fim de reserva.
+     * Este job notifica o usuario sobre o fim da reserva.
+     * @param context contexto do job
+     * @throws JobExecutionException se ocorrer algum erro durante a execução do job
+     */
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
         UUID usuarioId = UUID.fromString(
