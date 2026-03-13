@@ -90,7 +90,6 @@ public class AuthController {
      */
     @PostMapping("/loginWithGoogle")
     public ResponseEntity<AuthResponseDTO> loginWithGoogle(@RequestParam(required = true) String token, HttpServletResponse response) {
-        System.out.println("Recebido token do cliente: " + token);
         AuthResponseDTO auth = authService.loginWithGoogle(token);
         ResponseCookie cookie = ResponseCookie.from("auth-token", auth.getToken())
             .httpOnly(true)

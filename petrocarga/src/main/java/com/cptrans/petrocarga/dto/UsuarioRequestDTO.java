@@ -38,7 +38,7 @@ public class UsuarioRequestDTO {
         Usuario usuario = new Usuario();
         usuario.setNome(this.nome);
         usuario.setCpfHash(this.cpf);
-        usuario.setTelefone(this.telefone);
+        usuario.setTelefoneHash(this.telefone);
         usuario.setEmail(this.email);
         usuario.setSenha(this.senha);
         return usuario;

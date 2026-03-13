@@ -48,8 +48,17 @@ public class Usuario implements UserDetails{
     @Column(name = "cpf_last5", nullable = false)
     private String cpfLast5;
 
-    @Column(length = 11)
-    private String telefone;
+    @Column(name = "telefone_hash", nullable = true)
+    private String telefoneHash;
+
+    @Column(name = "telefone_cripto", nullable = true)
+    private String telefoneCripto;
+
+    @Column(name = "telefone_last4", nullable = true)
+    private String telefoneLast4;
+
+    @Column(name = "telefone_key_version", nullable = false)
+    private Integer telefoneKeyVersion;
 
     @Column(nullable = false, unique = true)
     private String email;
@@ -103,7 +112,7 @@ public class Usuario implements UserDetails{
     public Usuario(String nome, String cpf, String telefone, String email, String senha, PermissaoEnum permissao) {
         this.nome = nome;
         this.cpfHash = cpf;
-        this.telefone = telefone;
+        this.telefoneHash = telefone;
         this.email = email;
         this.senha = senha;
         this.permissao = permissao;
@@ -130,12 +139,36 @@ public class Usuario implements UserDetails{
         this.nome = nome;
     }
 
-    public String getTelefone() {
-        return telefone;
+    public String getTelefoneHash() {
+        return telefoneHash;
     }
 
-    public void setTelefone(String telefone) {
-        this.telefone = telefone;
+    public void setTelefoneHash(String telefoneHash) {
+        this.telefoneHash = telefoneHash;
+    }
+
+    public String getTelefoneCripto() {
+        return telefoneCripto;
+    }
+
+    public void setTelefoneCripto(String telefoneCripto) {
+        this.telefoneCripto = telefoneCripto;
+    }
+
+    public String getTelefoneLast4() {
+        return telefoneLast4;
+    }
+
+    public void setTelefoneLast4(String telefoneLast4) {
+        this.telefoneLast4 = telefoneLast4;
+    }
+
+    public Integer getTelefoneKeyVersion() {
+        return telefoneKeyVersion;
+    }
+
+    public void setTelefoneKeyVersion(Integer telefoneKeyVersion) {
+        this.telefoneKeyVersion = telefoneKeyVersion;
     }
 
     public String getEmail() {
@@ -279,7 +312,7 @@ public class Usuario implements UserDetails{
     }
 
     public UsuarioResponseDTO toResponseDTO() {
-        return new UsuarioResponseDTO(id, nome, cpfLast5, telefone, email, permissao, criadoEm, ativo, desativadoEm);
+        return new UsuarioResponseDTO(id, nome, cpfLast5, telefoneLast4, email, permissao, criadoEm, ativo, desativadoEm);
     }
 
     @Override

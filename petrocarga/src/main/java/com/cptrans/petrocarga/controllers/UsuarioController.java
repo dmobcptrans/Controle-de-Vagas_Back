@@ -52,4 +52,30 @@ public class UsuarioController {
         Usuario usuario = usuarioService.findById(id);
         return ResponseEntity.ok(usuario.toResponseDTO());
     }
+
+    /**
+     * Retorna o CPF de um usuário com base no seu id de usuário.
+     * Só permite que o CPF seja visualizado por um usuário com permissão de ADMIN ou GESTOR.
+     * @param usuarioId o id do usuário para buscar o CPF
+     * @return o CPF do usuário encontrado com status ok
+     */
+    @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR')")
+    @GetMapping("/cpf/{usuarioId}")
+    public ResponseEntity<String> getFullCpfByUsuarioId(@PathVariable UUID usuarioId) {
+        String cpf = usuarioService.visualizarCpf(usuarioId);
+        return ResponseEntity.ok(cpf);
+    }
+
+    /**
+     * Retorna o telefone de um usuário com base no seu id de usuário.
+     * Só permite que o telefone seja visualizado por um usuário com permissão de ADMIN ou GESTOR.
+     * @param usuarioId o id do usuário para buscar o telefone
+     * @return o telefone do usuário encontrado com status ok
+     */
+    @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR')")
+    @GetMapping("/telefone/{usuarioId}")
+    public ResponseEntity<String> getFullTelefoneByUsuarioId(@PathVariable UUID usuarioId) {
+        String telefone = usuarioService.visualizarTelefone(usuarioId);
+        return ResponseEntity.ok(telefone);
+    }
 }

@@ -48,6 +48,14 @@ public class MailConfig {
     @Value("${spring.mail.properties.mail.smtp.timeout:${SMTP_TIMEOUT:10000}}")
     private int timeoutMillis;
 
+/**
+ *
+ * Esse bean só é criado se spring.mail.host OU SMTP_HOST estiverem presentes. 
+ * Ele configura um JavaMailSenderImpl com as informações SMTP.
+ *
+ * Os timeouts são configurados para evitar bloqueios indeterminados em ambientes nuvem.
+ *
+ */
     @Bean
     @Primary
     public JavaMailSender javaMailSender() {

@@ -44,7 +44,7 @@ public class AgenteController {
  * @param nome o nome do agente
  * @param telefone o telefone do agente
  * @param matricula a matricula do agente
- * @param ativo se o agente est  ativo
+ * @param ativo se o agente está ativo
  * @param email o email do agente
  * @return uma lista de agentes com base nos filtros passados ou todos agentes se nenhum filtro for passado.
  */

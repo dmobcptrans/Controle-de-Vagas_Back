@@ -33,7 +33,7 @@ public class AuthService {
     private JwtService jwtService;
 
     @Autowired
-    private CpfHashService cpfHashService;
+    private HashService hashService;
 
     @Autowired
     private GoogleAuthService googleAuthService;
@@ -46,11 +46,18 @@ public class AuthService {
 
  
 
+    /**
+     * Faz o login do usuário com base em (email ou cpf) e senha.
+     * 
+     * @param request DTO contendo (email ou cpf) e senha do usuário.
+     * @return DTO contendo informações do usuário e token de acesso.
+     * @throws IllegalArgumentException se o (email e cpf) for nulo ou se as credenciais forem inválidas.
+     */
     public AuthResponseDTO login(AuthRequestDTO request) {
         if((request.getEmail() == null && request.getCpf() == null) || (request.getEmail() != null && request.getCpf() != null)) throw new IllegalArgumentException("Informe um email OU CPF.");
        
         
-        Usuario usuario = usuarioRepository.findByEmailOrCpfHash(request.getEmail(), request.getCpf() == null ? null : cpfHashService.hash(request.getCpf())).orElseThrow(() -> new IllegalArgumentException("Credenciais inválidas."));
+        Usuario usuario = usuarioRepository.findByEmailOrCpfHash(request.getEmail(), request.getCpf() == null ? null : hashService.hash(request.getCpf())).orElseThrow(() -> new IllegalArgumentException("Credenciais inválidas."));
 
         if(usuario.isAtivo().equals(false)) {
             throw new IllegalArgumentException("Usuário desativado.");
@@ -63,6 +70,17 @@ public class AuthService {
        return new AuthResponseDTO(usuario.toResponseDTO(), token);
     }
 
+    /**
+     * Faz o login do usuário com base no token do Google informado.
+     * Se o usuário não existir, um novo usuário será criado com as informações do Google e permnissão de motorista.
+     * Se o usuário existir, mas ainda não foi ativado, ele será ativado.
+     * Se o usuário existir e não for motorista, o email do usuário e google id serão atualizados.
+     * O token de acesso será gerado com base nas informações do usu rio.
+     * 
+     * @param token O token do Google recebido do cliente.
+     * @return Um objeto AuthResponseDTO com as informações do usuário e o token de acesso.
+     * @throws IllegalArgumentException se o token do Google for nulo ou inválido.
+     */
     public AuthResponseDTO loginWithGoogle(String token)  {
 
         Payload payload = googleAuthService.verifyGoogleToken(token);
@@ -83,14 +101,9 @@ public class AuthService {
         }
 
         if (usuario.get().isAtivo().equals(false)) {
-            if(usuario.get().getVerificationCode() != null) {
-                usuario.get().setVerificationCode(null);
-                usuario.get().setVerificationCodeExpiresAt(null);
-                usuario.get().setAtivo(true);
-                usuarioRepository.save(usuario.get());
-            }else{
-                throw new IllegalArgumentException("Usuário desativado.");
-            }
+            usuarioService.resendActivationCode(email,null);
+            throw new IllegalArgumentException("Usuário desativado. Se deseja ativar a conta, siga as instruções enviadas para o email '" + email + "'.");
+            
         }
 
         if(usuario.isPresent() && usuario.get().getGoogleId() == null) {
@@ -104,6 +117,16 @@ public class AuthService {
         return new AuthResponseDTO(usuario.get().toResponseDTO(), jwt);
     }
 
+    /**
+     * Completar cadastro de usuário com as informações informadas no corpo da requisição.
+     * Retorna um objeto Usuario com as informações do usuário.
+     * O token de autenticação do usuário deve ser informado no header da requisição.
+     * 
+     * @param request O corpo da requisição CompletarCadastroDTO com as informações do usuário.
+     * @param usuarioId O ID do usuário a ser completado.
+     * @return Um objeto Usuario com as informações do usuário.
+     * @throws EntityNotFoundException se o usuário não for encontrado para completar cadastro.
+     */
     @Transactional
     public Usuario completarCadastro(CompletarCadastroDTO request, UUID usuarioId){
         Usuario usuario = usuarioService.completarCadastro(request, usuarioId);
