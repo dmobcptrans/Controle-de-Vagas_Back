@@ -31,6 +31,13 @@ public class SecurityConfig {
     @Value("${app.cors.allowed-origins}")
     private List<String> allowedOrigins;
 
+    /**
+     * Cria a cadeia de filtros de segurança para autenticar as requisições HTTP.
+     * A cadeia de filtros adiciona o filtro de autenticação JWT antes do filtro de autenticação de usuario e senha.
+     * Todos os endpoints listados abaixo não precisam de autenticação.
+     * Os endpoints que não estão listados abaixo precisam de autenticação.
+     * @return a cadeia de filtros de segurança configurada para autenticar as requisições HTTP.
+     */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -62,8 +69,7 @@ public class SecurityConfig {
                     "/motoristas/cadastro/",
                     "/motoristas/cadastro",
                     "/notificacoes/stream/",
-                    "/notificacoes/stream",
-                    "/api/test/**"  // Endpoints de teste de email (remover em produção)
+                    "/notificacoes/stream"
                 ).permitAll()
                 .anyRequest().authenticated()
             )
@@ -72,6 +78,13 @@ public class SecurityConfig {
         return http.build();
     }
 
+    /**
+     * Providencia uma fonte de configuração CORS para a aplicação (CorsConfigurationSource).
+     * Permite origens especificadas na propriedade "app.cors.allowed-origins" do arquivo de configuração da aplicação.
+     * Permite os seguintes métodos: GET, PATCH, POST, PUT, DELETE, OPTIONS.
+     * Permite os seguintes headers: Authorization, Content-Type, Accept, Cache-Control, Last-Event-ID.
+     * Também permite o envio de cookies e outras credenciais nas requisições CORS, o que é importante para autenticação de sessões.
+     */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration corsConfig = new CorsConfiguration();
@@ -90,11 +103,28 @@ public class SecurityConfig {
         return source;
 }
 
+    /**
+     * Retorna o gerenciador de autenticação da API.
+     * Este gerenciador é responsável por verificar se o usuário e senha informados na requisição
+     * HTTP são válidos e carregar o usuário autenticado no contexto de segurança da API.
+     * Se a autenticação for bem sucedida, coloca o usuário autenticado no contexto de segurança da API.
+     * Se a autenticação falhar, lança uma exceção de tipo AuthenticationException.
+     * 
+     * @param config a configuração de autenticação da API
+     * @return o gerenciador de autenticação da API
+     * @throws Exception se ocorrer um erro durante a configuração do gerenciador de autenticação
+     */
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
   
+    /**
+     * Retorna um gerador de hash para senhas na API.
+     * Este gerador utiliza o algoritmo de hash BCrypt para gerar senhas.
+     * 
+     * @return o gerador de hash para senhas da API
+     */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();

@@ -38,6 +38,14 @@ public class VagaController {
     @Autowired
     private VagaService vagaService;
 
+    /**
+     * Retorna uma lista de todas as vagas registradas.
+     * Só permite acesso por usuários autenticados com permissão de ADMIN, GESTOR, AGENTE, MOTORISTA ou EMPRESA.
+     * 
+     * @param status Opcional, se nulo, retorna todas as vagas. Caso contrário, retorna apenas as vagas com o status especificado.
+     * 
+     * @return Uma lista de vagas.
+     */
     @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR','AGENTE','MOTORISTA','EMPRESA')")
     @GetMapping("/all")
     @Operation(
@@ -59,6 +67,19 @@ public class VagaController {
         return ResponseEntity.ok(vagas);
     }
 
+    /**
+     * Retorna uma lista paginada de todas as vagas disponíveis com paginação e com filtros opcionais por status e nome da rua (logradouro).
+     * 
+     * Só permite acesso por usuários autenticados com permissão de ADMIN, GESTOR, AGENTE, MOTORISTA ou EMPRESA.
+     * 
+     * @param numeroPagina número da página a ser consultada (por padrão, começa em 0)
+     * @param tamanhoPagina tamanho da página a ser consultada (por padrão, começa em 10)
+     * @param ordenarPor campo para ordenar a lista de vagas (por padrão, utiliza "endereco.logradouro")
+     * @param status status da vaga para filtrar as vagas (opcional)
+     * @param logradouro nome da rua (logradouro) para filtrar as vagas (opcional)
+     * 
+     * @return Uma lista de vagas paginadas.
+     */
     @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR','AGENTE','MOTORISTA','EMPRESA')")
     @GetMapping()
     @Operation(
@@ -90,6 +111,14 @@ public class VagaController {
         return ResponseEntity.ok(vagasDto);
     }
     
+    /**
+     * Busca uma vaga pelo ID.
+     * 
+     * Só permite que a vaga seja acessada por um usuário autenticado com permissão de ADMIN, GESTOR, AGENTE, MOTORISTA ou EMPRESA.
+     * 
+     * @param id UUID da vaga a ser buscada.
+     * @return Os detalhes da vaga encontrada ou um erro caso a vaga não seja encontrada.
+     */
     @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR','AGENTE','MOTORISTA','EMPRESA')")
     @GetMapping("/{id}")
     @Operation(
@@ -108,6 +137,14 @@ public class VagaController {
         return ResponseEntity.ok(vaga.toResponseDTO());
     }
 
+    /**
+     * Cria uma nova vaga com base nos dados fornecidos no corpo da requisição.
+     * Só permite que a vaga seja criada por um usuário autenticado com permissão de ADMIN ou GESTOR.
+     * 
+     * @param vagaRequest dados necessários para criação de uma vaga
+     * @return Os detalhes da vaga criada com sucesso ou um erro caso a vaga não seja criada.
+     * 
+     */
     @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR')")
     @PostMapping()
     @Operation(
@@ -131,6 +168,15 @@ public class VagaController {
         return ResponseEntity.status(HttpStatus.CREATED).body(new VagaResponseDTO(vaga));
     }
     
+
+    /**
+     * Deleta uma vaga específica identificada pelo seu id.
+     * 
+     * Só permite que a vaga seja deletada por um usuário autenticado com permissão de ADMIN.
+     * 
+     * @param id id da vaga a ser deletada
+     * @return resposta sem conteúdo caso a vaga seja deletada com sucesso ou um erro caso a vaga não seja encontrada ou não seja deletada.
+     */
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     @Operation(
@@ -151,6 +197,16 @@ public class VagaController {
         return ResponseEntity.noContent().build(); 
     }
     
+    /**
+     * Atualiza parcialmente uma vaga com base nos dados fornecidos no corpo da requisição.
+     * 
+     * Só permite que a vaga seja atualizada por um usuário autenticado com permissão de ADMIN ou GESTOR.
+     * 
+     * @param id id da vaga a ser atualizada
+     * @param vagaRequest dados necessários para atualizar a vaga
+     * @return Os detalhes da vaga atualizada com sucesso ou um erro caso a vaga não seja encontrada ou não seja atualizada.
+     * 
+     */
     @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR')")
     @PatchMapping("/{id}")
     @Operation(

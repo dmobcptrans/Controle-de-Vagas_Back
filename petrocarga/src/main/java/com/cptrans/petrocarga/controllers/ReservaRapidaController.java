@@ -39,6 +39,13 @@ public class ReservaRapidaController {
     @Autowired
     private AgenteService agenteService;
 
+/**
+ * Cria uma nova reserva rápida por um AGENTE/ADMIN.
+ * Só permite que as reservas sejam criadas por um usuário com permissão de ADMIN ou AGENTE.
+ * 
+ * @param reservaRapidaRequestDTO os dados da reserva a ser criada
+ * @return a reserva criada com status CREATED
+ */
     @PreAuthorize("hasAnyRole('ADMIN', 'AGENTE')")
     @PostMapping()
     public ResponseEntity<ReservaRapidaResponseDTO> createReservaRapida(@RequestBody ReservaRapidaRequestDTO reservaRapidaRequest) {
@@ -48,6 +55,16 @@ public class ReservaRapidaController {
         return ResponseEntity.status(HttpStatus.CREATED).body(novaReservaRapida.toResponse());
     }
     
+/**
+ * Retorna todas as reservas rapidas dado um usuarioId, com filtros opcionais de vagaId, placaVeiculo, data e listaStatus.
+ * Só permite que as reservas sejam acessadas pelo própio dono (agente que criou) ou por um usuário autenticado com permissão de ADMIN ou GESTOR.
+ * @param usuarioId o id do usuário para buscar as reservas rápidas
+ * @param vagaID o id da vaga para filtrar as reservas
+ * @param placaVeiculo a placa do veículo para filtrar as reservas
+ * @param data a data da reserva para filtrar as reservas
+ * @param listaStatus a lista de status para filtrar as reservas
+ * @return A lista de reservas rápidas encontradas com status ok
+ */
     @PreAuthorize("#usuarioId == authentication.principal.id or hasAnyRole('ADMIN', 'GESTOR')")
     @GetMapping("/{usuarioId}")
     public ResponseEntity<List<ReservaRapidaResponseDTO>> getReservasRapidasByUsuarioId(@PathVariable UUID usuarioId, @RequestParam(required = false) UUID vagaId, @RequestParam(required = false) String placaVeiculo, @RequestParam(required = false) LocalDate data, @RequestParam(required = false) List<StatusReservaEnum> listaStatus) {
@@ -62,11 +79,5 @@ public class ReservaRapidaController {
         return ResponseEntity.ok(reservasRapidas);
 
     }
-    
-    // @PreAuthorize("hasAnyRole('ADMIN','GESTOR', 'AGENTE')")
-    // @GetMapping()
-    // public ResponseEntity<List<ReservaRapidaResponseDTO>> getReservasRapidas(@RequestParam (required = false) UUID vagaId, @RequestParam (required = false) String placaVeiculo) {
-    //     return new String();
-    // }
     
 }

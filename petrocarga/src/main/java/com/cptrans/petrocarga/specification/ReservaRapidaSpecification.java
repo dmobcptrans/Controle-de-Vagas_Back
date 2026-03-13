@@ -14,6 +14,19 @@ import jakarta.persistence.criteria.Predicate;
 
 
 public class ReservaRapidaSpecification {
+    /**
+     * Cria uma Specification para filtrar reservas rápidas com base nos filtros passados.
+     * Os filtros são: usuarioId, vagaId, placaVeiculo, data e listaStatus.
+     * Se nenhum filtro for passado, então retorna uma Specification que não filtra nada.
+     *
+     * @param usuarioId o id do usuário para buscar as reservas rápidas
+     * @param vagaId o id da vaga para filtrar as reservas
+     * @param placaVeiculo a placa do veículo para filtrar as reservas
+     * @param data a data da reserva para filtrar as reservas
+     * @param listaStatus a lista de status para filtrar as reservas
+     * @return a Specification que filtra as reservas r pidas com base nos filtros passados
+     * 
+     */
     public static Specification<ReservaRapida> filtrar(
         UUID usuarioId,
         UUID vagaId,

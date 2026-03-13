@@ -16,6 +16,14 @@ public class CustomUserDetailsService implements UserDetailsService {
         this.usuarioRepository = usuarioRepository;
     }
 
+
+/**
+ * Carrega um usuário pelo seu email.
+ *
+ * @param email O email do usuário a ser carregado.
+ * @return O objeto UserDetails do usuário carregado.
+ * @throws UsernameNotFoundException se o usuário não for encontrado com o email informado.
+ */
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         return usuarioRepository.findByEmail(email)

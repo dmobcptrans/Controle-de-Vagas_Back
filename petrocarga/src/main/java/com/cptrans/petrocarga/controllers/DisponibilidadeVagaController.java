@@ -34,6 +34,11 @@ public class DisponibilidadeVagaController {
     @Autowired
     private DisponibilidadeVagaService disponibilidadeVagaService;
 
+    /**
+     * Retorna uma lista de todas as DisponibilidadeVaga.
+     * 
+     * @return All DisponibilidadeVaga records.
+     */
     @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR', 'AGENTE', 'MOTORISTA', 'EMPRESA')")
     @GetMapping
     public ResponseEntity<List<DisponibilidadeVagaResponseDTO>> getAllDisponibilidadeVagas() {
@@ -43,6 +48,12 @@ public class DisponibilidadeVagaController {
         return ResponseEntity.ok(disponibilidadeVagas);
     }
 
+/**
+ * Retorna a DisponibilidadeVaga por ID.
+ * 
+ * @param id DisponibilidadeVaga Id.
+ * @return DisponibilidadeVaga por Id.
+ */
     @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR', 'AGENTE', 'MOTORISTA', 'EMPRESA')")
     @GetMapping("/{id}")
     public ResponseEntity<DisponibilidadeVagaResponseDTO> getDisponibilidadeVagaById(@PathVariable UUID id) {
@@ -50,6 +61,12 @@ public class DisponibilidadeVagaController {
         return ResponseEntity.ok(disponibilidadeVaga.toResponseDTO());
     }
 
+/**
+ * Retorna uma lista de todas as DisponibilidadeVaga por vagaId.
+ * 
+ * @param vagaId Vaga Id.
+ * @return Lista de todas as DisponibilityVaga registradas com base no vagaId.
+ */
     @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR', 'AGENTE', 'MOTORISTA', 'EMPRESA')")
     @GetMapping("/vaga/{vagaId}")
     public ResponseEntity<List<DisponibilidadeVagaResponseDTO>> getDisponibilidadeVagaByVagaId(@PathVariable UUID vagaId) {
@@ -57,6 +74,12 @@ public class DisponibilidadeVagaController {
         return ResponseEntity.ok(disponibilidadeVaga);
     }
 
+/**
+ * Cria uma nova DisponibilidadeVaga com base em um objeto DisponibilidadeVagaRequestDTO.
+ * 
+ * @param disponibilidadeVagaRequestDTO objeto DisponibilidadeVagaRequestDTO com todas as informações necessárias para criar uma nova DisponibilidadeVaga.
+ * @return A DisponibilidadeVaga criada com sucesso.
+ */
     @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR')")
     @PostMapping
     public ResponseEntity<DisponibilidadeVagaResponseDTO> createDisponibilidadeVaga(@RequestBody @Valid DisponibilidadeVagaRequestDTO disponibilidadeVagaRequestDTO) {

@@ -13,6 +13,16 @@ import com.cptrans.petrocarga.security.UserAuthenticated;
 
 @Component
 public class AuthUtils {
+    /**
+     * Valida se o usuário autenticado tem permissão para realizar uma ação.
+     * A permissão é concedida se o id do usuário autenticado for igual ao id do usuário que precisa de permissão ou se o usuário autenticado tiver alguma das permissões passadas.
+     * Caso contrário, é lançada uma exceção do tipo
+     * AuthorizationDeniedException.
+     *
+     * @param userAuthenticated o usuário autenticado
+     * @param usuarioId o id do usuário que precisa de permissão
+     * @param permissoes a lista de permissões do usuário
+     */
     public static void validarPemissoesUsuarioLogado(@AuthenticationPrincipal UserAuthenticated userAuthenticated, UUID usuarioId, List<String> permissoes) {
         if (usuarioId.equals(userAuthenticated.id())) return;
         List<String> authorities = userAuthenticated.userDetails().getAuthorities().stream().map(GrantedAuthority::getAuthority).toList();

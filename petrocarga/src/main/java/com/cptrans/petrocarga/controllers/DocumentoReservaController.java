@@ -43,6 +43,14 @@ public class DocumentoReservaController {
         return ResponseEntity.ok(dto);
     }
 
+/**
+ * Gera um PDF contendo os detalhes da reserva.
+ * @param id O ID da reserva.
+ * @return O PDF gerado como um anexo.
+ * @throws EntityNotFoundException se a reserva não for encontrada.
+ * @throws IOException se ocorrer um erro ao gerar o PDF.
+ * @param user O usuário autenticado que requisitou o PDF.
+ */
     @GetMapping(
     value = "/{id}/comprovante",
     produces = MediaType.APPLICATION_PDF_VALUE

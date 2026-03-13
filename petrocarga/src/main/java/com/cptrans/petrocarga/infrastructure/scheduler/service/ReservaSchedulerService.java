@@ -25,6 +25,12 @@ public class ReservaSchedulerService {
         this.scheduler = scheduler;
     }
 
+    /**
+     * Agenda o job de finalizar reserva.
+     * Agenda o job que finaliza uma reserva quando chega o horário de fim da reserva.
+     * @param reservaDTO dados da reserva a ser finalizada
+     * @throws SchedulerException se houver um erro ao agendar o job
+     */
     public void agendarFinalizacaoReserva(ReservaDTO reservaDTO) throws SchedulerException {
         JobKey jobKey = JobKey.jobKey(
             "finaliza-reserva-" + reservaDTO.getId(),
@@ -52,6 +58,12 @@ public class ReservaSchedulerService {
         scheduler.scheduleJob(job, trigger);
     }
    
+    /**
+     * Agenda o job de finalizar reserva noshow.
+     * Agenda o job que finaliza uma reserva quando o motorista não faz check-in à tempo.
+     * @param reservaDTO dados da reserva a ser finalizada
+     * @throws SchedulerException se houver um erro ao agendar o job
+     */
     public void agendarFinalizacaoNoShow(ReservaDTO reservaDTO) throws SchedulerException{
         JobKey jobKey = JobKey.jobKey(
             "finaliza-noshow-reserva" + reservaDTO.getId(),
@@ -79,6 +91,12 @@ public class ReservaSchedulerService {
         scheduler.scheduleJob(job, trigger);
     }
 
+    /**
+     * Cancela o job de finalizar reserva.
+     * Cancela o job que finaliza uma reserva quando chega o horário de fim da reserva.
+     * @param reservaId id da reserva a ser cancelada
+     * @throws SchedulerException se houver um erro ao cancelar o job
+     */
     public void cancelarSchedulerFinalizaReserva(UUID reservaId) throws SchedulerException {
         JobKey jobKey = JobKey.jobKey("finaliza-reserva-" + reservaId, QuartzGroups.RESERVAS);
         if (!scheduler.checkExists(jobKey)) {
@@ -89,6 +107,12 @@ public class ReservaSchedulerService {
         );
     }
 
+    /**
+     * Cancela o job de finalizar reserva noshow.
+     * Cancela o job que finaliza uma reserva quando o motorista não faz check-in à tempo.
+     * @param reservaId id da reserva a ser cancelada
+     * @throws SchedulerException se houver um erro ao cancelar o job
+     */
     public void cancelarSchedulerNoShowReserva(UUID reservaId) throws SchedulerException {
         JobKey jobKey = JobKey.jobKey("finaliza-noshow-reserva" + reservaId, QuartzGroups.RESERVAS);
         if (!scheduler.checkExists(jobKey)) {

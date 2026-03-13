@@ -14,6 +14,12 @@ public class NoShowJob implements Job {
     @Autowired
     private ReservaService reservaService;
 
+    /**
+     * Executa o job de processar no show.
+     * Este job finaliza uma reserva caso o motorista não faça check-in à tempo.
+     * @param context contexto do job
+     * @throws JobExecutionException se ocorrer algum erro durante a execução do job
+     */
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
        UUID reservaId = UUID.fromString(context.getMergedJobDataMap().getString("reservaId"));

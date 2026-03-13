@@ -35,6 +35,19 @@ public class AgenteController {
     @Autowired
     private AgenteService agenteService;
 
+/**
+ * Retorna uma lista de agentes com base nos filtros passados.
+ *
+ * Os filtros são: nome, telefone, matricula, ativo e email.
+ * Se nenhum filtro for passado, então retorna uma lista com todos agentes.
+ *
+ * @param nome o nome do agente
+ * @param telefone o telefone do agente
+ * @param matricula a matricula do agente
+ * @param ativo se o agente est  ativo
+ * @param email o email do agente
+ * @return uma lista de agentes com base nos filtros passados ou todos agentes se nenhum filtro for passado.
+ */
     @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR')")
     @GetMapping
     public ResponseEntity<List<AgenteResponseDTO>> getAllAgentes(@RequestParam(required = false) String nome, @RequestParam(required = false) String telefone, @RequestParam(required = false) String matricula, @RequestParam(required = false) Boolean ativo, @Valid @Email @RequestParam(required = false) String email) {
@@ -49,6 +62,13 @@ public class AgenteController {
         return ResponseEntity.ok(response);
     }
 
+/**
+ * Retorna um agente com base no seu id de usuário.
+ * Só permite que o agente seja acessado pelo seu próprio dono ou por um usuário com permissão de ADMIN ou GESTOR.
+ *
+ * @param usuarioId o id do usuário do agente
+ * @return o agente com base no seu id de usuário.
+ */
     @PreAuthorize(" #usuarioId == authentication.principal.id or hasAnyRole('ADMIN', 'GESTOR')")
     @GetMapping("/{usuarioId}")
     public ResponseEntity<AgenteResponseDTO> getAgenteById(@PathVariable UUID usuarioId) {
@@ -56,6 +76,12 @@ public class AgenteController {
         return ResponseEntity.ok(agente.toResponseDTO());
     }
 
+/**
+ * Cria um novo agente com base nos dados passados.
+ * Só permite que o agente seja criado por um usuário com permissão de ADMIN ou GESTOR.
+ * @param agenteRequestDTO o objeto com os dados do agente
+ * @return o objeto criado com base nos dados do agente
+ */
     @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR')")
     @PostMapping
     public ResponseEntity<AgenteResponseDTO> createAgente(@RequestBody @Valid AgenteRequestDTO agenteRequestDTO) {
@@ -63,6 +89,13 @@ public class AgenteController {
         return ResponseEntity.status(HttpStatus.CREATED).body(savedAgente.toResponseDTO());
     }
 
+/**
+ * Atualiza um agente com base nos dados passados.
+ * Só permite que o agente seja atualizado por um usuário com permissão de ADMIN ou GESTOR ou pelo seu próprio dono.
+ * @param usuarioId o id do usuário do agente
+ * @param agenteRequestDTO o objeto com os dados do agente
+ * @return o objeto atualizado com base nos dados do agente
+ */
     @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR') or #usuarioId == authentication.principal.id")
     @PatchMapping("/{usuarioId}")
     public ResponseEntity<AgenteResponseDTO> updateAgente(@PathVariable UUID usuarioId, @RequestBody @Valid UsuarioPATCHRequestDTO agenteRequestDTO) {
@@ -70,6 +103,12 @@ public class AgenteController {
         return ResponseEntity.ok(updatedAgente.toResponseDTO());
     }
 
+/**
+ * Deleta um agente com base no seu id de usuário.
+ * Só permite que o agente seja deletado por um usuário com permissão de ADMIN ou GESTOR.
+ * @param usuarioId o id do usuário do agente
+ * @return uma resposta sem conteúdo caso a exclusão seja realizada com sucesso
+ */
     @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR')")
     @DeleteMapping("/{usuarioId}")
     public ResponseEntity<Void> deleteAgente(@PathVariable UUID usuarioId) {

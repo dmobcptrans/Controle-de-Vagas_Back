@@ -27,6 +27,14 @@ public class NotificacaoSchedulerService {
         this.scheduler = scheduler;
     }
 
+    /**
+     * Agenda notificacao de check-in disponível.
+     * Agenda o job que notifica o usuario sobre a proximidade da reserva.
+     * @param usuarioId id do usuario a ser notificado
+     * @param reservaId id da reserva em questão
+     * @param inicioReserva data e hora de inicio da reserva
+     * @throws SchedulerException se houver um erro ao agendar o job
+     */
     public void agendarNotificacaoCheckInDisponivel(UUID usuarioId, UUID reservaId, OffsetDateTime inicioReserva) throws SchedulerException {
         JobKey jobKey = JobKey.jobKey(
             "envia-notificacao-" + CHECKIN_DISPONIVEL + "-usuario-" + usuarioId.toString() + "-reserva-" + reservaId.toString(),
@@ -55,6 +63,14 @@ public class NotificacaoSchedulerService {
 
     }
 
+    /**
+     * Agenda notificacao de fim de reserva.
+     * Agenta o job que notifica o usuario sobre o fim da reserva.
+     * @param usuarioId id do usuario a ser notificado
+     * @param reservaId id da reserva em questao
+     * @param fimReserva data e hora de fim da reserva
+     * @throws SchedulerException se houver um erro ao agendar o job
+     */
      public void agendarNotificacaoFimProximo(UUID usuarioId, UUID reservaId, OffsetDateTime fimReserva) throws SchedulerException {
         JobKey jobKey = JobKey.jobKey(
             "envia-notificacao-" + FIM_PROXIMO + "-usuario-" + usuarioId.toString() + "-reserva-" + reservaId.toString(),
@@ -84,6 +100,13 @@ public class NotificacaoSchedulerService {
 
     }
 
+    /**
+     * Cancela o job de notificacao de check-in em disponibilidade.
+     * Cancela o job que notifica o usuario sobre a proximidade da reserva.
+     * @param usuarioId id do usuário a ser notificado
+     * @param reservaId id da reserva em questão
+     * @throws SchedulerException se houver um erro ao cancelar o job
+     */
     public void cancelarSchedulerCheckIn(UUID usuarioId, UUID reservaId) throws SchedulerException {
         JobKey jobKey = JobKey.jobKey(
             "envia-notificacao-" + CHECKIN_DISPONIVEL + "-usuario-" + usuarioId.toString() + "-reserva-" + reservaId.toString(),
@@ -100,6 +123,13 @@ public class NotificacaoSchedulerService {
         );
     }
 
+    /**
+     * Cancela o job de notificacao de fim de reserva.
+     * Cancela o job que notifica o usuário sobre o fim da reserva.
+     * @param usuarioId id do usuário a ser notificado
+     * @param reservaId id da reserva em questão
+     * @throws SchedulerException se houver um erro ao cancelar o job
+     */
     public void cancelarSchedulerFimProximo(UUID usuarioId, UUID reservaId) throws SchedulerException {
         JobKey jobKey = JobKey.jobKey(
             "envia-notificacao-" + FIM_PROXIMO + "-usuario-" + usuarioId.toString() + "-reserva-" + reservaId.toString(),

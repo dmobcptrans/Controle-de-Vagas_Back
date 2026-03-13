@@ -19,6 +19,12 @@ public class AlterarDisponibilidadeJob implements Job {
     @Autowired
     private DisponibilidadeVagaService disponibilidadeVagaService;
 
+/**
+ * Executa o job de alterar disponibilidade de vaga.
+ * Este job altera o status de uma disponibilidade de vaga.
+ * @param context contexto do job
+ * @throws JobExecutionException se ocorrer algum erro durante a execução do job
+ */
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
         UUID disponibilidadeId = UUID.fromString(

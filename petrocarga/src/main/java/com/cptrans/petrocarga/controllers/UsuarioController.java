@@ -23,6 +23,14 @@ public class UsuarioController {
     @Autowired
     private UsuarioService usuarioService;
 
+/**
+ * Retorna todos os usuários cadastrados no sistema.
+ * 
+ * Só permite que os usuários sejam acessados por um usuário com permissão de ADMIN ou GESTOR.
+ * @GetMapping
+ * @return Lista de usuários encontrados com status ok
+ * 
+ */
     @PreAuthorize("hasAnyRole('ADMIN','GESTOR')")
     @GetMapping
     public ResponseEntity<List<UsuarioResponseDTO>> getAllUsuarios() {
@@ -32,6 +40,12 @@ public class UsuarioController {
         return ResponseEntity.ok(usuarios);
     }
 
+    /**
+     * Retorna um usuário com base no seu id de usuário.
+     * Só permite que o usuário seja acessado pelo seu próprio dono ou por um usuário com permissão de ADMIN ou GESTOR.
+     * @param id o id do usuário
+     * @return o usuário com base no seu id de usuário
+     */
     @PreAuthorize(" #id == authentication.principal.id or hasAnyRole('ADMIN', 'GESTOR')")
     @GetMapping("/{id}")
     public ResponseEntity<UsuarioResponseDTO> getUsuarioById(@PathVariable UUID id) {

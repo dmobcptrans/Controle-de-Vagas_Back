@@ -27,9 +27,12 @@ public class GlobalHandlerException {
     private static final Logger log = LoggerFactory.getLogger(GlobalHandlerException.class);
 
     /**
-     * Handle client abort/disconnect errors (SSE, long-polling, etc.)
-     * These are normal when clients close connections - no need to log as errors.
-     */
+    * Trata ClientAbortException, que ocorre quando o cliente desconecta durante uma requisição, especialmente em conexões SSE (Server-Sent Events).
+    * Esta exceção é comum e esperada em cenários de SSE, portanto, apenas ignore-as.
+    * @param ex a exceção lançada quando o cliente desconecta
+    * @param request a requisição HTTP que originou a exceção
+    * @return void (nenhuma resposta é enviada, pois o cliente já desconectou)
+    */
     @ExceptionHandler(ClientAbortException.class)
     public void handleClientAbort(ClientAbortException ex, HttpServletRequest request) {
         // Client disconnected - this is normal for SSE, just ignore
@@ -37,7 +40,10 @@ public class GlobalHandlerException {
     }
     
     /**
-     * Handle async request not usable (connection closed during async processing)
+     * Trata AsyncRequestNotUsableException, que pode ocorrer quando o cliente desconecta durante uma requisição assíncrona. Esta exceção é comum e esperada em cenários de SSE, portanto, apenas ignore-as.
+     * @param ex a exceção lançada quando o cliente desconecta
+     * @param request a requisição HTTP que originou a exceção
+     * @return void (nenhuma resposta é enviada)
      */
     @ExceptionHandler(AsyncRequestNotUsableException.class)
     public void handleAsyncNotUsable(AsyncRequestNotUsableException ex, HttpServletRequest request) {
@@ -45,8 +51,14 @@ public class GlobalHandlerException {
     }
     
     /**
-     * Handle generic IOExceptions that are typically client disconnects
-     */
+    *Trata IOException, que pode ocorrer quando o cliente desconecta durante uma requisição. 
+    *Se a mensagem da exceção indicar que o cliente desconectou (ex: "Broken pipe" ou "Connection reset"), apenas ignore a exceção.
+    * Para outras IOExceptions, retorna um erro 500 com detalhes.
+     * @param ex a exceção de IO lançada
+     * @param request a requisição HTTP que originou a exceção
+     * @return ResponseEntity com status 500 e detalhes do erro, ou null se o cliente desconectou
+    * 
+    */
     @ExceptionHandler(IOException.class)
     public ResponseEntity<?> handleIOException(IOException ex, HttpServletRequest request) {
         String message = ex.getMessage();
@@ -62,6 +74,12 @@ public class GlobalHandlerException {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
     }
 
+    /**
+    * Trata EntityNotFoundException (404) - quando uma entidade não é encontrada no banco de dados.
+    * 
+    * @param ex a exceção lançada quando a entidade não é encontrada
+    * @return ResponseEntity com status 404 e um mapa contendo a mensagem de erro e causa
+    */
     @ExceptionHandler(EntityNotFoundException.class)
     public ResponseEntity<Map<String, String>> handleNotFound(EntityNotFoundException ex) {
         Map<String, String> error = new HashMap<>();
@@ -74,6 +92,10 @@ public class GlobalHandlerException {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
 
+    /**
+     * Trata IllegalArgumentException (400) - quando o algum parametro não é válido ou quando o estado do objeto é inválido para a operação solicitada.
+     * @return ResponseEntity com status 400 e um mapa contendo a mensagem de erro e causa
+     */
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, String>> handleBadRequest(IllegalArgumentException ex) {
         Map<String, String> error = new HashMap<>();
@@ -86,6 +108,14 @@ public class GlobalHandlerException {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 
+    /**
+     * Trata erros genéricos que não foram tratados por
+     * outros métodos de tratamento de exceções.
+     * 
+     * @param ex Exceção a ser tratada
+     * @param request Requisição HTTP que originou a exceção
+     * @return Resposta com status 500 e a mensagem contendo o erro e causa
+     */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, String>> handleGeneric(Exception ex, HttpServletRequest request) {
         Map<String, String> error = new HashMap<>();
@@ -112,6 +142,11 @@ public class GlobalHandlerException {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
     }
 
+    /**
+     * Trata DataIntegrityViolationException (409) - quando uma solicitação viola a regra de integridade de dados.
+     * Exibe a mensagem de erro com a causa mais detalhada.
+     * @return Resposta com status 409 e um mapa contendo a mensagem de erro e causa
+     */
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<Map<String, String>> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
         Map<String, String> error = new HashMap<>();
@@ -121,6 +156,12 @@ public class GlobalHandlerException {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
     }
 
+/**
+ * Trata MethodArgumentNotValidException (400) - quando o parâmetro de uma solicitação não é válido.
+ * Exibe a mensagem de erro com a causa mais detalhada.
+ * 
+ * @return Resposta com status 400 e um mapa contendo a mensagem de erro e causa
+ */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, String>> handleMethodArgumentNotValid(MethodArgumentNotValidException ex) {
         Map<String, String> error = new HashMap<>();
@@ -132,6 +173,11 @@ public class GlobalHandlerException {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 
+/**
+ * Trata ConstraintViolationException (400) - quando a solicitação viola uma regra de validação.
+ * Exibe uma mensagem de erro com a causa mais detalhada.
+ * @return Resposta com status 400 e um mapa contendo a mensagem de erro e causa
+ */
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<Map<String, String>> handleConstraintViolation(ConstraintViolationException ex) {
         Map<String, String> error = new HashMap<>();
@@ -143,6 +189,11 @@ public class GlobalHandlerException {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 
+/**
+ * Trata BadCredentialsException (401) - quando as credenciais fornecidas são inválidas.
+ * Exibe uma mensagem de erro com a causa mais detalhada.
+ * @return Resposta com status 401 e um mapa contendo a mensagem de erro e causa
+ */
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<Map<String, String>> handleBadCredentials(BadCredentialsException ex) {
         Map<String, String> error = new HashMap<>();
@@ -151,6 +202,11 @@ public class GlobalHandlerException {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
     }
 
+/**
+ * Trata AuthorizationDeniedException (403) - quando o acesso é negado.
+ * Exibe uma mensagem de erro com a causa mais detalhada.
+ * @return Resposta com status 403 e um mapa contendo a mensagem de erro e causa
+ */
     @ExceptionHandler(AuthorizationDeniedException.class)
     public ResponseEntity<Map<String, String>> handleAuthorizationDenied(AuthorizationDeniedException ex) {
         Map<String, String> error = new HashMap<>();
@@ -163,6 +219,11 @@ public class GlobalHandlerException {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
     }
 
+/**
+ * Trata IllegalStateExcepion (400) - quando o estado do objeto é inválido para uma operação solicitada.
+ * Exibe uma mensagem de erro com a causa mais detalhada.
+ * @return Resposta com status 400 e um mapa contendo a mensagem de erro e causa
+ */
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<Map<String, String>> handleIllegalStateException(IllegalStateException ex) {
         Map<String, String> error = new HashMap<>();

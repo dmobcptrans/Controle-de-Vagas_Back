@@ -11,6 +11,15 @@ import com.cptrans.petrocarga.models.Motorista;
 import jakarta.persistence.criteria.Predicate;
 
 public class MotoristaSpecification {
+    /**
+     * Cria uma Specification para filtrar motoristas com base nos filtros passados.
+     *
+     * Os filtros são: nome, telefone, cnh, ativo.
+     * Se nenhum filtro for passado, então retorna uma Specification que não filtra nada.
+     *
+     * @param filtros o objeto com os filtros para a busca
+     * @return a Specification que filtra os motoristas com base nos filtros passados
+     */
      public static Specification<Motorista> filtrar(
         MotoristaFiltrosDTO filtros
     ) {

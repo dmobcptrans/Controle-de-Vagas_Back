@@ -380,7 +380,6 @@ public static class Intervalo {
             }
         }
 
-        // AGENTE e ADMIN podem fazer check-in em qualquer reserva (já permitido)
 
         reserva.setCheckedIn(true);
         reserva.setStatus(StatusReservaEnum.ATIVA);

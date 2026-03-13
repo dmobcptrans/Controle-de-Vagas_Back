@@ -29,6 +29,14 @@ public class DashboardController {
     @Autowired
     private DashboardService dashboardService;
 
+    /**
+     * Retorna KPIs, tipos de veículos, bairros e cidades de origem.
+     * Se os parâmetros de data não forem informados, assume o dia atual (00:00 até 23:59).
+     * 
+     * @param startDate Data/hora de início do período (ISO 8601). Ex: 2026-01-01T00:00:00-03:00
+     * @param endDate Data/hora de fim do período (ISO 8601). Ex: 2026-01-31T23:59:59-03:00
+     * @return Resumo obtido com sucesso
+     */
     @GetMapping("/summary")
     @Operation(
         summary = "Resumo completo do dashboard",
@@ -53,6 +61,16 @@ public class DashboardController {
         return ResponseEntity.ok(summary);
     }
 
+    /**
+     * Retorna KPIs principais do sistema, como total de vagas, 
+     * ocupação, reservas ativas/concluídas/canceladas e 
+     * reservas de múltiplas vagas.
+     * Se os parâmetros de data não forem informados, assume o dia atual (00:00 até 23:59).
+     * 
+     * @param startDate Data/hora de início do período (ISO 8601). Ex: 2026-01-01T00:00:00-03:00
+     * @param endDate Data/hora de fim do período (ISO 8601). Ex: 2026-01-31T23:59:59-03:00
+     * @return KPIs obtidos com sucesso
+     */
     @GetMapping("/kpis")
     @Operation(
         summary = "KPIs principais do sistema",

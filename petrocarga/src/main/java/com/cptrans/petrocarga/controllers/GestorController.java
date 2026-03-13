@@ -31,6 +31,18 @@ public class GestorController {
     @Autowired
     private GestorService gestorService;
 
+    /**
+     * Retorna uma lista de gestores com base nos filtros passados.
+     *
+     * Os filtros são: nome, telefone, email, ativo.
+     * Se nenhum filtro for passado, então retorna uma lista com todos gestores.
+     *
+     * @param nome o nome do gestor
+     * @param telefone o telefone do gestor
+     * @param email o email do gestor
+     * @param ativo se o gestor está ativo
+     * @return uma lista de gestores com base nos filtros passados ou todos gestores se nenhum filtro for passado.
+     */
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping()
     public ResponseEntity<List<UsuarioResponseDTO>> getAllGestores(@RequestParam(required = false) String nome, @RequestParam(required = false) String telefone, @RequestParam(required = false) String email, @RequestParam(required = false) Boolean ativo) {
@@ -47,23 +59,49 @@ public class GestorController {
         return ResponseEntity.ok(gestores);
     }
 
+    /**
+     * Retorna um gestor com base no seu id de usuário.
+     * Só permite que o gestor seja acessado pelo seu próprio dono ou por um usuário com permissão de ADMIN.
+     * @param usuarioId o id do usuário do gestor
+     * @return o gestor com base no seu id de usuário
+     */
     @PreAuthorize("#usuarioId == authentication.principal.id or hasRole('ADMIN')")
     @GetMapping("/{usuarioId}")
     public ResponseEntity<UsuarioResponseDTO> getGestorById(@PathVariable UUID usuarioId) {
         return ResponseEntity.ok(gestorService.findByUsuarioId(usuarioId).toResponseDTO());
     }
 
+    /**
+     * Cria um novo gestor com base nos dados passados.
+     * Só permite que o gestor seja criado por um usuário com permissão de ADMIN.
+     * @param gestorRequestDTO o objeto com os dados do gestor
+     * @return o objeto criado com base nos dados do gestor
+     */
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping()
     public ResponseEntity<UsuarioResponseDTO> createGestor(@RequestBody @Valid GestorRequestDTO gestorRequestDTO) {
         return ResponseEntity.status(HttpStatus.CREATED).body(gestorService.createGestor(gestorRequestDTO.toEntity()).toResponseDTO());
     }
 
+    /**
+     * Atualiza um gestor com base nos dados passados.
+     * Só permite que o gestor seja atualizado pelo seu próprio dono ou por um usuário com permissão de ADMIN.
+     * @param usuarioId o id do usuário do gestor
+     * @param gestorRequestDTO o objeto com os dados do gestor
+     * @return o objeto atualizado com base nos dados do gestor
+     */
     @PreAuthorize("#usuarioId == authentication.principal.id or hasRole('ADMIN')")
     @PatchMapping("/{usuarioId}")
     public ResponseEntity<UsuarioResponseDTO> updateGestor(@PathVariable UUID usuarioId, @RequestBody @Valid UsuarioPATCHRequestDTO gestorRequestDTO) {
         return ResponseEntity.ok(gestorService.updateGestor(usuarioId, gestorRequestDTO).toResponseDTO());
     }
+
+    /**
+     * Deleta um gestor com base no seu id de usuário.
+     * Só permite que o gestor seja deletado pelo seu próprio dono ou por um usuário com permissão de ADMIN.
+     * @param usuarioId o id do usuário do gestor
+     * @return uma resposta sem conteúdo caso a exclusão seja realizada com sucesso
+     */
 
     @PreAuthorize("#usuarioId == authentication.principal.id or hasRole('ADMIN')")
     @DeleteMapping("/{usuarioId}")
