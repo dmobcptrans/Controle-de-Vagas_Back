@@ -29,6 +29,7 @@ import com.cptrans.petrocarga.dto.UsuarioRequestDTO;
 import com.cptrans.petrocarga.dto.UsuarioResponseDTO;
 import com.cptrans.petrocarga.enums.PermissaoEnum;
 import com.cptrans.petrocarga.models.Usuario;
+import com.cptrans.petrocarga.repositories.VeiculoRepository;
 import com.cptrans.petrocarga.security.UserAuthenticated;
 import com.cptrans.petrocarga.services.AuthService;
 import com.cptrans.petrocarga.services.UsuarioService;
@@ -47,6 +48,9 @@ public class AuthController {
     // TODO: Remover instância depois de cadastrar o primeiro admin em deploy
     @Autowired
     private UsuarioService usuarioService;
+
+    @Autowired
+    private VeiculoRepository veiculoRepository;
     
     @Value("${app.cookie-settings.secure:true}")
     private boolean secure;
@@ -139,7 +143,12 @@ public class AuthController {
         }
         UUID usuarioIdFromToken = userAuthenticated.id();
         Usuario usuarioLogado = usuarioService.findByIdAndAtivo(usuarioIdFromToken, true);
-        return ResponseEntity.ok(usuarioLogado.toResponseDTO());
+        UsuarioResponseDTO response = usuarioLogado.toResponseDTO();
+        if(usuarioLogado.getPermissao().equals(PermissaoEnum.MOTORISTA)){
+            Boolean possuiVeiculo = veiculoRepository.existsByUsuarioId(usuarioIdFromToken);
+            response.setVeiculoCadastrado(possuiVeiculo);
+        }
+        return ResponseEntity.ok(response);
     }
 
 /**
