@@ -5,7 +5,7 @@ COPY pom.xml .
 RUN mvn dependency:go-offline -B
 
 COPY . .
-RUN mvn clean package -DskipTests
+RUN mvn clean package -DskipTests -q
 
 FROM eclipse-temurin:21-jre
 WORKDIR /app
@@ -13,7 +13,6 @@ WORKDIR /app
 COPY --from=builder /app/target/*.jar app.jar
 
 ENV PORT=8080
-ENV SPRING_PROFILES_ACTIVE=gcloud
 
 EXPOSE 8080
 
