@@ -17,6 +17,7 @@ public class UsuarioResponseDTO {
     private OffsetDateTime criadoEm;
     private Boolean ativo;
     private OffsetDateTime desativadoEm;
+    private boolean veiculoCadastrado;
 
     public UsuarioResponseDTO() {
     }
@@ -117,5 +118,13 @@ public class UsuarioResponseDTO {
 
     public void setDesativadoEm(OffsetDateTime desativadoEm) {
         this.desativadoEm = desativadoEm;
+    }
+
+    public boolean isVeiculoCadastrado() {
+        return veiculoCadastrado;
+    }
+
+    public void setVeiculoCadastrado(boolean veiculoCadastrado) {
+        this.veiculoCadastrado = veiculoCadastrado;
     }
 }
