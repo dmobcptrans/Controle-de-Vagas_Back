@@ -33,13 +33,13 @@ public class EmailService implements EmailSender {
 
     private final JavaMailSender mailSender;
 
-    @Value("${SMTP_FROM:}")
+    @Value("${spring.mail.from}")
     private String from;
 
-    @Value("${SMTP_USERNAME:}")
+    @Value("${spring.mail.username}")
     private String mailUsername;
 
-    @Value("${FRONTEND_URL:http://localhost:3000}")
+    @Value("${app.frontend.base-url:http://localhost:3000}")
     private String frontendBaseUrl;
 
     @Value("${app.mailSender.enabled:true}")

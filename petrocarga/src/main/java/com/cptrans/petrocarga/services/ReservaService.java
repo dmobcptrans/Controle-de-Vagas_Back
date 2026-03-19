@@ -324,6 +324,16 @@ public static class Intervalo {
         }
 
         notificacaoService.sendNotificationToUsuarioBySystem(reservaDTO.getCriadoPor().getId(), new Notificacao("Checkout Forçado","Sua reserva foi removida por um gestor. Realize uma nova reserva se necessário", TipoNotificacaoEnum.RESERVA),null);
+        
+        if (reserva.isPresent()){
+            try {
+                notificacaoSchedulerService.cancelarSchedulerCheckIn(reserva.get().getMotorista().getUsuario().getId(), reserva.get().getId());
+                notificacaoSchedulerService.cancelarSchedulerFimProximo(reserva.get().getMotorista().getUsuario().getId(), reserva.get().getId());
+            } catch (Exception e) {
+                throw new RuntimeException("Erro ao cancelar schedulers no checkout forçado: " + e.getMessage());
+            }
+        }
+        
         return reservaDTO;
 
     }
