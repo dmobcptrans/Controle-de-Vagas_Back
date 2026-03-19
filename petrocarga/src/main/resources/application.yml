@@ -39,7 +39,7 @@ spring:
         port: ${SMTP_PORT:465}
         username: ${SMTP_USERNAME:}
         password: ${SMTP_PASSWORD:}
-        from: ${SMTP_FROM:${spring.mail.username}
+        from: ${SMTP_FROM:${spring.mail.username}}
         properties:
             mail:
                 smtp:
