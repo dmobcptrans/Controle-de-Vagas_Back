@@ -22,10 +22,10 @@ app:
         enabled: false
         credentials: "classpath:firebase-service-account.json"
     cookie-settings:
-        secure: false
-        same-site: Lax
+        secure: true
+        same-site: None
     mailSender:
-        enabled: false
+        enabled: true
 
 logging:
     level:
