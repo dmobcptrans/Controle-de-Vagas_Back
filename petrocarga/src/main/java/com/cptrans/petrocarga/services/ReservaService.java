@@ -21,10 +21,12 @@ import com.cptrans.petrocarga.dto.ReservaDTO;
 import com.cptrans.petrocarga.dto.ReservaPATCHRequestDTO;
 import com.cptrans.petrocarga.enums.PermissaoEnum;
 import com.cptrans.petrocarga.enums.StatusReservaEnum;
+import com.cptrans.petrocarga.enums.TipoNotificacaoEnum;
 import com.cptrans.petrocarga.enums.TipoVeiculoEnum;
 import com.cptrans.petrocarga.infrastructure.scheduler.service.NotificacaoSchedulerService;
 import com.cptrans.petrocarga.infrastructure.scheduler.service.ReservaSchedulerService;
 import com.cptrans.petrocarga.models.Motorista;
+import com.cptrans.petrocarga.models.Notificacao;
 import com.cptrans.petrocarga.models.Reserva;
 import com.cptrans.petrocarga.models.ReservaRapida;
 import com.cptrans.petrocarga.models.Usuario;
@@ -304,14 +306,9 @@ public static class Intervalo {
 
         if (!reserva.isPresent() && !reservaRapida.isPresent()) throw new EntityNotFoundException("Reserva não encontrada.");
        
-        OffsetDateTime agora = OffsetDateTime.now();
-
         if(reserva.isPresent()){
             if (!StatusReservaEnum.RESERVADA.equals(reserva.get().getStatus()) && !StatusReservaEnum.ATIVA.equals(reserva.get().getStatus())) {
                 throw new IllegalStateException("Só é possivel finalizar uma reserva com status 'RESERVADA' ou 'ATIVA'.");
-            }
-            if (agora.isBefore(reserva.get().getInicio())) {
-                throw new IllegalStateException("Não é possível finalizar uma reserva que ainda não começou.");
             }
             reserva.get().setStatus(StatusReservaEnum.REMOVIDA);
             reservaRepository.save(reserva.get());
@@ -321,14 +318,12 @@ public static class Intervalo {
             if (!StatusReservaEnum.RESERVADA.equals(reservaRapida.get().getStatus()) && !StatusReservaEnum.ATIVA.equals(reservaRapida.get().getStatus())) {
                 throw new IllegalStateException("Só é possivel finalizar uma reserva com status 'RESERVADA' ou 'ATIVA'.");
             }
-            // if (agora.isBefore(reservaRapida.get().getInicio())) {
-            //     throw new IllegalStateException("Não é possível finalizar uma reserva que ainda não começou.");
-            // }
             reservaRapida.get().setStatus(StatusReservaEnum.REMOVIDA);
             reservaRapidaService.save(reservaRapida.get());
             reservaDTO = new ReservaDTO(reservaRapida.get());
         }
 
+        notificacaoService.sendNotificationToUsuarioBySystem(reservaDTO.getCriadoPor().getId(), new Notificacao("Checkout Forçado","Sua reserva foi removida por um gestor. Realize uma nova reserva se necessário", TipoNotificacaoEnum.RESERVA),null);
         return reservaDTO;
 
     }
@@ -387,38 +382,6 @@ public static class Intervalo {
         return reservaRepository.save(reserva);
     }
 
-    /**
-     * Processa reservas elegíveis para no-show (sem check-in após grace period).
-     * Chamado pelo scheduler automaticamente.
-     * @param graceMinutes minutos de tolerância após o início
-     * @return quantidade de reservas finalizadas
-     */
-    public int processarNoShow(int graceMinutes) {
-        OffsetDateTime agora = OffsetDateTime.now();
-
-        List<Reserva> candidatas = reservaRepository.findNoShowCandidates(
-            StatusReservaEnum.RESERVADA,
-            graceMinutes,
-            agora
-        );
-
-        int finalizadas = 0;
-        for (Reserva reserva : candidatas) {
-            try {
-                finalizarForcado(reserva.getId());
-                finalizadas++;
-            } catch (Exception e) {
-                // Log e continua para não bloquear outras reservas
-                System.err.println("Erro ao finalizar reserva " + reserva.getId() + ": " + e.getMessage());
-            }
-        }
-
-        if (finalizadas > 0) {
-            System.out.println("No-show: " + finalizadas + " reserva(s) finalizada(s) automaticamente.");
-        }
-
-        return finalizadas;
-    }
 
     public Reserva atualizarReserva (Reserva reserva, UUID usuarioId, ReservaPATCHRequestDTO reservaRequestDTO) {
         final Integer TEMPO_LIMITE_ALTERACAO = 60;

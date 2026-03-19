@@ -91,6 +91,20 @@ public class NotificacaoService {
     }
 
     @Transactional
+    public Notificacao sendNotificationToUsuarioBySystem(UUID usuarioId, Notificacao novaNotificacao, Map<String,Object> dadosAdicionais) {
+        Usuario usuario = usuarioService.findByIdAndAtivo(usuarioId, true);
+        novaNotificacao.setUsuarioId(usuario.getId());
+        
+        if (dadosAdicionais != null){
+            novaNotificacao.getMetadata().putAll(dadosAdicionais);
+        } else novaNotificacao.setMetadata(new HashMap<String,Object>());
+
+        Notificacao notificacaoSalva = saveNotificacao(novaNotificacao);
+        eventPublisher.publish(new NotificacaoCriadaEvent(notificacaoSalva));
+        return notificacaoSalva;
+    }
+
+    @Transactional
     public List<Notificacao> sendNotificacaoToUsuariosByPermissao(PermissaoEnum permissao, Notificacao novaNotificacao) {
         List<Usuario> usuarios = usuarioService.findByPermissaoAndAtivo(permissao, true);
         Usuario usuarioLogado = usuarioService.findById(((UserAuthenticated) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).id());
