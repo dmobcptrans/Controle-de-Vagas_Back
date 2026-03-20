@@ -145,7 +145,7 @@ public class AuthController {
         Usuario usuarioLogado = usuarioService.findByIdAndAtivo(usuarioIdFromToken, true);
         UsuarioResponseDTO response = usuarioLogado.toResponseDTO();
         if(usuarioLogado.getPermissao().equals(PermissaoEnum.MOTORISTA)){
-            Boolean possuiVeiculo = veiculoRepository.existsByUsuarioId(usuarioIdFromToken);
+            Boolean possuiVeiculo = veiculoRepository.existsByUsuarioIdAndAtivo(usuarioIdFromToken, true);
             response.setVeiculoCadastrado(possuiVeiculo);
         }
         return ResponseEntity.ok(response);
