@@ -32,3 +32,6 @@ logging:
         org:
             hibernate:
                 sql: info
+springdoc:
+    api-docs:
+        enabled: true
