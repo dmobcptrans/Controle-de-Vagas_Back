@@ -4,7 +4,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
 import com.cptrans.petrocarga.application.port.out.DomainEventPublisher;
-import com.cptrans.petrocarga.domain.event.DomainEvent;
+import com.cptrans.petrocarga.domain.events.DomainEvent;
 
 @Component
 public class SpringDomainEventPublisher implements DomainEventPublisher {

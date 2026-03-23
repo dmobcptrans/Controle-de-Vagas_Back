@@ -5,8 +5,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
-import com.cptrans.petrocarga.domain.event.UsuarioCriadoEvent;
-import com.cptrans.petrocarga.infrastructure.email.EmailSender;
+import com.cptrans.petrocarga.application.port.out.EmailSender;
+import com.cptrans.petrocarga.domain.events.UsuarioCriadoEvent;
 
 @Component
 public class UsuarioCriadoListener {

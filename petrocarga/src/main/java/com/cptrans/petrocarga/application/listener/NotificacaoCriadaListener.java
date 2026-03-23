@@ -6,9 +6,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
-import com.cptrans.petrocarga.application.service.PushNotificationService;
-import com.cptrans.petrocarga.application.service.RealTimeNotificationService;
-import com.cptrans.petrocarga.domain.event.NotificacaoCriadaEvent;
+import com.cptrans.petrocarga.application.port.out.PushNotificationService;
+import com.cptrans.petrocarga.application.port.out.RealTimeNotificationService;
+import com.cptrans.petrocarga.domain.events.NotificacaoCriadaEvent;
 import com.google.firebase.FirebaseApp;
 
 @Component
