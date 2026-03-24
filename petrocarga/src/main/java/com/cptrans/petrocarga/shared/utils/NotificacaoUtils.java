@@ -18,12 +18,11 @@ public class NotificacaoUtils {
      */
     public static void validateByPermissao(PermissaoEnum permissaoUsuarioLogado,  PermissaoEnum permissaoDestinatario) {
         switch (permissaoUsuarioLogado) {
-            case ADMIN, GESTOR -> {
+            case ADMIN, GESTOR, AGENTE -> {
                 break;
             }
             case EMPRESA -> throw new IllegalArgumentException("Usuários com permissão EMPRESA não podem enviar notificações para outros usuários.");
             case MOTORISTA -> throw new IllegalArgumentException("Usuários com permissão MOTORISTA não podem enviar notificações para outros usuários.");
-            case AGENTE -> throw new IllegalArgumentException("Usuários com permissão AGENTE não podem enviar notificações para outros usuários.");
             default -> throw new IllegalArgumentException("Permissão de usuário inválida.");
         }
         
