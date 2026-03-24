@@ -147,8 +147,16 @@ public class VeiculoService {
             veiculoRegistrado.setCpfProprietarioCripto(cpfCriptoService.encrypt(novoVeiculo.getCpfProprietario()));
             veiculoRegistrado.setCpfProprietarioLast5(UsuarioUtils.gerarLastN(novoVeiculo.getCpfProprietario(), 5));
             veiculoRegistrado.setCpfProprietarioKeyVersion(activeKeyVersion);
+            if  ( veiculoRegistrado.getCnpjProprietario() != null ) veiculoRegistrado.setCnpjProprietario(null);
         }
-        if (novoVeiculo.getCnpjProprietario() != null) veiculoRegistrado.setCnpjProprietario(novoVeiculo.getCnpjProprietario());
+        if (novoVeiculo.getCnpjProprietario() != null){
+            veiculoRegistrado.setCnpjProprietario(novoVeiculo.getCnpjProprietario());
+            if(veiculoRegistrado.getCpfProprietarioHash() != null){
+                veiculoRegistrado.setCpfProprietarioHash(null);
+                veiculoRegistrado.setCpfProprietarioCripto(null);
+                veiculoRegistrado.setCpfProprietarioLast5(null);
+            }
+        }
      
         return veiculoRepository.save(veiculoRegistrado);
     }
