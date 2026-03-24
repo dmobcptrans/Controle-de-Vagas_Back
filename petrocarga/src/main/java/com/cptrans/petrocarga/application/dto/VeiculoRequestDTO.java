@@ -17,7 +17,7 @@ public class VeiculoRequestDTO {
     @Size(min=7, max=7, message="Placa deve ter exatamente 7 caracteres.")
     private String placa;
     
-    @Size(min=3, max=20, message="Marca deve ter entre 3 e 20 caracteres.")
+    @Size(min=2, max=20, message="Marca deve ter entre 2 e 20 caracteres.")
     private String marca;
 
     @Size(min=3, max=20, message="Modelo deve ter entre 3 e 20 caracteres.")
@@ -28,15 +28,16 @@ public class VeiculoRequestDTO {
 
     @Valid
     @CPF(message = "CPF inválido.")
+    @Size(min = 11, max = 11, message = "CPF deve conter exatamente 11 dígitos (apenas números).")
     private String cpfProprietario;
 
     @Valid
     @CNPJ(message = "CNPJ inválido.")
+    @Size(min = 14, max = 14, message = "CNPJ deve conter exatamente 14 dígitos (apenas números).")
     private String cnpjProprietario;
 
     public Veiculo toEntity() {
         Veiculo veiculo = new Veiculo();
-        // if(this.placa == null) throw new IllegalArgumentException("Placa deve ser informada.");
         veiculo.setPlaca(this.placa.toUpperCase());
         veiculo.setMarca(this.marca);
         veiculo.setModelo(this.modelo);
