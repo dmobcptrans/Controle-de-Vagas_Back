@@ -6,7 +6,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.cptrans.petrocarga.application.dto.MotoristaFiltrosDTO;
@@ -41,9 +40,6 @@ public class MotoristaService {
 
     // @Autowired
     // private EmpresaService empresaService;
-
-    @Value("${app.security.aes-criptography.active-key-version}")
-    private Integer activeKeyVersion;
 
     public List<Motorista> findAll() {
         return motoristaRepository.findAll();
@@ -84,7 +80,6 @@ public class MotoristaService {
             novoMotorista.setCnhHash(hashService.hash(numero_cnh));
             novoMotorista.setCnhCripto(criptoService.encrypt(numero_cnh));
             novoMotorista.setCnhLast4(UsuarioUtils.gerarLastN(numero_cnh, 4));
-            novoMotorista.setCnhKeyVersion(activeKeyVersion);
         return  motoristaRepository.save(novoMotorista);
     }
 
@@ -104,7 +99,6 @@ public class MotoristaService {
             motoristaCadastrado.setCnhHash(hashService.hash(motoristaRequest.getNumeroCnh()));
             motoristaCadastrado.setCnhCripto(criptoService.encrypt(motoristaRequest.getNumeroCnh()));
             motoristaCadastrado.setCnhLast4(UsuarioUtils.gerarLastN(motoristaRequest.getNumeroCnh(), 4));
-            motoristaCadastrado.setCnhKeyVersion(activeKeyVersion);
         }
         if (motoristaRequest.getTipoCnh() != null) {
             motoristaCadastrado.setTipoCnh(motoristaRequest.getTipoCnh());
@@ -144,7 +138,6 @@ public class MotoristaService {
                 motorista.get().setCnhHash(hashService.hash(numeroCnh));
                 motorista.get().setCnhCripto(criptoService.encrypt(numeroCnh));
                 motorista.get().setCnhLast4(UsuarioUtils.gerarLastN(numeroCnh, 4));
-                motorista.get().setCnhKeyVersion(activeKeyVersion);
                 motorista.get().setTipoCnh(tipoCnh);
                 return motoristaRepository.save(motorista.get());
             }
@@ -154,7 +147,6 @@ public class MotoristaService {
             novoMotorista.setCnhHash(hashService.hash(numeroCnh));
             novoMotorista.setCnhCripto(criptoService.encrypt(numeroCnh));
             novoMotorista.setCnhLast4(UsuarioUtils.gerarLastN(numeroCnh, 4));
-            novoMotorista.setCnhKeyVersion(activeKeyVersion);
             novoMotorista.setTipoCnh(tipoCnh);
             novoMotorista.setUsuario(usuario);
             return motoristaRepository.save(novoMotorista);

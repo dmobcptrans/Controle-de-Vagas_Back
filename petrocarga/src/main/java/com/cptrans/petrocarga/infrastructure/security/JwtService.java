@@ -7,6 +7,7 @@ import java.util.UUID;
 
 import javax.crypto.SecretKey;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -25,6 +26,8 @@ public class JwtService {
     @Value("${jwt.expiration}")
     private Long expirationMs;
 
+    @Autowired
+    private CriptoService criptoService;
     /**
      * Retorna a chave secreta a ser usada para assinar os tokens JWT.
      * A chave é gerada a partir do segredo armazenado no arquivo application.yml.
@@ -49,7 +52,7 @@ public class JwtService {
         Map<String, Object> claims = new HashMap<>();
         claims.put("id", usuario.getId().toString());
         claims.put("nome", usuario.getNome());
-        claims.put("email", usuario.getEmail());
+        claims.put("email", criptoService.decrypt(usuario.getEmailCripto(), usuario.getPersonalDataKeyVersion()));
         claims.put("permissao", usuario.getPermissao().name());
 
         Date agora = new Date();
@@ -57,7 +60,7 @@ public class JwtService {
 
         return Jwts.builder()
                 .claims(claims) 
-                .subject(usuario.getEmail())
+                .subject(claims.get("email").toString())
                 .issuedAt(agora)
                 .expiration(expiracao)
                 .signWith(getSigningKey(), Jwts.SIG.HS256)

@@ -46,9 +46,6 @@ public class Motorista {
     @Column(name = "cnh_last4", nullable = false)
     private String cnhLast4;
 
-    @Column(name = "cnh_key_version", nullable = false)
-    private Integer cnhKeyVersion;
-
     @Column(name = "data_validade_cnh")
     private LocalDate dataValidadeCnh;
 
@@ -107,15 +104,6 @@ public class Motorista {
     public void setCnhLast4(String cnhLast4) {
         this.cnhLast4 = cnhLast4;
     }
-
-    public Integer getCnhKeyVersion() {
-        return cnhKeyVersion;
-    }
-
-    public void setCnhKeyVersion(Integer cnhKeyVersion) {
-        this.cnhKeyVersion = cnhKeyVersion;
-    }
-
 
     public LocalDate getDataValidadeCnh() {
         return dataValidadeCnh;

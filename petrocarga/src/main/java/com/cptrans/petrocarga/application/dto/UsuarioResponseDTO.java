@@ -40,7 +40,7 @@ public class UsuarioResponseDTO {
         this.nome = usuario.getNome();
         this.cpf = usuario.getCpfLast5();
         this.telefone = usuario.getTelefoneLast4();
-        this.email = usuario.getEmail();
+        this.email = usuario.getEmailCripto();
         this.permissao = usuario.getPermissao();
         this.criadoEm = usuario.getCriadoEm();
         this.ativo = usuario.isAtivo();

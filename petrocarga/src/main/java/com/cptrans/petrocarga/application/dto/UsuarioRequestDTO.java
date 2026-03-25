@@ -39,7 +39,7 @@ public class UsuarioRequestDTO {
         usuario.setNome(this.nome);
         usuario.setCpfHash(this.cpf);
         usuario.setTelefoneHash(this.telefone);
-        usuario.setEmail(this.email);
+        usuario.setEmailHash(this.email);
         usuario.setSenha(this.senha);
         return usuario;
     }
