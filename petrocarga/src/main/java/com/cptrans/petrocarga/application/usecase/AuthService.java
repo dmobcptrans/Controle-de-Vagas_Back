@@ -103,7 +103,10 @@ public class AuthService {
         }
 
         if (usuario.get().isAtivo().equals(false)) {
-            usuarioService.resendActivationCode(email,null);
+            if ((usuario.get().getPermissao().equals(PermissaoEnum.GESTOR) || usuario.get().getPermissao().equals(PermissaoEnum.AGENTE) || usuario.get().getPermissao().equals(PermissaoEnum.ADMIN)) && usuario.get().getDesativadoEm() != null) {
+                throw new IllegalArgumentException("Usuário desativado em " + usuario.get().getDesativadoEm() + ". Para mais informações, entre em contato com a CPTrans.");
+            }
+            usuarioService.resendActivationCode(email, null);
             throw new IllegalArgumentException("Usuário desativado. Se deseja ativar a conta, siga as instruções enviadas para o email '" + email + "'.");
             
         }

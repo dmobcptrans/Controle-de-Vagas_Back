@@ -141,7 +141,11 @@ public class UsuarioService {
             throw new IllegalArgumentException("Código expirado.");
         }
 
-        if (usuario.getDesativadoEm() != null) usuario.setDesativadoEm(null);
+        if (usuario.getDesativadoEm() != null) {
+            if(usuario.getPermissao().equals(PermissaoEnum.GESTOR) || usuario.getPermissao().equals(PermissaoEnum.AGENTE)) {
+                throw new IllegalArgumentException("Usuario desativado em " + usuario.getDesativadoEm() + ". Para mais informações, entre em contato com a CPTrans.");
+            }
+        }
 
         usuario.setAceitarTermos(aceitarTermos);
         usuario.setAceitouTermosEm(OffsetDateTime.now(DateUtils.FUSO_BRASIL));
@@ -171,6 +175,9 @@ public class UsuarioService {
 
         if (usuario.isAtivo() != null && usuario.isAtivo()) {
             throw new IllegalArgumentException("Usuário já ativado.");
+        }
+        if ((usuario.getPermissao().equals(PermissaoEnum.GESTOR) || usuario.getPermissao().equals(PermissaoEnum.AGENTE) || usuario.getPermissao().equals(PermissaoEnum.ADMIN)) && usuario.getDesativadoEm() != null)  {
+            throw new IllegalArgumentException("Usuário desativado em " + usuario.getDesativadoEm() + ". Para mais informações, entre em contato com a CPTrans.");
         }
 
         SecureRandom random = new SecureRandom();
