@@ -107,6 +107,7 @@ public class Usuario implements UserDetails{
         this.ativo = false;
         this.aceitarTermos = false;
         this.versaoTermos = UsuarioUtils.VERSAO_ATUAL_TERMOS;
+        this.provider = UsuarioProviderEnum.LOCAL;
     }
 
     public Usuario(String nome, String cpf, String telefone, String email, String senha, PermissaoEnum permissao) {
@@ -120,6 +121,7 @@ public class Usuario implements UserDetails{
         this.ativo = false;
         this.aceitarTermos=false;
         this.versaoTermos=UsuarioUtils.VERSAO_ATUAL_TERMOS;
+        this.provider = UsuarioProviderEnum.LOCAL;
     }
 
     // Getters and Setters
