@@ -312,7 +312,7 @@ public class Usuario implements UserDetails{
     }
 
     public UsuarioResponseDTO toResponseDTO() {
-        return new UsuarioResponseDTO(id, nome, cpfLast5, telefoneLast4, emailCripto, permissao, criadoEm, ativo, desativadoEm);
+        return new UsuarioResponseDTO(id, nome, cpfCripto, telefoneCripto, emailCripto, permissao, criadoEm, ativo, desativadoEm);
     }
 
     @Override

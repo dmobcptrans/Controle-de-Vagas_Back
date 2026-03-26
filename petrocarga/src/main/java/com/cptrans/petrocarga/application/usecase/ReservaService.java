@@ -13,6 +13,10 @@ import java.util.UUID;
 
 import org.quartz.SchedulerException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -133,13 +137,17 @@ public class ReservaService {
         return reserva;
     }
 
-    public List<Reserva> findByUsuarioId(UUID usuarioId, List<StatusReservaEnum> status) {
+    public List<Reserva> findByUsuarioId(UUID usuarioId, List<StatusReservaEnum> status, Integer numeroPagina, Integer tamanhoPagina) {
+        Pageable pageable = PageRequest.of(numeroPagina, tamanhoPagina, Sort.by("inicio").descending());
+        Page<Reserva> reservasPage;
         Usuario usuario = usuarioService.findById(usuarioId);
         if(status == null ) status = new ArrayList<>();
         if(!status.isEmpty()) {
-            return reservaRepository.findByCriadoPorAndStatusIn(usuario, status);
+            reservasPage = reservaRepository.findByCriadoPorAndStatusIn(usuario, status, pageable);
+        }else{
+            reservasPage = reservaRepository.findByCriadoPor(usuario, pageable);
         }
-        return reservaRepository.findByCriadoPor(usuario);
+        return reservasPage.getContent();
     }
 
     public Reserva createReserva(Reserva novaReserva) {

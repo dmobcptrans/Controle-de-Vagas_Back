@@ -33,6 +33,7 @@ import com.cptrans.petrocarga.domain.entities.Usuario;
 import com.cptrans.petrocarga.domain.enums.PermissaoEnum;
 import com.cptrans.petrocarga.domain.repositories.VeiculoRepository;
 import com.cptrans.petrocarga.infrastructure.security.UserAuthenticated;
+import com.cptrans.petrocarga.shared.utils.CriptoUtils;
 
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -51,6 +52,9 @@ public class AuthController {
 
     @Autowired
     private VeiculoRepository veiculoRepository;
+    
+    @Autowired
+    private CriptoUtils criptoUtils;
     
     @Value("${app.cookie-settings.secure:true}")
     private boolean secure;
@@ -108,15 +112,15 @@ public class AuthController {
         return ResponseEntity.ok(auth);
     }
 
-/**
- * Completar cadastro de usuário com as informações informadas no corpo da requisição.
- * Retorna um objeto UsuarioResponseDTO com as informações do usuário.
- * O token de autenticação do usuário deve ser informado no header da requisição.
- *
- * @param userAuthenticated O objeto UserAuthenticated com o token de autenticação do usuário.
- * @param request O corpo da requisição CompletarCadastroDTO com as informações do usuário.
- * @return Um objeto ResponseEntity com o corpo UsuarioResponseDTO e o status de resposta HTTP OK.
- */
+    /**
+     * Completar cadastro de usuário com as informações informadas no corpo da requisição.
+     * Retorna um objeto UsuarioResponseDTO com as informações do usuário.
+     * O token de autenticação do usuário deve ser informado no header da requisição.
+     *
+     * @param userAuthenticated O objeto UserAuthenticated com o token de autenticação do usuário.
+     * @param request O corpo da requisição CompletarCadastroDTO com as informações do usuário.
+     * @return Um objeto ResponseEntity com o corpo UsuarioResponseDTO e o status de resposta HTTP OK.
+     */
     @PostMapping("/completarCadastro")
     public ResponseEntity<UsuarioResponseDTO> completarCadastro(@AuthenticationPrincipal UserAuthenticated userAuthenticated, @RequestBody @Valid CompletarCadastroDTO request) {
         Usuario usuarioCompleto = authService.completarCadastro(request, userAuthenticated.id());
@@ -131,11 +135,11 @@ public class AuthController {
         return ResponseEntity.ok(novoUsuario.toResponseDTO());
     }
 
-/**
- * Retorna as informações do usuário logado.
- * O token de autenticação do usuário deve ser informado no header da requisição.
- * @return Um objeto ResponseEntity com o corpo UsuarioResponseDTO e o status de resposta HTTP OK.
- */
+    /**
+     * Retorna as informações do usuário logado.
+     * O token de autenticação do usuário deve ser informado no header da requisição.
+     * @return Um objeto ResponseEntity com o corpo UsuarioResponseDTO e o status de resposta HTTP OK.
+     */
     @GetMapping("/me")
     public ResponseEntity<UsuarioResponseDTO> getMe(@AuthenticationPrincipal UserAuthenticated userAuthenticated) {
         if(userAuthenticated == null) {
@@ -148,16 +152,16 @@ public class AuthController {
             Boolean possuiVeiculo = veiculoRepository.existsByUsuarioIdAndAtivo(usuarioIdFromToken, true);
             response.setVeiculoCadastrado(possuiVeiculo);
         }
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(criptoUtils.decrypt(response));
     }
 
-/**
- * Realiza logout do usuário logado.
- * O token de autenticação do usuário deve ser informado no header da requisição.
- * Após a chamada dessa rota, o token de autenticação do usuário não será mais válido.
- * @param response O objeto HttpServletResponse que será usado para remover o cookie com o token de autenticação.
- * @return Um objeto ResponseEntity com o corpo Void e o status de resposta HTTP NO CONTENT.
- */
+    /**
+     * Realiza logout do usuário logado.
+     * O token de autenticação do usuário deve ser informado no header da requisição.
+     * Após a chamada dessa rota, o token de autenticação do usuário não será mais válido.
+     * @param response O objeto HttpServletResponse que será usado para remover o cookie com o token de autenticação.
+     * @return Um objeto ResponseEntity com o corpo Void e o status de resposta HTTP NO CONTENT.
+     */
     @PreAuthorize("isAuthenticated()")
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(HttpServletResponse response) {
@@ -201,13 +205,13 @@ public class AuthController {
         }
     }
 
-/**
- * Reenvia o código de ativação para o email ou CPF informado.
- * 
- * @param request o objeto ResendCodeRequest com os dados do email ou CPF.
- * @return uma resposta com o status de sucesso ou erro.
- * 
- */
+    /**
+     * Reenvia o código de ativação para o email ou CPF informado.
+     * 
+     * @param request o objeto ResendCodeRequest com os dados do email ou CPF.
+     * @return uma resposta com o status de sucesso ou erro.
+     * 
+     */
     @PostMapping("/resend-code")
     public ResponseEntity<ApiResponse> resendCode(@RequestBody @Valid ResendCodeRequest request) {
         try {
@@ -252,16 +256,16 @@ public class AuthController {
     }
 
 
-/**
- * Reenvia o código de recuperação de senha para o email ou CPF informado.
- * Se o email ou CPF estiver cadastrado, o usuário receberá um código de recuperação para redefinir sua senha.
- * A resposta será um objeto ApiResponse com o status de sucesso ou erro.
- * Se o email ou CPF não estiver cadastrado, a resposta será um objeto ApiResponse com uma mensagem genérica para não expor se o email existe.
- * 
- * @param request o objeto ResetPasswordRequest com os dados do email ou CPF e do código de recuperação.
- * @return uma resposta com o status de sucesso ou erro.
- * 
- */
+    /**
+     * Reenvia o código de recuperação de senha para o email ou CPF informado.
+     * Se o email ou CPF estiver cadastrado, o usuário receberá um código de recuperação para redefinir sua senha.
+     * A resposta será um objeto ApiResponse com o status de sucesso ou erro.
+     * Se o email ou CPF não estiver cadastrado, a resposta será um objeto ApiResponse com uma mensagem genérica para não expor se o email existe.
+     * 
+     * @param request o objeto ResetPasswordRequest com os dados do email ou CPF e do código de recuperação.
+     * @return uma resposta com o status de sucesso ou erro.
+     * 
+     */
     @PostMapping("/reset-password")
     public ResponseEntity<ApiResponse> resetPassword(@RequestBody @Valid ResetPasswordRequest request) {
         try {

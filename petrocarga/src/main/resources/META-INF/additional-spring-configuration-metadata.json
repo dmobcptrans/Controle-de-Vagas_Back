@@ -84,6 +84,21 @@
             "name": "google.client-id",
             "type": "java.lang.String",
             "description": "A description for 'google.client-id'"
+        },
+        {
+            "name": "app.security.aes-criptography.active-key-version",
+            "type": "java.lang.String",
+            "description": "A description for 'app.security.aes-criptography.active-key-version'"
+        },
+        {
+            "name": "app.security.aes-criptography.keys.1",
+            "type": "java.lang.String",
+            "description": "A description for 'app.security.aes-criptography.keys.1'"
+        },
+        {
+            "name": "app.security.aes-criptography.pepper",
+            "type": "java.lang.String",
+            "description": "A description for 'app.security.aes-criptography.pepper'"
         }
     ]
 }

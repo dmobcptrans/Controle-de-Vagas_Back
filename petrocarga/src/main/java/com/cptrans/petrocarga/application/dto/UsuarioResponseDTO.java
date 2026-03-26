@@ -38,8 +38,8 @@ public class UsuarioResponseDTO {
     public UsuarioResponseDTO(Usuario usuario) {
         this.id = usuario.getId();
         this.nome = usuario.getNome();
-        this.cpf = usuario.getCpfLast5();
-        this.telefone = usuario.getTelefoneLast4();
+        this.cpf = usuario.getCpfCripto();
+        this.telefone = usuario.getTelefoneCripto();
         this.email = usuario.getEmailCripto();
         this.permissao = usuario.getPermissao();
         this.criadoEm = usuario.getCriadoEm();
@@ -68,8 +68,8 @@ public class UsuarioResponseDTO {
         return cpf;
     }
 
-    public void setCpf(String cpfLast5) {
-        this.cpf = cpfLast5;
+    public void setCpf(String cpfCripto) {
+        this.cpf = cpfCripto;
     }
 
     public String getTelefone() {

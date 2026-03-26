@@ -202,7 +202,7 @@ public class UsuarioService {
             throw new IllegalArgumentException("Informe um email OU CPF.");
         }
         // Busca usuário pelo email (silenciosamente ignora se não existir por segurança)
-        Optional<Usuario> optUsuario = usuarioRepository.findByEmailOrCpfHashAndAtivo(email, cpf == null ? null : hashService.hash(cpf), true);
+        Optional<Usuario> optUsuario = usuarioRepository.findByEmailHashOrCpfHashAndAtivo(email == null ? null : hashService.hash(email), cpf == null ? null : hashService.hash(cpf), true);
         
         if (optUsuario.isEmpty()) {
             // Por segurança, não revelamos se o email/cpf existe ou não

@@ -5,6 +5,8 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -23,7 +25,9 @@ public interface ReservaRepository extends JpaRepository<Reserva, UUID> {
     public List<Reserva> findByVagaAndStatus(Vaga vaga, StatusReservaEnum status);
     public List<Reserva> findByVagaAndStatusIn(Vaga vaga, List<StatusReservaEnum> status);
     public List<Reserva> findByCriadoPor(Usuario criadoPor);
+    public Page<Reserva> findByCriadoPor(Usuario criadoPor, Pageable pageable);
     public List<Reserva> findByCriadoPorAndStatusIn(Usuario criadoPor, List<StatusReservaEnum> status);
+    public Page<Reserva> findByCriadoPorAndStatusIn(Usuario criadoPor, List<StatusReservaEnum> status, Pageable pageable);
     public List<Reserva> findByStatusIn(List<StatusReservaEnum> status);
     public List<Reserva> findByVagaAndStatusAndInicio(Vaga vaga, StatusReservaEnum status, OffsetDateTime data);
     public List<Reserva> findByVeiculoPlacaIgnoringCaseAndStatusIn(String placa, List<StatusReservaEnum> status);

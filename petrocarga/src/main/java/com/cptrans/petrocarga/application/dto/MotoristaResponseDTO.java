@@ -22,7 +22,7 @@ public class MotoristaResponseDTO {
         this.id = motorista.getId();
         this.usuario = new UsuarioResponseDTO(motorista.getUsuario());
         this.tipoCnh = motorista.getTipoCnh();
-        this.numeroCnh = motorista.getCnhLast4();
+        this.numeroCnh = motorista.getCnhCripto();
         this.dataValidadeCnh = motorista.getDataValidadeCnh();
         if (motorista.getEmpresa() != null) {
             this.empresaId = motorista.getEmpresa().getId();
