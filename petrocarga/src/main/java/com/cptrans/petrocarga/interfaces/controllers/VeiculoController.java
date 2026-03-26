@@ -45,7 +45,7 @@ public class VeiculoController {
     @GetMapping
     public ResponseEntity<List<VeiculoResponseDTO>> getAllVeiculos() {
         List<VeiculoResponseDTO> veiculos = veiculoService.findAll().stream()
-                .map(veiculo -> criptoUtils.decrypt(veiculo.toResponseDTO()))
+                .map(veiculo -> criptoUtils.decrypt(veiculo.toResponseDTO(), veiculo.getUsuario().getPersonalDataKeyVersion()))
                 .collect(Collectors.toList());
         return ResponseEntity.ok(veiculos);
     }
@@ -61,7 +61,7 @@ public class VeiculoController {
     @GetMapping("/usuario/{usuarioId}")
     public ResponseEntity<List<VeiculoResponseDTO>> getVeiculoByUsuarioId(@PathVariable UUID usuarioId) {
         List<VeiculoResponseDTO> veiculos = veiculoService.findByUsuarioId(usuarioId).stream()
-                .map(veiculo -> criptoUtils.decrypt(veiculo.toResponseDTO()))
+                .map(veiculo -> criptoUtils.decrypt(veiculo.toResponseDTO(), veiculo.getUsuario().getPersonalDataKeyVersion()))
                 .collect(Collectors.toList());
         return ResponseEntity.ok(veiculos);
     }
@@ -92,7 +92,7 @@ public class VeiculoController {
     @GetMapping("/{id}")
     public ResponseEntity<VeiculoResponseDTO> getVeiculoById(@PathVariable UUID id) {
         Veiculo veiculo = veiculoService.findById(id);
-        return ResponseEntity.ok(criptoUtils.decrypt(veiculo.toResponseDTO()));
+        return ResponseEntity.ok(criptoUtils.decrypt(veiculo.toResponseDTO(), veiculo.getUsuario().getPersonalDataKeyVersion()));
     }
 
     /**

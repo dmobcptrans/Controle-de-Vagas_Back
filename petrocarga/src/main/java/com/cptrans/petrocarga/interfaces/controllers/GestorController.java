@@ -22,6 +22,7 @@ import com.cptrans.petrocarga.application.dto.GestorRequestDTO;
 import com.cptrans.petrocarga.application.dto.UsuarioPATCHRequestDTO;
 import com.cptrans.petrocarga.application.dto.UsuarioResponseDTO;
 import com.cptrans.petrocarga.application.usecase.GestorService;
+import com.cptrans.petrocarga.domain.entities.Usuario;
 import com.cptrans.petrocarga.shared.utils.CriptoUtils;
 
 import jakarta.validation.Valid;
@@ -71,7 +72,9 @@ public class GestorController {
     @PreAuthorize("#usuarioId == authentication.principal.id or hasRole('ADMIN')")
     @GetMapping("/{usuarioId}")
     public ResponseEntity<UsuarioResponseDTO> getGestorById(@PathVariable UUID usuarioId) {
-        return ResponseEntity.ok(criptoUtils.decrypt(gestorService.findByUsuarioId(usuarioId).toResponseDTO()));
+        Usuario gestor = gestorService.findByUsuarioId(usuarioId);
+        UsuarioResponseDTO response = gestor.toResponseDTO();
+        return ResponseEntity.ok(criptoUtils.decrypt(response, gestor.getPersonalDataKeyVersion()));
     }
 
     /**

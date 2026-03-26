@@ -302,11 +302,11 @@ public class UsuarioService {
         return usuarioRepository.findAll(GestorSpecification.filtrar(filtros));
     }
 
-    @Transactional
     public Usuario createMotoristaByGoogleAccount(String name, String email, String googleId){
         Usuario novoUsuario = new Usuario();
         novoUsuario.setAtivo(true);
         novoUsuario.setEmailHash(hashService.hash(email));
+        novoUsuario.setEmailCripto(criptoService.encrypt(email));
         novoUsuario.setNome(name);
         novoUsuario.setGoogleId(googleId);
         novoUsuario.setProvider(UsuarioProviderEnum.GOOGLE);

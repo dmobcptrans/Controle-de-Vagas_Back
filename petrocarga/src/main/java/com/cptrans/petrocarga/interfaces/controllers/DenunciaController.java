@@ -80,9 +80,9 @@ public class DenunciaController {
     @GetMapping("all")
     public ResponseEntity<List<DenunciaResponseDTO>> getAll(@RequestParam(required = false) UUID vagaId, @RequestParam(required = false) List<StatusDenunciaEnum> listaStatus, @RequestParam(required = false) List<TipoDenunciaEnum> listaTipos) {
         if(vagaId != null || listaStatus != null || listaTipos != null) {
-            return ResponseEntity.ok().body(denunciaService.findAllWithFilters(vagaId, listaStatus, listaTipos).stream().map(denuncia -> criptoUtils.decrypt(denuncia.toResponseDTO())).collect(Collectors.toList()));
+            return ResponseEntity.ok().body(denunciaService.findAllWithFilters(vagaId, listaStatus, listaTipos).stream().map(denuncia -> criptoUtils.decrypt(denuncia.toResponseDTO(), denuncia.getCriadoPor().getPersonalDataKeyVersion())).collect(Collectors.toList()));
         }
-        return ResponseEntity.ok().body(denunciaService.findAll().stream().map(denuncia -> criptoUtils.decrypt(denuncia.toResponseDTO())).collect(Collectors.toList()));
+        return ResponseEntity.ok().body(denunciaService.findAll().stream().map(denuncia -> criptoUtils.decrypt(denuncia.toResponseDTO(), denuncia.getCriadoPor().getPersonalDataKeyVersion())).collect(Collectors.toList()));
     }
 
 
@@ -95,8 +95,9 @@ public class DenunciaController {
      */
     @GetMapping("{denunciaId}")
     public ResponseEntity<DenunciaResponseDTO> getDenuncia(@AuthenticationPrincipal UserAuthenticated userAuthenticated, @PathVariable UUID denunciaId) {
-        DenunciaResponseDTO response = denunciaService.findByIdAutenticado(userAuthenticated, denunciaId).toResponseDTO();
-        return ResponseEntity.ok().body(criptoUtils.decrypt(response));
+        Denuncia denuncia = denunciaService.findByIdAutenticado(userAuthenticated, denunciaId);
+        DenunciaResponseDTO response = denuncia.toResponseDTO();
+        return ResponseEntity.ok().body(criptoUtils.decrypt(response, denuncia.getCriadoPor().getPersonalDataKeyVersion()));
     }
 
     /**
@@ -115,7 +116,7 @@ public class DenunciaController {
     public ResponseEntity<List<DenunciaResponseDTO>> getDenunciasByUsuario(@PathVariable UUID usuarioId, @RequestParam(required = false) StatusDenunciaEnum status) {
         if(status != null) {
             return ResponseEntity.ok().body(denunciaService.findAllByUsuarioIdAndStatus(usuarioId, status).stream()
-            .map(denuncia -> criptoUtils.decrypt(denuncia.toResponseDTO())).collect(Collectors.toList()));
+            .map(denuncia -> criptoUtils.decrypt(denuncia.toResponseDTO(), denuncia.getCriadoPor().getPersonalDataKeyVersion())).collect(Collectors.toList()));
         }
         return ResponseEntity.ok().body(denunciaService.findAllByUsuarioId(usuarioId).stream().map(DenunciaResponseDTO::new).collect(Collectors.toList()));
     }

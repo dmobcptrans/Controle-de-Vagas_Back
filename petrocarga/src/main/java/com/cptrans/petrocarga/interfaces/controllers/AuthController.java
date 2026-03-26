@@ -152,7 +152,7 @@ public class AuthController {
             Boolean possuiVeiculo = veiculoRepository.existsByUsuarioIdAndAtivo(usuarioIdFromToken, true);
             response.setVeiculoCadastrado(possuiVeiculo);
         }
-        return ResponseEntity.ok(criptoUtils.decrypt(response));
+        return ResponseEntity.ok(criptoUtils.decrypt(response, usuarioLogado.getPersonalDataKeyVersion()));
     }
 
     /**

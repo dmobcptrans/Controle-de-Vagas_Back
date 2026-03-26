@@ -94,9 +94,7 @@ public class AuthService {
         Optional<Usuario> usuario = usuarioRepository.findByEmailHashOrGoogleId(hashService.hash(email), googleId);
 
         if (!usuario.isPresent()) {
-
             Usuario novoUsuario = usuarioService.createMotoristaByGoogleAccount(name, email, googleId);
-
             String jwt = jwtService.gerarToken(novoUsuario);
 
             return new AuthResponseDTO(novoUsuario.toResponseDTO(), jwt);
@@ -116,7 +114,6 @@ public class AuthService {
             usuario.get().setProvider(UsuarioProviderEnum.GOOGLE);
             usuarioRepository.save(usuario.get());
         }
-
         String jwt = jwtService.gerarToken(usuario.get());
 
         return new AuthResponseDTO(usuario.get().toResponseDTO(), jwt);

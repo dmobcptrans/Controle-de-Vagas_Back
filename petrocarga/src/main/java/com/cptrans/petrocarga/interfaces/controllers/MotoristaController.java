@@ -61,7 +61,7 @@ public class MotoristaController {
         if(filtros.nome() != null || filtros.telefone() != null || filtros.cnh() != null || filtros.ativo() != null) {
             List<MotoristaResponseDTO> motoristasFiltrados = motoristaService.findAllWithFiltros(filtros).stream()
                     .map(motorista -> {
-                        MotoristaResponseDTO response = criptoUtils.decrypt(motorista.toResponseDTO());
+                        MotoristaResponseDTO response = criptoUtils.decrypt(motorista.toResponseDTO(), motorista.getUsuario().getPersonalDataKeyVersion());
                         return response;
                     })
                     .collect(Collectors.toList());
@@ -69,7 +69,7 @@ public class MotoristaController {
         }
         List<MotoristaResponseDTO> motoristas = motoristaService.findAll().stream()
                 .map(motorista -> {
-                    MotoristaResponseDTO response = criptoUtils.decrypt(motorista.toResponseDTO());
+                    MotoristaResponseDTO response = criptoUtils.decrypt(motorista.toResponseDTO(), motorista.getUsuario().getPersonalDataKeyVersion());
                     return response;
                 })
                 .collect(Collectors.toList());
@@ -88,7 +88,7 @@ public class MotoristaController {
     @GetMapping("/{usuarioId}")
     public ResponseEntity<MotoristaResponseDTO> getMotoristaById(@PathVariable UUID usuarioId, @RequestParam(required = false) Boolean ativo) {
         Motorista motorista = motoristaService.findByUsuarioIdAndAtivo(usuarioId, ativo);
-        MotoristaResponseDTO response = criptoUtils.decrypt(motorista.toResponseDTO());
+        MotoristaResponseDTO response = criptoUtils.decrypt(motorista.toResponseDTO(), motorista.getUsuario().getPersonalDataKeyVersion());
         return ResponseEntity.ok(response);
     }
 
