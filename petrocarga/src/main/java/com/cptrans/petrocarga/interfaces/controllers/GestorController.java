@@ -53,12 +53,12 @@ public class GestorController {
         if(nome != null || telefone != null || email != null || ativo != null) {
             GestorFiltrosDTO filtros = new GestorFiltrosDTO(nome, telefone, email, ativo);
             return ResponseEntity.ok(gestorService.findAllWithFiltros(filtros).stream()
-                    .map(gestor -> gestor.toResponseDTO())
+                    .map(gestor -> criptoUtils.decrypt(gestor.toResponseDTO(), gestor.getPersonalDataKeyVersion()))
                     .toList());
         }
 
         List<UsuarioResponseDTO> gestores = gestorService.findAll().stream()
-                .map(gestor -> gestor.toResponseDTO())
+                .map(gestor -> criptoUtils.decrypt(gestor.toResponseDTO(), gestor.getPersonalDataKeyVersion()))
                 .toList();
         return ResponseEntity.ok(gestores);
     }
