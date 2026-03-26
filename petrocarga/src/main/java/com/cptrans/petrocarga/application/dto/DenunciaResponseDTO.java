@@ -37,7 +37,7 @@ public class DenunciaResponseDTO {
     public DenunciaResponseDTO(Denuncia denuncia){
         this.id = denuncia.getId();
         this.criadoPorId = denuncia.getCriadoPor().getId();
-        this.telefoneMotorista = denuncia.getReserva().getMotorista().getUsuario().getTelefoneLast4();
+        this.telefoneMotorista = denuncia.getReserva().getMotorista().getUsuario().getTelefoneCripto();
         this.vagaId = denuncia.getVaga().getId();
         this.reservaId = denuncia.getReserva().getId();
         this.descricao = denuncia.getDescricao();
@@ -125,6 +125,10 @@ public class DenunciaResponseDTO {
 
     public String getTelefoneMotorista() {
         return telefoneMotorista;
+    }
+
+    public void setTelefoneMotorista(String telefoneMotorista) {
+        this.telefoneMotorista = telefoneMotorista;
     }
 
     public UUID getVeiculoId() {

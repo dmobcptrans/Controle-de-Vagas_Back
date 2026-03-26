@@ -15,15 +15,15 @@ import com.cptrans.petrocarga.domain.enums.PermissaoEnum;
 
 @Repository
 public interface UsuarioRepository extends JpaRepository<Usuario, UUID>, JpaSpecificationExecutor<Usuario> {
-    public Optional<Usuario> findByEmail(String email);
-    public Optional<Usuario> findByEmailOrGoogleId(String email, String google_id);
-    public Optional<Usuario> findByEmailOrCpfHash(String email, String cpfHash);
+    public Optional<Usuario> findByEmailHash(String emailHash);
+    public Optional<Usuario> findByEmailHashOrGoogleId(String emailHash, String google_id);
+    public Optional<Usuario> findByEmailHashOrCpfHash(String emailHash, String cpfHash);
     public Optional<Usuario> findByCpfHash(String cpfHash);
-    public Boolean existsByEmail(String email);
+    public Boolean existsByEmailHash(String emailHash);
     public Boolean existsByCpfHash(String cpfHash);
     public List<Usuario> findByPermissao(PermissaoEnum permissao);
     public List<Usuario> findByPermissaoAndAtivo(PermissaoEnum permissao, Boolean ativo);
     public Optional<Usuario> findByIdAndAtivo(UUID id, Boolean ativo);
-    @Query("SELECT u FROM Usuario u WHERE (u.email = :email OR u.cpfHash = :cpfHash) AND u.ativo = :ativo")
-    public Optional<Usuario> findByEmailOrCpfHashAndAtivo(@Param("email") String email, @Param("cpfHash") String cpfHash, @Param("ativo") Boolean ativo);
+    @Query("SELECT u FROM Usuario u WHERE (u.emailHash = :emailHash OR u.cpfHash = :cpfHash) AND u.ativo = :ativo")
+    public Optional<Usuario> findByEmailHashOrCpfHashAndAtivo(@Param("emailHash") String emailHash, @Param("cpfHash") String cpfHash, @Param("ativo") Boolean ativo);
 }

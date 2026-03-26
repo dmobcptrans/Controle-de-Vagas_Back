@@ -59,7 +59,7 @@ public class AuthService {
         if((request.getEmail() == null && request.getCpf() == null) || (request.getEmail() != null && request.getCpf() != null)) throw new IllegalArgumentException("Informe um email OU CPF.");
        
         
-        Usuario usuario = usuarioRepository.findByEmailOrCpfHash(request.getEmail(), request.getCpf() == null ? null : hashService.hash(request.getCpf())).orElseThrow(() -> new IllegalArgumentException("Credenciais inválidas."));
+        Usuario usuario = usuarioRepository.findByEmailHashOrCpfHash(request.getEmail() == null ? null : hashService.hash(request.getEmail()), request.getCpf() == null ? null : hashService.hash(request.getCpf())).orElseThrow(() -> new IllegalArgumentException("Credenciais inválidas."));
 
         if(usuario.isAtivo().equals(false)) {
             throw new IllegalArgumentException("Usuário desativado.");
@@ -91,7 +91,7 @@ public class AuthService {
         String googleId = payload.getSubject();
         String name = (String) payload.get("name");
 
-        Optional<Usuario> usuario = usuarioRepository.findByEmailOrGoogleId(email, googleId);
+        Optional<Usuario> usuario = usuarioRepository.findByEmailHashOrGoogleId(hashService.hash(email), googleId);
 
         if (!usuario.isPresent()) {
 

@@ -42,9 +42,6 @@ public class Usuario implements UserDetails{
     @Column(name = "cpf_cripto", nullable = false)
     private String cpfCripto;
 
-    @Column(name = "cpf_key_version", nullable = false)
-    private Integer cpfKeyVersion;
-
     @Column(name = "cpf_last5", nullable = false)
     private String cpfLast5;
 
@@ -57,11 +54,11 @@ public class Usuario implements UserDetails{
     @Column(name = "telefone_last4", nullable = true)
     private String telefoneLast4;
 
-    @Column(name = "telefone_key_version", nullable = false)
-    private Integer telefoneKeyVersion;
+    @Column(name = "email_hash", nullable = false, unique = true)
+    private String emailHash;
 
-    @Column(nullable = false, unique = true)
-    private String email;
+    @Column(name = "email_cripto", nullable = false)
+    private String emailCripto;
 
     @Column(nullable = false)
     private String senha;
@@ -101,6 +98,9 @@ public class Usuario implements UserDetails{
     @Enumerated(EnumType.STRING)
     private UsuarioProviderEnum provider;
 
+    @Column(name = "personal_data_key_version", nullable = false)
+    private Integer personalDataKeyVersion;
+
     // Constructors
     public Usuario() {
         this.criadoEm = OffsetDateTime.now();
@@ -113,7 +113,7 @@ public class Usuario implements UserDetails{
         this.nome = nome;
         this.cpfHash = cpf;
         this.telefoneHash = telefone;
-        this.email = email;
+        this.emailHash = email;
         this.senha = senha;
         this.permissao = permissao;
         this.criadoEm = OffsetDateTime.now();
@@ -163,20 +163,20 @@ public class Usuario implements UserDetails{
         this.telefoneLast4 = telefoneLast4;
     }
 
-    public Integer getTelefoneKeyVersion() {
-        return telefoneKeyVersion;
+    public String getEmailHash() {
+        return emailHash;
     }
 
-    public void setTelefoneKeyVersion(Integer telefoneKeyVersion) {
-        this.telefoneKeyVersion = telefoneKeyVersion;
+    public void setEmailHash(String emailHash) {
+        this.emailHash = emailHash;
     }
 
-    public String getEmail() {
-        return email;
+    public String getEmailCripto() {
+        return emailCripto;
     }
 
-    public void setEmail(String email) {
-        this.email = email;
+    public void setEmailCripto(String emailCripto) {
+        this.emailCripto = emailCripto;
     }
 
     public String getSenha() {
@@ -275,14 +275,6 @@ public class Usuario implements UserDetails{
         this.cpfCripto = cpfCripto;
     }
 
-    public Integer getCpfKeyVersion() {
-        return cpfKeyVersion;
-    }
-
-    public void setCpfKeyVersion(Integer cpfKeyVersion) {
-        this.cpfKeyVersion = cpfKeyVersion;
-    }
-
     public String getCpfLast5() {
         return cpfLast5;
     }
@@ -311,8 +303,16 @@ public class Usuario implements UserDetails{
         this.provider = provider;
     }
 
+    public Integer getPersonalDataKeyVersion() {
+        return personalDataKeyVersion;
+    }
+
+    public void setPersonalDataKeyVersion(Integer personalDataKeyVersion) {
+        this.personalDataKeyVersion = personalDataKeyVersion;
+    }
+
     public UsuarioResponseDTO toResponseDTO() {
-        return new UsuarioResponseDTO(id, nome, cpfLast5, telefoneLast4, email, permissao, criadoEm, ativo, desativadoEm);
+        return new UsuarioResponseDTO(id, nome, cpfCripto, telefoneCripto, emailCripto, permissao, criadoEm, ativo, desativadoEm);
     }
 
     @Override
@@ -327,6 +327,6 @@ public class Usuario implements UserDetails{
 
     @Override
     public String getUsername() {
-       return email;
+       return emailCripto;
     }
 }

@@ -21,6 +21,7 @@ import com.cptrans.petrocarga.application.dto.VeiculoRequestDTO;
 import com.cptrans.petrocarga.application.dto.VeiculoResponseDTO;
 import com.cptrans.petrocarga.application.usecase.VeiculoService;
 import com.cptrans.petrocarga.domain.entities.Veiculo;
+import com.cptrans.petrocarga.shared.utils.CriptoUtils;
 
 import jakarta.validation.Valid;
 
@@ -30,20 +31,21 @@ public class VeiculoController {
 
     @Autowired
     private VeiculoService veiculoService;
-
-/**
- * Retorna uma lista de todos os veículos registrados.,
- * 
- * Só permite que os veículos sejam acessados por um usuário autenticado com permissão de ADMIN ou GESTOR.
- * 
- * @return lista de veículos encontrados com status ok
- * 
- */
+    @Autowired
+    private CriptoUtils criptoUtils;
+    /**
+     * Retorna uma lista de todos os veículos registrados.,
+     * 
+     * Só permite que os veículos sejam acessados por um usuário autenticado com permissão de ADMIN ou GESTOR.
+     * 
+     * @return lista de veículos encontrados com status ok
+     * 
+     */
     @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR')")
     @GetMapping
     public ResponseEntity<List<VeiculoResponseDTO>> getAllVeiculos() {
         List<VeiculoResponseDTO> veiculos = veiculoService.findAll().stream()
-                .map(VeiculoResponseDTO::new)
+                .map(veiculo -> criptoUtils.decrypt(veiculo.toResponseDTO()))
                 .collect(Collectors.toList());
         return ResponseEntity.ok(veiculos);
     }
@@ -58,7 +60,9 @@ public class VeiculoController {
     @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR', 'MOTORISTA', 'EMPRESA')")
     @GetMapping("/usuario/{usuarioId}")
     public ResponseEntity<List<VeiculoResponseDTO>> getVeiculoByUsuarioId(@PathVariable UUID usuarioId) {
-        List<VeiculoResponseDTO> veiculos = veiculoService.findByUsuarioId(usuarioId).stream().map(VeiculoResponseDTO::new).collect(Collectors.toList());
+        List<VeiculoResponseDTO> veiculos = veiculoService.findByUsuarioId(usuarioId).stream()
+                .map(veiculo -> criptoUtils.decrypt(veiculo.toResponseDTO()))
+                .collect(Collectors.toList());
         return ResponseEntity.ok(veiculos);
     }
 
@@ -88,7 +92,7 @@ public class VeiculoController {
     @GetMapping("/{id}")
     public ResponseEntity<VeiculoResponseDTO> getVeiculoById(@PathVariable UUID id) {
         Veiculo veiculo = veiculoService.findById(id);
-        return ResponseEntity.ok(veiculo.toResponseDTO());
+        return ResponseEntity.ok(criptoUtils.decrypt(veiculo.toResponseDTO()));
     }
 
     /**
