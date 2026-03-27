@@ -29,7 +29,7 @@ public class AgenteRequestDTO {
     @Email(message="Email inválido.")
     private String email;
 
-    @NotBlank
+    @Size(min = 4, max = 4, message = "Matrícula deve conter 4 dígitos.")
     private String matricula;
 
     public Agente toEntity() {
