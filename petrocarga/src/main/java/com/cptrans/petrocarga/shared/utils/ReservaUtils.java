@@ -1,5 +1,6 @@
 package com.cptrans.petrocarga.shared.utils;
 
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,12 +38,25 @@ public class ReservaUtils {
 
     public static void validarTempoMaximoReserva(ReservaDTO novaReserva, Vaga vagaNovaReserva) {
         OffsetDateTime agora = OffsetDateTime.now(DateUtils.FUSO_BRASIL);
-        if(novaReserva.getFim().toInstant().isBefore(novaReserva.getInicio().toInstant())) {
-            throw new IllegalArgumentException("Horário de Fim da reserva deve ser posterior ao horário de início.");
+        if(novaReserva.getFim().toInstant().isBefore(novaReserva.getInicio().toInstant()) || novaReserva.getFim().toInstant().isBefore(agora.toInstant()) ) {
+            throw new IllegalArgumentException("Horário de Fim da reserva deve ser posterior ao horário de início e do horário atual.");
         }
 
-        if(novaReserva.getInicio().toInstant().isBefore(agora.toInstant()) || novaReserva.getFim().toInstant().isBefore(agora.toInstant())) {
-            throw new IllegalArgumentException("Horário da reserva deve ser posterior ao horário atual.");
+        if(novaReserva.getInicio().toInstant().isBefore(agora.toInstant())) {
+            LocalDate dataAgora = agora.toLocalDate();
+            LocalDate dataInicio =  novaReserva.getInicio().toLocalDate();
+            LocalDate dataFim = novaReserva.getFim().toLocalDate();
+            if(novaReserva.getCriadoPor().getPermissao().equals(PermissaoEnum.AGENTE)){
+                if (dataAgora.equals(dataInicio) && dataAgora.equals(dataFim) && (agora.getHour() == novaReserva.getInicio().getHour())) {
+                    Integer diferencaMinutos = agora.getMinute() - novaReserva.getInicio().getMinute();
+                    if (diferencaMinutos >= 2 || diferencaMinutos < 0){
+                        throw new IllegalArgumentException("Horário da reserva deve ser posterior ao horário atual." + novaReserva.getInicio().atZoneSameInstant(DateUtils.FUSO_BRASIL) + "  " +  novaReserva.getFim().atZoneSameInstant(DateUtils.FUSO_BRASIL) + "  " + agora.atZoneSameInstant(DateUtils.FUSO_BRASIL));
+                    }else{
+                        return;
+                    }
+                }
+            }
+            throw new IllegalArgumentException("Horário da reserva deve ser posterior ao horário atual." + novaReserva.getInicio().atZoneSameInstant(DateUtils.FUSO_BRASIL) + "  " +  novaReserva.getFim().atZoneSameInstant(DateUtils.FUSO_BRASIL) + "  " + agora.atZoneSameInstant(DateUtils.FUSO_BRASIL));
         }
 
         Integer tempoReservaEmMinutos = (int) (novaReserva.getInicio().toInstant().until(novaReserva.getFim().toInstant(), java.time.temporal.ChronoUnit.MINUTES));
