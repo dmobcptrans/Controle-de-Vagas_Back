@@ -158,16 +158,6 @@ public class UsuarioService {
         return usuarioRepository.save(usuario);
     }
 
-    public String visualizarTelefone(UUID usuarioId){
-        Usuario usuario = findByIdAndAtivo(usuarioId, true);
-        return criptoService.decrypt(usuario.getTelefoneCripto(), usuario.getPersonalDataKeyVersion());
-    }
-
-    public String visualizarCpf(UUID usuarioId){
-        Usuario usuario = findByIdAndAtivo(usuarioId, true);
-        return criptoService.decrypt(usuario.getCpfCripto(), usuario.getPersonalDataKeyVersion());
-    }
-
     @Transactional
     public void resendActivationCode(String email, String cpf) {
         if ((email == null && cpf == null) || (email != null && cpf != null)) {
@@ -353,4 +343,13 @@ public class UsuarioService {
         return usuarioRepository.save(usuarioCadastrado);
 
     }  
+
+    public void reativar(UUID usuarioId){
+        Usuario usuario = usuarioRepository.findByIdAndAtivoAndPermissaoInAndDesativadoEmNotNull(usuarioId, false, List.of(PermissaoEnum.AGENTE, PermissaoEnum.GESTOR))
+            .orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado."));
+
+        usuario.setDesativadoEm(null);
+        usuario.setAtivo(true);
+        usuarioRepository.save(usuario);
+    }
 }

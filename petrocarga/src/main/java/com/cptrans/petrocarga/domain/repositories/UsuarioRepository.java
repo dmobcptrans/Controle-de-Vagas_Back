@@ -24,6 +24,7 @@ public interface UsuarioRepository extends JpaRepository<Usuario, UUID>, JpaSpec
     public List<Usuario> findByPermissao(PermissaoEnum permissao);
     public List<Usuario> findByPermissaoAndAtivo(PermissaoEnum permissao, Boolean ativo);
     public Optional<Usuario> findByIdAndAtivo(UUID id, Boolean ativo);
+    public Optional<Usuario> findByIdAndAtivoAndPermissaoInAndDesativadoEmNotNull(UUID id, Boolean ativo, List<PermissaoEnum> permissoes);
     @Query("SELECT u FROM Usuario u WHERE (u.emailHash = :emailHash OR u.cpfHash = :cpfHash) AND u.ativo = :ativo")
     public Optional<Usuario> findByEmailHashOrCpfHashAndAtivo(@Param("emailHash") String emailHash, @Param("cpfHash") String cpfHash, @Param("ativo") Boolean ativo);
 }

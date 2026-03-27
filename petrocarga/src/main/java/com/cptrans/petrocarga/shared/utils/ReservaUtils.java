@@ -50,13 +50,13 @@ public class ReservaUtils {
                 if (dataAgora.equals(dataInicio) && dataAgora.equals(dataFim) && (agora.getHour() == novaReserva.getInicio().getHour())) {
                     Integer diferencaMinutos = agora.getMinute() - novaReserva.getInicio().getMinute();
                     if (diferencaMinutos >= 2 || diferencaMinutos < 0){
-                        throw new IllegalArgumentException("Horário da reserva deve ser posterior ao horário atual." + novaReserva.getInicio().atZoneSameInstant(DateUtils.FUSO_BRASIL) + "  " +  novaReserva.getFim().atZoneSameInstant(DateUtils.FUSO_BRASIL) + "  " + agora.atZoneSameInstant(DateUtils.FUSO_BRASIL));
+                        throw new IllegalArgumentException("Horário da reserva deve ser posterior ao horário atual.");
                     }else{
                         return;
                     }
                 }
             }
-            throw new IllegalArgumentException("Horário da reserva deve ser posterior ao horário atual." + novaReserva.getInicio().atZoneSameInstant(DateUtils.FUSO_BRASIL) + "  " +  novaReserva.getFim().atZoneSameInstant(DateUtils.FUSO_BRASIL) + "  " + agora.atZoneSameInstant(DateUtils.FUSO_BRASIL));
+            throw new IllegalArgumentException("Horário da reserva deve ser posterior ao horário atual.");
         }
 
         Integer tempoReservaEmMinutos = (int) (novaReserva.getInicio().toInstant().until(novaReserva.getFim().toInstant(), java.time.temporal.ChronoUnit.MINUTES));
@@ -83,8 +83,8 @@ public class ReservaUtils {
                 if(reservaSobrepostas){
                     if(metodoChamador.equals(METODO_PATCH) && motoristaDaReserva.getUsuario().getId().equals(usuarioLogado.getId())){
                         if(tamanhoDisponivelVaga < 0) throw new IllegalArgumentException("Não há espaço suficiente na vaga para a reserva no período solicitado devido a uma reserva existente. Espaço disponível: " + (tamanhoDisponivelVaga + veiculoDaReserva.getComprimento()) + " metros.");
-                        return;
-                    }
+                            return;
+                        }  
                     tamanhoDisponivelVaga -= reserva.getTamanhoVeiculo();
                     if(tamanhoDisponivelVaga < 0) throw new IllegalArgumentException("Não há espaço suficiente na vaga para a reserva no período solicitado devido a uma reserva existente. Espaço disponível: " + (tamanhoDisponivelVaga + veiculoDaReserva.getComprimento()) + " metros.");
                 }
