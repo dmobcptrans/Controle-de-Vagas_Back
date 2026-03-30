@@ -8,6 +8,10 @@ import java.util.UUID;
 
 import org.quartz.SchedulerException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
@@ -107,12 +111,18 @@ public class ReservaRapidaService {
         return reservaRapidaRepository.findByPlacaIgnoringCaseAndStatus(placa, StatusReservaEnum.ATIVA);
     }
 
-    public List<ReservaRapida> findByAgente(Agente agente) {
-        return reservaRapidaRepository.findByAgente(agente);
+    public List<ReservaRapida> findByAgente(UUID agenteId, Integer numeroPagina, Integer tamanhoPagina) {
+        Pageable pageable = PageRequest.of(numeroPagina, tamanhoPagina, Sort.by("inicio").descending());
+
+        Page<ReservaRapida> reservasPage = reservaRapidaRepository.findByAgenteId(agenteId, pageable);
+
+        return reservasPage.getContent();
     }
     
-    public List<ReservaRapida> findByAgenteWithFilters(Agente agente, UUID vagaId, String placaVeiculo, LocalDate data, List<StatusReservaEnum> listaStatus) {
-       return reservaRapidaRepository.findAll(ReservaRapidaSpecification.filtrar(agente.getUsuario().getId(), vagaId, placaVeiculo, data, listaStatus));
+    public List<ReservaRapida> findByAgenteWithFilters(Agente agente, UUID vagaId, String placaVeiculo, LocalDate data, List<StatusReservaEnum> listaStatus, Integer numeroPagina, Integer tamanhoPagina) {
+        Pageable pageable = PageRequest.of(numeroPagina, tamanhoPagina, Sort.by("inicio").descending());
+        Page<ReservaRapida> reservasPage =  reservaRapidaRepository.findAll(ReservaRapidaSpecification.filtrar(agente.getUsuario().getId(), vagaId, placaVeiculo, data, listaStatus), pageable);
+        return reservasPage.getContent();
     }
 
     public ReservaRapida create(ReservaRapida novaReservaRapida) {
