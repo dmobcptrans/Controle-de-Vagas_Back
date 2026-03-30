@@ -5,13 +5,14 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import com.cptrans.petrocarga.domain.entities.Agente;
 import com.cptrans.petrocarga.domain.entities.ReservaRapida;
 import com.cptrans.petrocarga.domain.enums.StatusReservaEnum;
 import com.cptrans.petrocarga.domain.repositories.projections.StayDurationAggProjection;
@@ -22,12 +23,12 @@ public interface ReservaRapidaRepository extends JpaRepository<ReservaRapida, UU
     public List<ReservaRapida> findByVagaId(UUID vagaId);
     public List<ReservaRapida> findByVagaIdAndStatusIn(UUID vagaId, List<StatusReservaEnum> status);
     public List<ReservaRapida> findByPlacaIgnoringCaseAndStatus(String placa, StatusReservaEnum status);
-    public List<ReservaRapida> findByAgente(Agente agente);
-    public List<ReservaRapida> findByAgenteAndVagaId(Agente agente, UUID vagaId);
-    public List<ReservaRapida> findByAgenteAndPlacaIgnoringCase(Agente agente, String placaVeiculo);
-    public List<ReservaRapida> findByAgenteAndStatusIn(Agente agente, List<StatusReservaEnum> listaStatus);
+    public Page<ReservaRapida> findByAgenteId(UUID agenteId, Pageable pageable);
+    public List<ReservaRapida> findByAgenteIdAndVagaId(UUID agenteId, UUID vagaId);
+    public List<ReservaRapida> findByAgenteIdAndPlacaIgnoringCase(UUID agenteId, String placaVeiculo);
+    public List<ReservaRapida> findByAgenteIdAndStatusIn(UUID agenteId, List<StatusReservaEnum> listaStatus);
     public List<ReservaRapida> findByFimGreaterThanAndInicioLessThanAndStatusIn(OffsetDateTime novoInicio, OffsetDateTime novoFim, List<StatusReservaEnum> status);
-    public List<ReservaRapida> findByAgenteAndVagaIdAndPlacaIgnoringCaseAndStatusIn(Agente agente, UUID vagaId, String placaVeiculo, List<StatusReservaEnum> status);
+    public List<ReservaRapida> findByAgenteIdAndVagaIdAndPlacaIgnoringCaseAndStatusIn(UUID agenteId, UUID vagaId, String placaVeiculo, List<StatusReservaEnum> status);
     public Integer countByPlacaIgnoringCase(String placa);
     
     @Query("SELECT COUNT(rr) FROM ReservaRapida rr WHERE rr.status = 'ATIVA' AND rr.inicio BETWEEN :startDate AND :endDate")
