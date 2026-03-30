@@ -23,6 +23,7 @@ import com.cptrans.petrocarga.application.dto.AuthRequestDTO;
 import com.cptrans.petrocarga.application.dto.AuthResponseDTO;
 import com.cptrans.petrocarga.application.dto.CompletarCadastroDTO;
 import com.cptrans.petrocarga.application.dto.ForgotPasswordRequest;
+import com.cptrans.petrocarga.application.dto.GoogleAuthRequestDTO;
 import com.cptrans.petrocarga.application.dto.ResendCodeRequest;
 import com.cptrans.petrocarga.application.dto.ResetPasswordRequest;
 import com.cptrans.petrocarga.application.dto.UsuarioRequestDTO;
@@ -97,8 +98,8 @@ public class AuthController {
      * @return Um objeto ResponseEntity com o corpo AuthResponseDTO e o status de resposta HTTP OK.
      */
     @PostMapping("/loginWithGoogle")
-    public ResponseEntity<AuthResponseDTO> loginWithGoogle(@RequestParam(required = true) String token, HttpServletResponse response) {
-        AuthResponseDTO auth = authService.loginWithGoogle(token);
+    public ResponseEntity<AuthResponseDTO> loginWithGoogle(@RequestBody(required = true) @Valid GoogleAuthRequestDTO googleRequest, HttpServletResponse response) {
+        AuthResponseDTO auth = authService.loginWithGoogle(googleRequest.token());
         ResponseCookie cookie = ResponseCookie.from("auth-token", auth.getToken())
             .httpOnly(true)
             .secure(secure)
