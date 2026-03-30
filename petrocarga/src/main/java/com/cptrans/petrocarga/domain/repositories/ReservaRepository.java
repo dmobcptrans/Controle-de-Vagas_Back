@@ -14,22 +14,21 @@ import org.springframework.stereotype.Repository;
 
 import com.cptrans.petrocarga.domain.entities.Reserva;
 import com.cptrans.petrocarga.domain.entities.Usuario;
-import com.cptrans.petrocarga.domain.entities.Vaga;
 import com.cptrans.petrocarga.domain.enums.StatusReservaEnum;
 import com.cptrans.petrocarga.domain.repositories.projections.StayDurationAggProjection;
 import com.cptrans.petrocarga.domain.repositories.projections.VehicleRouteEventProjection;
 
 @Repository
 public interface ReservaRepository extends JpaRepository<Reserva, UUID> {
-    public List<Reserva> findByVaga(Vaga vaga);
-    public List<Reserva> findByVagaAndStatus(Vaga vaga, StatusReservaEnum status);
-    public List<Reserva> findByVagaAndStatusIn(Vaga vaga, List<StatusReservaEnum> status);
+    public List<Reserva> findByVagaId(UUID vaga);
+    public List<Reserva> findByVagaIdAndStatusIn(UUID vagaId, List<StatusReservaEnum> status);
+    public List<Reserva> findByVagaIdAndStatus(UUID vaga, StatusReservaEnum status);
     public List<Reserva> findByCriadoPor(Usuario criadoPor);
     public Page<Reserva> findByCriadoPor(Usuario criadoPor, Pageable pageable);
     public List<Reserva> findByCriadoPorAndStatusIn(Usuario criadoPor, List<StatusReservaEnum> status);
     public Page<Reserva> findByCriadoPorAndStatusIn(Usuario criadoPor, List<StatusReservaEnum> status, Pageable pageable);
     public List<Reserva> findByStatusIn(List<StatusReservaEnum> status);
-    public List<Reserva> findByVagaAndStatusAndInicio(Vaga vaga, StatusReservaEnum status, OffsetDateTime data);
+    public List<Reserva> findByVagaIdAndStatusAndInicio(UUID vaga, StatusReservaEnum status, OffsetDateTime data);
     public List<Reserva> findByVeiculoPlacaIgnoringCaseAndStatusIn(String placa, List<StatusReservaEnum> status);
     public Integer countByVeiculoPlacaIgnoringCaseAndStatusIn(String placa,List<StatusReservaEnum> status);
     public List<Reserva> findByFimGreaterThanAndInicioLessThanAndStatusIn(OffsetDateTime novoInicio, OffsetDateTime novoFim, List<StatusReservaEnum> status);

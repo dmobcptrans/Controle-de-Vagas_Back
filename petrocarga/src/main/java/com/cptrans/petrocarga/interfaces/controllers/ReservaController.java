@@ -85,10 +85,10 @@ public class ReservaController {
         Vaga vaga = vagaService.findById(vagaId);
         if(placa != null) {
             placa = placa.trim().toUpperCase();
-            List<ReservaDTO> reservas = reservaService.getReservasByVagaDataAndPlaca(vaga, data, placa, status);
+            List<ReservaDTO> reservas = reservaService.getReservasByVagaIdDataAndPlaca(vaga.getId(), data, placa, status);
             return ResponseEntity.ok(reservas);
         }
-        List<ReservaDTO> reservas = reservaService.getReservasByVagaAndData(vaga, data, status);
+        List<ReservaDTO> reservas = reservaService.getReservasByVagaIdAndData(vaga.getId(), data, status);
         return ResponseEntity.ok(reservas);
     }
 

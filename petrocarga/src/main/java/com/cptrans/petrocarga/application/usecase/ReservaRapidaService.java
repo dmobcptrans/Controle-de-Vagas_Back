@@ -73,20 +73,27 @@ public class ReservaRapidaService {
         
     }
 
-    public List<ReservaRapida> findByVagaAndStatusIn(Vaga vaga, List<StatusReservaEnum> status) {
+    public List<ReservaRapida> findByVagaIdAndStatusIn(UUID vagaId, List<StatusReservaEnum> status) {
         if(status == null ) status = new ArrayList<>();
         if(status.isEmpty()) {
-            return reservaRapidaRepository.findByVaga(vaga);
+            return reservaRapidaRepository.findByVagaId(vagaId);
         }
-        return reservaRapidaRepository.findByVagaAndStatusIn(vaga, status);
+        return reservaRapidaRepository.findByVagaIdAndStatusIn(vagaId, status);
     }
 
-    public List<ReservaRapida> findByVagaAndDataAndStatusIn(Vaga vaga, LocalDate data, List<StatusReservaEnum> status) {
-        List<ReservaRapida> reservasRapidas = reservaRapidaRepository.findByVaga(vaga);
+    public List<ReservaRapida> findByVagaIdAndDataAndStatusIn(UUID vagaId, LocalDate data, List<StatusReservaEnum> status) {
+        List<ReservaRapida> reservasRapidas = List.of();
+        
         if(status == null ) status = new ArrayList<>();
+
         if(!status.isEmpty()) {
-            reservasRapidas = reservaRapidaRepository.findByVagaAndStatusIn(vaga, status);
+            reservasRapidas = reservaRapidaRepository.findByVagaIdAndStatusIn(vagaId, status);
+        }else{
+            reservasRapidas = reservaRapidaRepository.findByVagaId(vagaId);
         }
+
+        if (reservasRapidas.isEmpty()) return reservasRapidas;
+
         if(data!=null && reservasRapidas!=null && !reservasRapidas.isEmpty()) {
             return reservasRapidas.stream()
                 .filter(reservaRapida -> DateUtils.toLocalDateInBrazil(reservaRapida.getInicio()).equals(data) || DateUtils.toLocalDateInBrazil(reservaRapida.getFim()).equals(data))
@@ -111,8 +118,8 @@ public class ReservaRapidaService {
     public ReservaRapida create(ReservaRapida novaReservaRapida) {
         Vaga vagaReserva = vagaService.findById(novaReservaRapida.getVaga().getId());
         List<StatusReservaEnum> listaStatus = new ArrayList<>(List.of(StatusReservaEnum.ATIVA, StatusReservaEnum.RESERVADA));
-        List<Reserva>  reservasAtivasNaVaga = reservaRepository.findByVagaAndStatusIn(vagaReserva, listaStatus);
-        List<ReservaRapida> reservasRapidasAtivasNaVaga = findByVagaAndStatusIn(vagaReserva, listaStatus);
+        List<Reserva>  reservasAtivasNaVaga = reservaRepository.findByVagaIdAndStatusIn(vagaReserva.getId(), listaStatus);
+        List<ReservaRapida> reservasRapidasAtivasNaVaga = findByVagaIdAndStatusIn(vagaReserva.getId(), listaStatus);
         UserAuthenticated userAuthenticated = (UserAuthenticated) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Usuario usuarioLogado = usuarioService.findById(userAuthenticated.id());
         if(usuarioLogado.getPermissao().equals(PermissaoEnum.AGENTE)){

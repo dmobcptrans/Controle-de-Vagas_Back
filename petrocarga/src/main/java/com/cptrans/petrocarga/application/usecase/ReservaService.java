@@ -96,23 +96,29 @@ public class ReservaService {
     }
 
     public List<Reserva> findByVagaId(UUID vagaId, List<StatusReservaEnum> status) {
-        Vaga vaga = vagaService.findById(vagaId);
         if(status == null) status = new ArrayList<>();
         if(!status.isEmpty()) {
-            return reservaRepository.findByVagaAndStatusIn(vaga, status);
+            return reservaRepository.findByVagaIdAndStatusIn(vagaId, status);
         }
-        return reservaRepository.findByVaga(vaga);
+        return reservaRepository.findByVagaId(vagaId);
     }
     
     public List<Reserva> findByVagaIdAndDataAndStatusIn(UUID vagaId, LocalDate data, List<StatusReservaEnum> status) {
         Vaga vaga = vagaService.findById(vagaId);
-        List<Reserva> reservas = reservaRepository.findByVaga(vaga);
+        List<Reserva> reservas = List.of();
+
         if (status == null) status = new ArrayList<>();
+
         if(!status.isEmpty()) {
-            reservas = reservaRepository.findByVagaAndStatusIn(vaga, status);
+            reservas = reservaRepository.findByVagaIdAndStatusIn(vaga.getId(), status);
+        } else{
+            reservas = reservaRepository.findByVagaId(vaga.getId());
         }
+
+        if(reservas.isEmpty()) return reservas;
+
         if(data != null) {
-            return reservas.stream().filter(reserva -> DateUtils.toLocalDateInBrazil(reserva.getInicio()).equals(data)).toList();
+            return reservas.stream().filter(reserva -> DateUtils.toLocalDateInBrazil(reserva.getInicio()).equals(data) || DateUtils.toLocalDateInBrazil(reserva.getFim()).equals(data)).toList();
         }
         return reservas;
     }
@@ -175,16 +181,16 @@ public class ReservaService {
     public void checarExcecoesReserva(Reserva novaReserva, Usuario usuarioLogado, Motorista motoristaDaReserva, Veiculo veiculoDaReserva, String metodoChamador) {
         Vaga vagaNovaReserva = novaReserva.getVaga();
         List<StatusReservaEnum> listaStatus = new ArrayList<>(List.of(StatusReservaEnum.ATIVA, StatusReservaEnum.RESERVADA));
-        List<Reserva> reservasAtivasNaVaga = reservaRepository.findByVagaAndStatusIn(vagaNovaReserva, listaStatus);
-        List<ReservaRapida> reservasRapidasAtivasNaVaga = reservaRapidaService.findByVagaAndStatusIn(vagaNovaReserva, listaStatus);
+        List<Reserva> reservasAtivasNaVaga = reservaRepository.findByVagaIdAndStatusIn(vagaNovaReserva.getId(), listaStatus);
+        List<ReservaRapida> reservasRapidasAtivasNaVaga = reservaRapidaService.findByVagaIdAndStatusIn(vagaNovaReserva.getId(), listaStatus);
         ReservaUtils.validarTempoMaximoReserva(novaReserva.toReservaDTO(), vagaNovaReserva);
         reservaUtils.validarEspacoDisponivelNaVaga(novaReserva, usuarioLogado, reservasAtivasNaVaga, reservasRapidasAtivasNaVaga, metodoChamador);
         reservaUtils.validarPermissoesReserva(usuarioLogado, motoristaDaReserva, veiculoDaReserva);
     }
 
-    public List<ReservaDTO> getReservasByVagaAndData(Vaga vaga, LocalDate data, List<StatusReservaEnum> status) {
-        List<Reserva> reservas = findByVagaIdAndDataAndStatusIn(vaga.getId(), data, status);
-        List<ReservaRapida> reservasRapidas = reservaRapidaService.findByVagaAndDataAndStatusIn(vaga, data, status);
+    public List<ReservaDTO> getReservasByVagaIdAndData(UUID vagaId, LocalDate data, List<StatusReservaEnum> status) {
+        List<Reserva> reservas = findByVagaIdAndDataAndStatusIn(vagaId, data, status);
+        List<ReservaRapida> reservasRapidas = reservaRapidaService.findByVagaIdAndDataAndStatusIn(vagaId, data, status);
         List<ReservaDTO> listaFinalReservas = ReservaUtils.juntarReservas(reservas, reservasRapidas);
         return listaFinalReservas;
     }
@@ -196,8 +202,8 @@ public class ReservaService {
         return listaFinalReservas;
     }
 
-    public List<ReservaDTO> getReservasByVagaDataAndPlaca(Vaga vaga, LocalDate data, String placa, List<StatusReservaEnum> status) {
-        List<ReservaDTO> reservas = getReservasByVagaAndData(vaga, data, status);
+    public List<ReservaDTO> getReservasByVagaIdDataAndPlaca(UUID vagaId, LocalDate data, String placa, List<StatusReservaEnum> status) {
+        List<ReservaDTO> reservas = getReservasByVagaIdAndData(vagaId, data, status);
         return reservas.stream()
                 .filter(r -> r.getPlacaVeiculo().equalsIgnoreCase(placa))
                 .toList();
@@ -220,11 +226,14 @@ public class ReservaService {
     public List<Intervalo> getIntervalosBloqueados(Vaga vaga, LocalDate data, TipoVeiculoEnum tipoVeiculo  ) {
         int capacidadeTotal = vaga.getComprimento();
         int comprimentoVeiculoDesejado = tipoVeiculo.getComprimento();
+        
+        if (comprimentoVeiculoDesejado > capacidadeTotal)  throw new IllegalArgumentException("O veículo selecionado é maior do que o tamanho da vaga.");
 
-        List<ReservaDTO> reservas = getReservasByVagaAndData(vaga, data, new ArrayList<>(List.of(StatusReservaEnum.RESERVADA, StatusReservaEnum.ATIVA)));
+        List<ReservaDTO> reservas = getReservasByVagaIdAndData(vaga.getId(), data, new ArrayList<>(List.of(StatusReservaEnum.RESERVADA, StatusReservaEnum.ATIVA)));
         if (reservas.isEmpty()) {
             return List.of(); // nada reservado → nenhum bloqueio
         }
+        
         // 1) coleta todos os pontos de corte
         TreeSet<Instant> pontos = new TreeSet<>();
         reservas.forEach(r -> {

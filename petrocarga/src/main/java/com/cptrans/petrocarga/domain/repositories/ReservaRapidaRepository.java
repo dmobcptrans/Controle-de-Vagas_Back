@@ -13,16 +13,14 @@ import org.springframework.stereotype.Repository;
 
 import com.cptrans.petrocarga.domain.entities.Agente;
 import com.cptrans.petrocarga.domain.entities.ReservaRapida;
-import com.cptrans.petrocarga.domain.entities.Vaga;
 import com.cptrans.petrocarga.domain.enums.StatusReservaEnum;
 import com.cptrans.petrocarga.domain.repositories.projections.StayDurationAggProjection;
 
 @Repository
 public interface ReservaRapidaRepository extends JpaRepository<ReservaRapida, UUID>, JpaSpecificationExecutor<ReservaRapida> {
     public List<ReservaRapida> findByStatusIn(List<StatusReservaEnum> status);
-    public List<ReservaRapida> findByVaga(Vaga vaga);
-    public List<ReservaRapida> findByVagaAndStatus(Vaga vaga, StatusReservaEnum status);
-    public List<ReservaRapida> findByVagaAndStatusIn(Vaga vaga, List<StatusReservaEnum> status);
+    public List<ReservaRapida> findByVagaId(UUID vagaId);
+    public List<ReservaRapida> findByVagaIdAndStatusIn(UUID vagaId, List<StatusReservaEnum> status);
     public List<ReservaRapida> findByPlacaIgnoringCaseAndStatus(String placa, StatusReservaEnum status);
     public List<ReservaRapida> findByAgente(Agente agente);
     public List<ReservaRapida> findByAgenteAndVagaId(Agente agente, UUID vagaId);

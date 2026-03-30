@@ -65,7 +65,7 @@ public class UsuarioController {
      */
     @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR')")
     @PostMapping("/reativar/{id}")
-    ResponseEntity<ApiResponse> reativarUsuario(UUID id){
+    ResponseEntity<ApiResponse> reativarUsuario(@PathVariable("id") UUID id){
         usuarioService.reativar(id);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success("Usuário reativado com sucesso!"));
     }
