@@ -45,7 +45,7 @@ public class Notificacao {
     private boolean lida = false;
 
     @Column(name = "criada_em", nullable = false)
-    private final OffsetDateTime CRIADA_EM = OffsetDateTime.now(DateUtils.FUSO_BRASIL);
+    private final OffsetDateTime criadaEm = OffsetDateTime.now(DateUtils.FUSO_BRASIL);
 
     @Convert(converter = MetadataJsonConverter.class)
     @JdbcTypeCode(SqlTypes.JSON)
@@ -128,7 +128,7 @@ public class Notificacao {
     }
 
     public OffsetDateTime getCriadaEm() {
-        return CRIADA_EM;
+        return criadaEm;
     }
 
     public Map<String, Object> getMetadata() {

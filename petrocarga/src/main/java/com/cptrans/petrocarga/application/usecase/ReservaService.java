@@ -143,7 +143,7 @@ public class ReservaService {
         return reserva;
     }
 
-    public List<Reserva> findByUsuarioId(UUID usuarioId, List<StatusReservaEnum> status, Integer numeroPagina, Integer tamanhoPagina) {
+    public Page<Reserva> findByUsuarioId(UUID usuarioId, List<StatusReservaEnum> status, Integer numeroPagina, Integer tamanhoPagina) {
         Pageable pageable = PageRequest.of(numeroPagina, tamanhoPagina, Sort.by("inicio").descending());
         Page<Reserva> reservasPage;
         Usuario usuario = usuarioService.findById(usuarioId);
@@ -153,7 +153,7 @@ public class ReservaService {
         }else{
             reservasPage = reservaRepository.findByCriadoPor(usuario, pageable);
         }
-        return reservasPage.getContent();
+        return reservasPage;
     }
 
     public Reserva createReserva(Reserva novaReserva) {
