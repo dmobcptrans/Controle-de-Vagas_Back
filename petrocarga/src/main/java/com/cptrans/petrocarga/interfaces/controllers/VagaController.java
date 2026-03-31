@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.cptrans.petrocarga.application.dto.PageResponseDTO;
 import com.cptrans.petrocarga.application.dto.VagaRequestDTO;
 import com.cptrans.petrocarga.application.dto.VagaResponseDTO;
 import com.cptrans.petrocarga.application.usecase.VagaService;
@@ -92,7 +94,7 @@ public class VagaController {
             @ApiResponse(responseCode = "500", description = "Erro interno no servidor")
         }
     )
-    public ResponseEntity<List<VagaResponseDTO>> findAllPaginadas(
+    public ResponseEntity<PageResponseDTO> findAllPaginadas(
             @RequestParam(defaultValue="0") Integer numeroPagina, 
             @RequestParam(defaultValue="10") Integer tamanhoPagina, 
             @RequestParam(defaultValue="endereco.logradouro") String ordenarPor, 
@@ -101,14 +103,9 @@ public class VagaController {
             @Parameter(description = "Filtrar vagas pelo nome da rua (logradouro). Busca parcial e case-insensitive.", example = "Rua do Imperador")
             @RequestParam(required = false) String logradouro) {
         
-
-    	List<Vaga> vagasPaginadas = vagaService.findAllPaginadas(numeroPagina, tamanhoPagina, ordenarPor, status, logradouro);
+    	Page<VagaResponseDTO> vagasPaginadas = vagaService.findAllPaginadas(numeroPagina, tamanhoPagina, ordenarPor, status, logradouro).map(VagaResponseDTO::new);
         
-        List<VagaResponseDTO> vagasDto = vagasPaginadas.stream()
-                                                      .map(VagaResponseDTO::new)
-                                                      .toList();
-        
-        return ResponseEntity.ok(vagasDto);
+        return ResponseEntity.ok(new PageResponseDTO(vagasPaginadas));
     }
     
     /**

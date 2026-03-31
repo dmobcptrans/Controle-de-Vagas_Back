@@ -8,6 +8,10 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -54,12 +58,16 @@ public class NotificacaoService {
         return notificacaoRepository.save(novaNotificacao);
     }
 
-    public List<Notificacao> findAllbyUsuarioId(UUID usuarioId) {
-        return notificacaoRepository.findByUsuarioId(usuarioId);
+    public Page<Notificacao> findAllbyUsuarioId(UUID usuarioId, int numeroPagina, int tamanhoPagina) {
+        Pageable pageable = PageRequest.of(numeroPagina, tamanhoPagina, Sort.by("criada_em").descending());
+        Page<Notificacao> page = notificacaoRepository.findByUsuarioId(usuarioId, pageable);
+        return page;
     }
 
-    public List<Notificacao> findAllbyUsuarioId(UUID usuarioId, boolean lida) {
-        return notificacaoRepository.findByUsuarioIdAndLida(usuarioId, lida);
+    public Page<Notificacao> findAllbyUsuarioIdAndLida(UUID usuarioId, boolean lida, int numeroPagina, int tamanhoPagina) {
+        Pageable pageable = PageRequest.of(numeroPagina, tamanhoPagina, Sort.by("criada_em").descending());
+        Page<Notificacao> page = notificacaoRepository.findByUsuarioIdAndLida(usuarioId, lida, pageable);
+        return page;
     }
 
     public Notificacao findById(UUID notificacaoId) {

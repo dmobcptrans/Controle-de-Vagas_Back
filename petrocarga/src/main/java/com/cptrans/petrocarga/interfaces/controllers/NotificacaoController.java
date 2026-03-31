@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -23,6 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import com.cptrans.petrocarga.application.dto.NotificacaoRequestDTO;
+import com.cptrans.petrocarga.application.dto.PageResponseDTO;
 import com.cptrans.petrocarga.application.dto.PushTokenPatchDTO;
 import com.cptrans.petrocarga.application.dto.PushTokenRequestDTO;
 import com.cptrans.petrocarga.application.dto.PushTokenResponseDTO;
@@ -91,14 +93,16 @@ public class NotificacaoController {
      */
     @PreAuthorize("#usuarioId == authentication.principal.id or hasAnyRole('ADMIN', 'GESTOR')")
     @GetMapping("byUsuario/{usuarioId}")
-    public ResponseEntity<List<Notificacao>> getAllByUsuarioId(@PathVariable UUID usuarioId, @Schema(example = "false")@RequestParam(required = false) String lida) {
+    public ResponseEntity<PageResponseDTO> getAllByUsuarioId(@PathVariable UUID usuarioId, @Schema(example = "false")@RequestParam(required = false) String lida, @RequestParam(defaultValue = "0") int numeroPagina, @RequestParam(defaultValue = "10") int tamanhoPagina) {
         if (lida != null) {
             if(lida.trim().toLowerCase().equals("true") || lida.trim().toLowerCase().equals("false")){
                 boolean lidaBoolean = Boolean.parseBoolean(lida);
-                return ResponseEntity.ok().body(notificacaoService.findAllbyUsuarioId(usuarioId, lidaBoolean));
+                Page<Notificacao> page = notificacaoService.findAllbyUsuarioIdAndLida(usuarioId, lidaBoolean, numeroPagina, tamanhoPagina);
+                return ResponseEntity.ok().body(new PageResponseDTO(page));
             }
         }
-        return ResponseEntity.ok().body(notificacaoService.findAllbyUsuarioId(usuarioId));
+        Page<Notificacao> page = notificacaoService.findAllbyUsuarioId(usuarioId, numeroPagina, tamanhoPagina);
+        return ResponseEntity.ok().body(new PageResponseDTO(page));
         
     }
 

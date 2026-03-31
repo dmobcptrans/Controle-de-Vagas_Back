@@ -3,9 +3,9 @@ package com.cptrans.petrocarga.interfaces.controllers;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.cptrans.petrocarga.application.dto.PageResponseDTO;
 import com.cptrans.petrocarga.application.dto.ReservaRapidaRequestDTO;
 import com.cptrans.petrocarga.application.dto.ReservaRapidaResponseDTO;
 import com.cptrans.petrocarga.application.usecase.AgenteService;
@@ -67,16 +68,15 @@ public class ReservaRapidaController {
      */
     @PreAuthorize("#usuarioId == authentication.principal.id or hasAnyRole('ADMIN', 'GESTOR')")
     @GetMapping("/{usuarioId}")
-    public ResponseEntity<List<ReservaRapidaResponseDTO>> getReservasRapidasByUsuarioId(@PathVariable UUID usuarioId, @RequestParam(required = false) UUID vagaId, @RequestParam(required = false) String placaVeiculo, @RequestParam(required = false) LocalDate data, @RequestParam(required = false) List<StatusReservaEnum> listaStatus, @RequestParam(defaultValue = "0") Integer numeroPagina, @RequestParam(defaultValue = "10") Integer tamanhoPagina) {
+    public ResponseEntity<PageResponseDTO> getReservasRapidasByUsuarioId(@PathVariable UUID usuarioId, @RequestParam(required = false) UUID vagaId, @RequestParam(required = false) String placaVeiculo, @RequestParam(required = false) LocalDate data, @RequestParam(required = false) List<StatusReservaEnum> listaStatus, @RequestParam(defaultValue = "0") Integer numeroPagina, @RequestParam(defaultValue = "10") Integer tamanhoPagina) {
         Agente agente = agenteService.findByUsuarioId(usuarioId);
         if(vagaId != null || placaVeiculo != null || data != null || (listaStatus != null && !listaStatus.isEmpty())) {
             placaVeiculo = placaVeiculo != null ? placaVeiculo.trim().toUpperCase() : null;
-            return ResponseEntity.ok().body(reservaRapidaService.findByAgenteWithFilters(agente, vagaId, placaVeiculo, data, listaStatus, numeroPagina, tamanhoPagina).stream().map(ReservaRapida::toResponse).collect(Collectors.toList()));
+            Page<ReservaRapidaResponseDTO> reservasRapidas = reservaRapidaService.findByAgenteWithFilters(agente, vagaId, placaVeiculo, data, listaStatus, numeroPagina, tamanhoPagina).map(ReservaRapida::toResponse);
+            return ResponseEntity.ok().body(new PageResponseDTO(reservasRapidas));
         }
-        List<ReservaRapidaResponseDTO> reservasRapidas = reservaRapidaService.findByAgente(agente.getId(), numeroPagina, tamanhoPagina).stream()
-                .map(ReservaRapida::toResponse)
-                .toList();
-        return ResponseEntity.ok(reservasRapidas);
+        Page<ReservaRapidaResponseDTO> reservasRapidas = reservaRapidaService.findByAgente(agente.getId(), numeroPagina, tamanhoPagina).map(ReservaRapida::toResponse);
+        return ResponseEntity.ok(new PageResponseDTO(reservasRapidas));
     }
     
 }

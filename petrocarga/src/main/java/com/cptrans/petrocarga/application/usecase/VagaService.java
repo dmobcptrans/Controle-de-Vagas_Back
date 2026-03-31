@@ -43,7 +43,7 @@ public class VagaService {
         return vagaRepository.findByStatus(status);
     }
     
-    public List<Vaga> findAllPaginadas(Integer numeroPagina, Integer tamanhoPagina, String ordenarPor, StatusVagaEnum status, String logradouro) {
+    public Page<Vaga> findAllPaginadas(Integer numeroPagina, Integer tamanhoPagina, String ordenarPor, StatusVagaEnum status, String logradouro) {
         Pageable pageable = PageRequest.of(numeroPagina, tamanhoPagina, Sort.by(ordenarPor).ascending());
 
         Page<Vaga> vagasPage;
@@ -59,7 +59,7 @@ public class VagaService {
             vagasPage = vagaRepository.findAll(pageable);
         }
 
-        return vagasPage.getContent();
+        return vagasPage;
     }
 
     public Vaga findById(UUID id) {

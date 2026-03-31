@@ -111,18 +111,15 @@ public class ReservaRapidaService {
         return reservaRapidaRepository.findByPlacaIgnoringCaseAndStatus(placa, StatusReservaEnum.ATIVA);
     }
 
-    public List<ReservaRapida> findByAgente(UUID agenteId, Integer numeroPagina, Integer tamanhoPagina) {
+    public Page<ReservaRapida> findByAgente(UUID agenteId, Integer numeroPagina, Integer tamanhoPagina) {
         Pageable pageable = PageRequest.of(numeroPagina, tamanhoPagina, Sort.by("inicio").descending());
 
-        Page<ReservaRapida> reservasPage = reservaRapidaRepository.findByAgenteId(agenteId, pageable);
-
-        return reservasPage.getContent();
+        return reservaRapidaRepository.findByAgenteId(agenteId, pageable);
     }
     
-    public List<ReservaRapida> findByAgenteWithFilters(Agente agente, UUID vagaId, String placaVeiculo, LocalDate data, List<StatusReservaEnum> listaStatus, Integer numeroPagina, Integer tamanhoPagina) {
+    public Page<ReservaRapida> findByAgenteWithFilters(Agente agente, UUID vagaId, String placaVeiculo, LocalDate data, List<StatusReservaEnum> listaStatus, Integer numeroPagina, Integer tamanhoPagina) {
         Pageable pageable = PageRequest.of(numeroPagina, tamanhoPagina, Sort.by("inicio").descending());
-        Page<ReservaRapida> reservasPage =  reservaRapidaRepository.findAll(ReservaRapidaSpecification.filtrar(agente.getUsuario().getId(), vagaId, placaVeiculo, data, listaStatus), pageable);
-        return reservasPage.getContent();
+        return reservaRapidaRepository.findAll(ReservaRapidaSpecification.filtrar(agente.getUsuario().getId(), vagaId, placaVeiculo, data, listaStatus), pageable);
     }
 
     public ReservaRapida create(ReservaRapida novaReservaRapida) {

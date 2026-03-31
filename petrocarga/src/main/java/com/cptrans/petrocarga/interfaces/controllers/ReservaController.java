@@ -6,6 +6,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.cptrans.petrocarga.application.dto.PageResponseDTO;
 import com.cptrans.petrocarga.application.dto.ReservaDTO;
 import com.cptrans.petrocarga.application.dto.ReservaDetailedResponseDTO;
 import com.cptrans.petrocarga.application.dto.ReservaPATCHRequestDTO;
@@ -175,12 +177,11 @@ public class ReservaController {
      */
     @PreAuthorize("#usuarioId == authentication.principal.id or hasAnyRole('ADMIN', 'GESTOR')")
     @GetMapping("/usuario/{usuarioId}")
-    public ResponseEntity<List<ReservaResponseDTO>> getReservasByUsuarioId(@PathVariable UUID usuarioId, @RequestParam(required = false) List<StatusReservaEnum> status, @RequestParam(defaultValue = "0") Integer numeroPagina, @RequestParam(defaultValue = "10") Integer tamanhoPagina) {
-        List<ReservaResponseDTO> reservas = reservaService.findByUsuarioId(usuarioId, status, numeroPagina, tamanhoPagina).stream()
-                .map(ReservaResponseDTO::new)
-
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(reservas);
+    public ResponseEntity<PageResponseDTO> getReservasByUsuarioId(@PathVariable UUID usuarioId, @RequestParam(required = false) List<StatusReservaEnum> status, @RequestParam(defaultValue = "0") Integer numeroPagina, @RequestParam(defaultValue = "10") Integer tamanhoPagina) {
+        Page<ReservaResponseDTO> reservas = reservaService.findByUsuarioId(usuarioId, status, numeroPagina, tamanhoPagina)
+                .map(ReservaResponseDTO::new);
+                
+        return ResponseEntity.ok(new PageResponseDTO(reservas));
     }
     
     /**
