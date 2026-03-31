@@ -59,13 +59,13 @@ public class NotificacaoService {
     }
 
     public Page<Notificacao> findAllbyUsuarioId(UUID usuarioId, int numeroPagina, int tamanhoPagina) {
-        Pageable pageable = PageRequest.of(numeroPagina, tamanhoPagina, Sort.by("criada_em").descending());
+        Pageable pageable = PageRequest.of(numeroPagina, tamanhoPagina, Sort.by("criadaEm").descending());
         Page<Notificacao> page = notificacaoRepository.findByUsuarioId(usuarioId, pageable);
         return page;
     }
 
     public Page<Notificacao> findAllbyUsuarioIdAndLida(UUID usuarioId, boolean lida, int numeroPagina, int tamanhoPagina) {
-        Pageable pageable = PageRequest.of(numeroPagina, tamanhoPagina, Sort.by("criada_em").descending());
+        Pageable pageable = PageRequest.of(numeroPagina, tamanhoPagina, Sort.by("criadaEm").descending());
         Page<Notificacao> page = notificacaoRepository.findByUsuarioIdAndLida(usuarioId, lida, pageable);
         return page;
     }

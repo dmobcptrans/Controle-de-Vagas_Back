@@ -40,3 +40,8 @@ firebase*.json
 
 ### .Env
 **.env
+**.env.local
+**.env.homologacao
+
+## ngrok
+ngrok

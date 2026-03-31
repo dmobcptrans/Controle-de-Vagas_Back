@@ -1,0 +1,38 @@
+spring:
+    config:
+        activate:
+            on-profile: homologacao
+
+    datasource:
+        url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/petrocarga-homologacao}
+        username: ${SPRING_DATASOURCE_USERNAME:postgres}
+        password: ${SPRING_DATASOURCE_PASSWORD:123456}
+        driver-class-name: org.postgresql.Driver
+        hikari:
+            maximum-pool-size: 5
+    # jpa:
+        # show-sql: true
+    flyway:
+        url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/petrocarga-homologacao}
+        user: ${SPRING_DATASOURCE_USERNAME:postgres}
+        password: ${SPRING_DATASOURCE_PASSWORD:123456}
+
+app:
+    firebase-push-notification:
+        enabled: true
+        credentials: "classpath:firebase-service-account.json"
+    cookie-settings:
+        secure: true
+        same-site: None
+    mailSender:
+        enabled: true
+
+# logging:
+#     level:
+#         org:
+#             hibernate:
+#                 sql: info
+
+springdoc:
+    api-docs:
+        enabled: true
