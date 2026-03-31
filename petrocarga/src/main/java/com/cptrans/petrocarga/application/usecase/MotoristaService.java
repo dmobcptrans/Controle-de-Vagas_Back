@@ -1,276 +1,155 @@
 package com.cptrans.petrocarga.application.usecase;
 
-import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.time.LocalDate;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.security.authorization.AuthorizationDeniedException;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
-import com.cptrans.petrocarga.domain.entities.Notificacao;
+import com.cptrans.petrocarga.application.dto.MotoristaFiltrosDTO;
+import com.cptrans.petrocarga.application.dto.UsuarioPATCHRequestDTO;
+import com.cptrans.petrocarga.domain.entities.Motorista;
 import com.cptrans.petrocarga.domain.entities.Usuario;
 import com.cptrans.petrocarga.domain.enums.PermissaoEnum;
-import com.cptrans.petrocarga.domain.enums.StatusDenunciaEnum;
-import com.cptrans.petrocarga.domain.enums.TipoNotificacaoEnum;
-import com.cptrans.petrocarga.domain.events.NotificacaoCriadaEvent;
-import com.cptrans.petrocarga.domain.repositories.NotificacaoRepository;
-import com.cptrans.petrocarga.infrastructure.event.SpringDomainEventPublisher;
-import com.cptrans.petrocarga.infrastructure.security.UserAuthenticated;
-import com.cptrans.petrocarga.shared.utils.DateUtils;
-import com.cptrans.petrocarga.shared.utils.NotificacaoUtils;
+import com.cptrans.petrocarga.domain.enums.TipoCnhEnum;
+import com.cptrans.petrocarga.domain.repositories.MotoristaRepository;
+import com.cptrans.petrocarga.domain.specification.MotoristaSpecification;
+import com.cptrans.petrocarga.infrastructure.security.CriptoService;
+import com.cptrans.petrocarga.infrastructure.security.HashService;
+import com.cptrans.petrocarga.shared.utils.UsuarioUtils;
 
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 
 @Service
-public class NotificacaoService {
+public class MotoristaService {
+
+    @Autowired
+    private MotoristaRepository motoristaRepository;
+
     @Autowired
     private UsuarioService usuarioService;
+
     @Autowired
-    private NotificacaoRepository notificacaoRepository;
+    private HashService hashService;
+
     @Autowired
-    private SpringDomainEventPublisher eventPublisher;
+    private CriptoService criptoService;
 
-    private Notificacao createNotificacao(UUID usuarioId, String titulo, String mensagem, TipoNotificacaoEnum tipo, Map<String, Object> dadosAdicionais) {
-        Usuario usuarioLogado = usuarioService.findById(((UserAuthenticated) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).id());
-        Usuario usuarioDestinatario = usuarioService.findById(usuarioId);
-        NotificacaoUtils.validateByPermissao(usuarioLogado.getPermissao(), usuarioDestinatario.getPermissao());
-        if (dadosAdicionais == null) dadosAdicionais = new HashMap<>();
-        dadosAdicionais.put("remetenteId", usuarioLogado.getId());
-        dadosAdicionais.put("remetente", usuarioLogado.getNome());
-        Notificacao novaNotificacao = new Notificacao(usuarioDestinatario.getId(), titulo, mensagem, tipo, dadosAdicionais);
-        
-        return notificacaoRepository.save(novaNotificacao);
+    // @Autowired
+    // private EmpresaService empresaService;
+
+    public List<Motorista> findAll() {
+        return motoristaRepository.findAll();
+    }
+
+    public List<Motorista> findAllWithFiltros(MotoristaFiltrosDTO filtros) {
+        return motoristaRepository.findAll(MotoristaSpecification.filtrar(filtros));
+    }
+
+    public Motorista findByUsuarioIdAndAtivo(UUID usuarioId, Boolean ativo) {
+        if(ativo == null) ativo = true;
+        Motorista motorista = motoristaRepository.findByUsuarioIdAndUsuarioAtivo(usuarioId, ativo)
+                .orElseThrow(() -> new IllegalArgumentException("Motorista não encontrado"));
+        return motorista;
+    }
+
+    public Motorista findByUsuarioId(UUID usuarioId) {
+        Motorista motorista = motoristaRepository.findByUsuarioId(usuarioId)
+                .orElseThrow(() -> new IllegalArgumentException("Motorista não encontrado"));
+        return motorista;
     }
 
     @Transactional
-    private Notificacao saveNotificacao(Notificacao novaNotificacao) {
-        return notificacaoRepository.save(novaNotificacao);
-    }
-
-    public Page<Notificacao> findAllbyUsuarioId(UUID usuarioId, int numeroPagina, int tamanhoPagina) {
-        Pageable pageable = PageRequest.of(numeroPagina, tamanhoPagina, Sort.by("criadaEm").descending());
-        Page<Notificacao> page = notificacaoRepository.findByUsuarioId(usuarioId, pageable);
-        return page;
-    }
-
-    public Page<Notificacao> findAllbyUsuarioIdAndLida(UUID usuarioId, boolean lida, int numeroPagina, int tamanhoPagina) {
-        Pageable pageable = PageRequest.of(numeroPagina, tamanhoPagina, Sort.by("criadaEm").descending());
-        Page<Notificacao> page = notificacaoRepository.findByUsuarioIdAndLida(usuarioId, lida, pageable);
-        return page;
-    }
-
-    public Notificacao findById(UUID notificacaoId) {
-        return notificacaoRepository.findById(notificacaoId).orElseThrow(() -> new EntityNotFoundException("Notificação não encontrada"));
-    }
-    public Notificacao findByIdAndUsuarioId(UUID notificacaoId, UUID usuarioId) {
-        return notificacaoRepository.findByIdAndUsuarioId(notificacaoId, usuarioId).orElseThrow(() -> new EntityNotFoundException("Notificação não encontrada"));
-    }
-
-    public Notificacao findByIdAndSetLida(UUID notificacaoId) {
-        UserAuthenticated userAuthenticated = (UserAuthenticated) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        List<String> authorities = userAuthenticated.userDetails().getAuthorities().stream().map(GrantedAuthority::toString).toList();
-        Notificacao notificacao = notificacaoRepository.findById(notificacaoId).orElseThrow(() -> new EntityNotFoundException("Notificação não encontrada"));
-        if ((userAuthenticated.id().equals(notificacao.getUsuarioId()) || (authorities.contains(PermissaoEnum.ADMIN.getRole()) || authorities.contains(PermissaoEnum.GESTOR.getRole())))) {
-            notificacao.marcarComoLida();
-            return notificacaoRepository.save(notificacao);
-        } else {
-            throw new AuthorizationDeniedException("Acesso negado à notificação");
-        }
-    }
-
-    @Transactional
-    public Notificacao sendNotificationToUsuario(UUID usuarioId, Notificacao novaNotificacao) {
-        Usuario usuario = usuarioService.findByIdAndAtivo(usuarioId, true);
-        novaNotificacao.setUsuarioId(usuario.getId());
-        Notificacao notificacaoSalva = createNotificacao(novaNotificacao.getUsuarioId(), novaNotificacao.getTitulo(), novaNotificacao.getMensagem(), novaNotificacao.getTipo(), novaNotificacao.getMetadata());
-        eventPublisher.publish(new NotificacaoCriadaEvent(notificacaoSalva));
-        return notificacaoSalva;
-    }
-
-    @Transactional
-    public Notificacao sendNotificationToUsuarioBySystem(UUID usuarioId, Notificacao novaNotificacao, Map<String,Object> dadosAdicionais) {
-        Usuario usuario = usuarioService.findByIdAndAtivo(usuarioId, true);
-        novaNotificacao.setUsuarioId(usuario.getId());
-        
-        if (dadosAdicionais != null){
-            novaNotificacao.getMetadata().putAll(dadosAdicionais);
-        } else novaNotificacao.setMetadata(new HashMap<String,Object>());
-
-        Notificacao notificacaoSalva = saveNotificacao(novaNotificacao);
-        eventPublisher.publish(new NotificacaoCriadaEvent(notificacaoSalva));
-        return notificacaoSalva;
-    }
-
-    @Transactional
-    public List<Notificacao> sendNotificacaoToUsuariosByPermissao(PermissaoEnum permissao, Notificacao novaNotificacao) {
-        List<Usuario> usuarios = usuarioService.findByPermissaoAndAtivo(permissao, true);
-        Usuario usuarioLogado = usuarioService.findById(((UserAuthenticated) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).id());
-        List<Notificacao> notificacoesSalvas = new ArrayList<>();
-        Map<String, Object> dadosAdicionais = new HashMap<>();
-
-        if (novaNotificacao.getMetadata() != null) dadosAdicionais.putAll(novaNotificacao.getMetadata());
-        
-        dadosAdicionais.put("remetenteId", usuarioLogado.getId());
-        dadosAdicionais.put("remetente", usuarioLogado.getNome());
-
-        if(usuarios.isEmpty()) {
-            throw new EntityNotFoundException("Nenhum usuário encontrado com a permissão: " + permissao);
-        }
-        for (Usuario usuario : usuarios) {
-            Notificacao novaNotificacaoUsuario = new Notificacao(usuario.getId(), novaNotificacao.getTitulo(), novaNotificacao.getMensagem(), novaNotificacao.getTipo());
-            novaNotificacaoUsuario.setMetadata(dadosAdicionais);
-            notificacoesSalvas.add(novaNotificacaoUsuario);
-        }
-        if (notificacoesSalvas.isEmpty()) return notificacoesSalvas;
-
-        List<Notificacao> notificacoesCriadas = notificacaoRepository.saveAll(notificacoesSalvas);
-        if(!notificacoesCriadas.isEmpty()) {
-            for (Notificacao notificacao : notificacoesCriadas) {
-                eventPublisher.publish(new NotificacaoCriadaEvent(notificacao));
+    public Motorista createMotorista(Motorista novoMotorista) {
+        // if(novoMotorista.getEmpresa() != null) {
+            //     Empresa empresa = empresaService.findById(novoMotorista.getEmpresa().getId());
+            //     novoMotorista.setEmpresa(empresa);
+            // }
+            if(novoMotorista.getDataValidadeCnh().isBefore(LocalDate.now())) {
+                throw new IllegalArgumentException("CNH vencida");
             }
-        }
-        return notificacoesCriadas;
-    }
-
-    @Transactional
-    public List<Notificacao> sendNotificacaoToUsuariosByPermissaoBySystem(PermissaoEnum permissao, Notificacao novaNotificacao) {
-        List<Usuario> usuarios = usuarioService.findByPermissaoAndAtivo(permissao, true);
-        List<Notificacao> notificacoesSalvas = new ArrayList<>();
-        Map<String, Object> dadosAdicionais = new HashMap<>();
-
-        if (novaNotificacao.getMetadata() != null) dadosAdicionais.putAll(novaNotificacao.getMetadata());
-
-        if(usuarios.isEmpty()) {
-            throw new EntityNotFoundException("Nenhum usuário encontrado com a permissão: " + permissao);
-        }
-        for (Usuario usuario : usuarios) {
-            Notificacao novaNotificacaoUsuario = new Notificacao(usuario.getId(), novaNotificacao.getTitulo(), novaNotificacao.getMensagem(), novaNotificacao.getTipo());
-            novaNotificacaoUsuario.setMetadata(dadosAdicionais);
-            notificacoesSalvas.add(novaNotificacaoUsuario);
-        }
-        if (notificacoesSalvas.isEmpty()) return notificacoesSalvas;
-
-        List<Notificacao> notificacoesCriadas = notificacaoRepository.saveAll(notificacoesSalvas);
-        if(!notificacoesCriadas.isEmpty()) {
-            for (Notificacao notificacao : notificacoesCriadas) {
-                eventPublisher.publish(new NotificacaoCriadaEvent(notificacao));
+            Usuario usuario = usuarioService.createUsuario(novoMotorista.getUsuario(), PermissaoEnum.MOTORISTA, novoMotorista.getUsuario().getCpfHash());
+            novoMotorista.setUsuario(usuario);
+            if(motoristaRepository.existsByCnhHash(novoMotorista.getCnhHash())) {
+                throw new IllegalArgumentException("Número da CNH já cadastrado");
             }
-        }
-        return notificacoesCriadas;
-    }
-
-    public Notificacao marcarComoLida(UUID usuarioId, UUID notificacaoId) {
-        Notificacao notificacao = findByIdAndUsuarioId(notificacaoId, usuarioId);
-        notificacao.marcarComoLida();
-        return notificacaoRepository.save(notificacao);
-    }
-
-    public List<Notificacao> marcarSelecionadasComoLida(UUID usuarioId, List<UUID> listaNotificacaoId) {
-        List<Notificacao> notificacoes = notificacaoRepository.findByIdInAndUsuarioId(listaNotificacaoId, usuarioId);
-        List<Notificacao> notificacoesLidas = new ArrayList<>();
-        if(notificacoes == null || notificacoes.isEmpty()) throw new EntityNotFoundException("Nenhuma notificação encontrada");
-        for(Notificacao notificacao : notificacoes) {
-            notificacao.marcarComoLida();
-            notificacoesLidas.add(notificacao);
-        }
-        return notificacaoRepository.saveAll(notificacoesLidas);
-    }
-
-    public void deletarSelecionadas(UUID usuarioId, List<UUID> listaNotificacaoId) {
-        List<Notificacao> notificacoes = notificacaoRepository.findByIdInAndUsuarioId(listaNotificacaoId, usuarioId);
-        if(notificacoes == null || notificacoes.isEmpty()) throw new EntityNotFoundException("Nenhuma notificação encontrada");
-        notificacaoRepository.deleteAll(notificacoes);
-    }
-
-    public void deleteById(UUID notificacaoId, UUID usuarioId) {
-        Notificacao notificacao = findByIdAndUsuarioId(notificacaoId, usuarioId);
-        notificacaoRepository.delete(notificacao);
-    }
-
-    public void notificarDenunciaCriada(Map<String, Object> dadosAdicionais) {
-        Notificacao notificacaoDenuncia = new Notificacao("Nova Denúncia", "Uma nova denúncia foi criada", TipoNotificacaoEnum.DENUNCIA, dadosAdicionais);
-        sendNotificacaoToUsuariosByPermissao(PermissaoEnum.GESTOR, notificacaoDenuncia);
-        sendNotificacaoToUsuariosByPermissao(PermissaoEnum.AGENTE, notificacaoDenuncia);
-    }
-
-    public void notificarDenunciaAtualizada(Map<String, Object> dadosAdicionais, StatusDenunciaEnum statusDenuncia, UUID usuarioIdDenuncia) {
-        Notificacao notificacaoDenuncia = new Notificacao("Denúncia Atualizada", "Sua denúncia foi atualizada para o status: '" + statusDenuncia + "'", TipoNotificacaoEnum.DENUNCIA, dadosAdicionais);
-        sendNotificationToUsuario(usuarioIdDenuncia, notificacaoDenuncia);
+            String numero_cnh = novoMotorista.getCnhHash();
+            novoMotorista.setCnhHash(hashService.hash(numero_cnh));
+            novoMotorista.setCnhCripto(criptoService.encrypt(numero_cnh));
+            novoMotorista.setCnhLast4(UsuarioUtils.gerarLastN(numero_cnh, 4));
+        return  motoristaRepository.save(novoMotorista);
     }
 
     @Transactional
-    public Notificacao notificarCheckInDisponivel(UUID usuarioId, OffsetDateTime dataCheckin) {
-        final String TITULO = "Check-In Disponível";
-        final String MENSAGEM = "O horário de início da reserva está próximo. Abra o app para confirmar o check-in e não perder sua vaga.";
+    public Motorista updateMotorista(UUID usuarioId, UsuarioPATCHRequestDTO motoristaRequest) {
+        Motorista motoristaCadastrado = findByUsuarioIdAndAtivo(usuarioId, true);
         
-        Map<String, Object> dadosAdicionais = new HashMap<>();
-        dadosAdicionais.put("inicioReserva", dataCheckin.atZoneSameInstant(DateUtils.FUSO_BRASIL).toString());
+        if(motoristaRequest.getDataValidadeCnh() != null) {
+            if(motoristaRequest.getDataValidadeCnh().isBefore(LocalDate.now())) throw new IllegalArgumentException("Cnh vencida");
+            motoristaCadastrado.setDataValidadeCnh(motoristaRequest.getDataValidadeCnh());
+        }
+        if (motoristaRequest.getNumeroCnh() != null) {
+            Optional<Motorista> motoristaByCnh = motoristaRepository.findByCnhHash(hashService.hash(motoristaRequest.getNumeroCnh()));
+            if(motoristaByCnh.isPresent() && !motoristaByCnh.get().getId().equals(motoristaCadastrado.getId())){
+                throw new IllegalArgumentException("Número da Cnh já cadastrado");
+            }
+            motoristaCadastrado.setCnhHash(hashService.hash(motoristaRequest.getNumeroCnh()));
+            motoristaCadastrado.setCnhCripto(criptoService.encrypt(motoristaRequest.getNumeroCnh()));
+            motoristaCadastrado.setCnhLast4(UsuarioUtils.gerarLastN(motoristaRequest.getNumeroCnh(), 4));
+        }
+        if (motoristaRequest.getTipoCnh() != null) {
+            motoristaCadastrado.setTipoCnh(motoristaRequest.getTipoCnh());
+        }
 
-        Notificacao notificacaoCheckIn = new Notificacao();
-        notificacaoCheckIn.setTitulo(TITULO);
-        notificacaoCheckIn.setMensagem(MENSAGEM);
-        notificacaoCheckIn.setTipo(TipoNotificacaoEnum.RESERVA);
-        notificacaoCheckIn.setUsuarioId(usuarioId);
-        notificacaoCheckIn.setMetadata(dadosAdicionais);
+        // if (motoristaRequest.getEmpresa() != null) {
+        //     Empresa empresa = empresaService.findById(motoristaRequest.getEmpresa().getId());
+        //     //TODO: Criar lógica de update no EmpresaService
+        //     motoristaCadastrado.setEmpresa(empresa);
+        // }
 
-        Notificacao notificacaoSalva = saveNotificacao(notificacaoCheckIn);
+        Usuario usuarioAtualizado = usuarioService.patchUpdate(usuarioId, PermissaoEnum.MOTORISTA, motoristaRequest);
+        motoristaCadastrado.setUsuario(usuarioAtualizado);
 
-        eventPublisher.publish(new NotificacaoCriadaEvent(notificacaoSalva));
-
-        return notificacaoSalva;
+        return motoristaRepository.save(motoristaCadastrado);
     }
 
-    @Transactional
-    public Notificacao notificarFimProximo(UUID usuarioId, OffsetDateTime dataFim) {
-        final String TITULO = "Fim da Reserva Próximo";
-        final String MENSAGEM = "Sua reserva está próxima do fim, realize suas atividades à tempo para evitar problemas.";
-
-        Map<String, Object> dadosAdicionais = new HashMap<>();
-        dadosAdicionais.put("fimReserva", dataFim.atZoneSameInstant(DateUtils.FUSO_BRASIL).toString());
-
-        Notificacao notificacaoFimProximo = new Notificacao();
-        notificacaoFimProximo.setTitulo(TITULO);
-        notificacaoFimProximo.setMensagem(MENSAGEM);
-        notificacaoFimProximo.setTipo(TipoNotificacaoEnum.RESERVA);
-        notificacaoFimProximo.setUsuarioId(usuarioId);
-        notificacaoFimProximo.setMetadata(dadosAdicionais);
-
-        Notificacao notificacaoSalva = saveNotificacao(notificacaoFimProximo);
-
-        eventPublisher.publish(new NotificacaoCriadaEvent(notificacaoSalva));
-
-        return notificacaoSalva;
+    public Motorista findById(UUID id) {
+        return motoristaRepository.findById(id).orElseThrow(()-> new EntityNotFoundException("Motorista nao encontrado."));
     }
 
-    @Transactional
-    public Notificacao notificarNoShow(UUID usuarioId, OffsetDateTime dataReserva){
-        final String TITULO = "Não Comparecimento à Reserva";
-        final String MENSAGEM = "Você não realizou check-in para a sua reserva à tempo. Sua reserva foi removida.";
+    public void deleteByUsuarioId(UUID usuarioId) {
+        Motorista motorista = findByUsuarioIdAndAtivo(usuarioId, true);
+        usuarioService.deleteById(motorista.getUsuario().getId());
+    }
 
-        Map<String, Object> dadosAdicionais = new HashMap<>();
-        dadosAdicionais.put("dataReserva", dataReserva.atZoneSameInstant(DateUtils.FUSO_BRASIL).toString());
-
-        Notificacao NO_SHOW_NOTIFICACAO = new Notificacao();
-        NO_SHOW_NOTIFICACAO.setTitulo(TITULO);
-        NO_SHOW_NOTIFICACAO.setMensagem(MENSAGEM);
-        NO_SHOW_NOTIFICACAO.setTipo(TipoNotificacaoEnum.RESERVA);
-        NO_SHOW_NOTIFICACAO.setUsuarioId(usuarioId);
-        NO_SHOW_NOTIFICACAO.setMetadata(dadosAdicionais);
-
-        Notificacao notificacaoSalva = saveNotificacao(NO_SHOW_NOTIFICACAO);
-
-        eventPublisher.publish(new NotificacaoCriadaEvent(notificacaoSalva));
-        return notificacaoSalva;
+    public Motorista completarCadastro(Usuario usuario, String numeroCnh, LocalDate dataValidadeCnh, TipoCnhEnum tipoCnh){
+        Optional<Motorista> motorista = motoristaRepository.findByUsuarioId(usuario.getId());
+        
+        if(motorista.isPresent()){
+            Optional<Motorista> motoristaByCnh = motoristaRepository.findByCnhHash(hashService.hash(numeroCnh));
+            if(motoristaByCnh.isPresent() && !motoristaByCnh.get().getUsuario().getId().equals(usuario.getId())){
+                throw new IllegalArgumentException("CNH já cadastrada");
+            }
+            else{
+                motorista.get().setDataValidadeCnh(dataValidadeCnh);
+                motorista.get().setCnhHash(hashService.hash(numeroCnh));
+                motorista.get().setCnhCripto(criptoService.encrypt(numeroCnh));
+                motorista.get().setCnhLast4(UsuarioUtils.gerarLastN(numeroCnh, 4));
+                motorista.get().setTipoCnh(tipoCnh);
+                return motoristaRepository.save(motorista.get());
+            }
+        }else{
+            Motorista novoMotorista = new Motorista();
+            novoMotorista.setDataValidadeCnh(dataValidadeCnh);
+            novoMotorista.setCnhHash(hashService.hash(numeroCnh));
+            novoMotorista.setCnhCripto(criptoService.encrypt(numeroCnh));
+            novoMotorista.setCnhLast4(UsuarioUtils.gerarLastN(numeroCnh, 4));
+            novoMotorista.setTipoCnh(tipoCnh);
+            novoMotorista.setUsuario(usuario);
+            return motoristaRepository.save(novoMotorista);
+        }
     }
 }
