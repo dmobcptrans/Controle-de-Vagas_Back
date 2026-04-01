@@ -28,7 +28,6 @@ public class FirebasePushService implements PushNotificationService {
     @Override
     public void enviarNotificacao(Notificacao notificacao) {
         List<PushToken> tokens = pushTokenRepository.findByUsuarioIdAndAtivo(notificacao.getUsuarioId(), true);
-        System.out.println("tokens list is empty: " + tokens.isEmpty());
         if (!tokens.isEmpty()) {
             for (PushToken token : tokens) {
                 Message message = Message.builder()
@@ -46,7 +45,6 @@ public class FirebasePushService implements PushNotificationService {
                     .build();
 
                 FirebaseMessaging.getInstance().sendAsync(message);
-                System.out.println("push enviado com sucesso para: " + notificacao.getUsuarioId());
             }
         }
     }
