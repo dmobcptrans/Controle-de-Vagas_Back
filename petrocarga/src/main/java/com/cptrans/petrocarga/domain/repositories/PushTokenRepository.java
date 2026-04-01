@@ -12,7 +12,7 @@ import com.cptrans.petrocarga.domain.entities.PushToken;
 @Repository
 public interface PushTokenRepository extends JpaRepository<PushToken, UUID> {
     List<PushToken> findByUsuarioId(UUID usuarioId);
-    Optional<PushToken> findByToken(String token);
+    List<PushToken> findByToken(String token);
     Optional<PushToken> findByTokenAndUsuarioId(String token, UUID usuarioId);
     List<PushToken> findByUsuarioIdAndAtivo(UUID usuarioid, boolean ativo);
 }

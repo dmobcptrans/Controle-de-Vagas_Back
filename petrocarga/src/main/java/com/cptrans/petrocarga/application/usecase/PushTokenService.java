@@ -17,19 +17,30 @@ public class PushTokenService {
     @Autowired
     private PushTokenRepository pushTokenRepository;
     
-    public PushToken salvar(PushToken novoPushToken){
-        Optional<PushToken> pushTokenExistente = pushTokenRepository.findByToken(novoPushToken.getToken());
-        
-        if (pushTokenExistente.isPresent()) {
-            PushToken tokenAtual = pushTokenExistente.get();
-            tokenAtual.setUsuarioId(novoPushToken.getUsuarioId());
-            tokenAtual.setAtivo(true);
-            tokenAtual.setPlataforma(novoPushToken.getPlataforma());
-            return pushTokenRepository.save(tokenAtual);
-        } else {
+    public PushToken salvar(PushToken novoPushToken) {
+        List<PushToken> existentes = pushTokenRepository.findByToken(novoPushToken.getToken());
+
+        if (existentes == null || existentes.isEmpty()) {
+            novoPushToken.setAtivo(true);
             return pushTokenRepository.save(novoPushToken);
         }
 
+        for (PushToken existente : existentes) {
+            existente.setAtivo(false);
+        }
+
+        for (PushToken existente : existentes) {
+            if (existente.getUsuarioId().equals(novoPushToken.getUsuarioId())) {
+                existente.setAtivo(true);
+                return pushTokenRepository.save(existente);
+            }
+        }
+
+        novoPushToken.setAtivo(true);
+        existentes.add(novoPushToken);
+
+        pushTokenRepository.saveAll(existentes);
+        return novoPushToken;
     }
 
     public PushToken atualizarStatus(UUID usuarioId, String token, Boolean ativo) {
