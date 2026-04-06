@@ -30,7 +30,6 @@ import com.cptrans.petrocarga.application.dto.PushTokenRequestDTO;
 import com.cptrans.petrocarga.application.dto.PushTokenResponseDTO;
 import com.cptrans.petrocarga.application.usecase.NotificacaoService;
 import com.cptrans.petrocarga.application.usecase.PushTokenService;
-import com.cptrans.petrocarga.application.usecase.AuthService;
 import com.cptrans.petrocarga.domain.entities.Notificacao;
 import com.cptrans.petrocarga.domain.entities.PushToken;
 import com.cptrans.petrocarga.domain.enums.PermissaoEnum;
@@ -42,6 +41,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 
+
+
+
 @RestController
 @RequestMapping("/notificacoes")
 public class NotificacaoController {
@@ -51,48 +53,31 @@ public class NotificacaoController {
     private NotificacaoService notificacaoService;
     @Autowired
     private PushTokenService pushTokenService;
-    @Autowired
-    private AuthService authService;  // <-- ADICIONADO
     
-    /**
-     * Esse método é responsável por criar uma conexão SSE (Server-Sent Events) para o usuário autenticado,
-     * permitindo que ele receba notificações em tempo real.
-     * Suporta autenticação via cookie/session ou via token na URL (para dispositivos mobile).
-     * 
-     * @param user o usuário autenticado via cookie/session
-     * @param token token JWT opcional passado via query parameter (para mobile)
-     * @param response o objeto HttpServletResponse
-     * @return SseEmitter o SseEmitter
-     */
+/*************  ✨ Windsurf Command ⭐  *************/
+/**
+ * Esse método é responsável por criar uma conexão SSE (Server-Sent Events) para o usuário autenticado, permitindo que ele receba notificações em tempo real.
+ * @param User o usuário autenticado
+ * @return SseEmitter o SseEmitter
+ * @throws IOException se o SseEmitter falhar 
+ */
     @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter stream(
-            @AuthenticationPrincipal UserAuthenticated user,
-            @RequestParam(required = false) String token,  // <-- ADICIONADO
-            HttpServletResponse response) {
-        
-        // Tenta autenticar primeiro pelo cookie/session, depois pelo token da URL
-        UserAuthenticated authenticatedUser = user;
-        
-        if (authenticatedUser == null && token != null && !token.isEmpty()) {
-            authenticatedUser = authService.authenticateByToken(token);
-        }
-        
-        if (authenticatedUser == null) {
+    public SseEmitter stream(@AuthenticationPrincipal UserAuthenticated user, HttpServletResponse response) {
+        if (user == null) {
             SseEmitter emitter = new SseEmitter(0L);
             try {
                 emitter.send(SseEmitter.event()
                     .name("error")
-                    .data("Acesso negado - Usuário não autenticado"));
+                    .data("Acesso negado"));
             } catch (IOException ignored) { }
             emitter.complete();
             return emitter;
         }
 
-        SseEmitter emitter = sseNotficationService.connect(authenticatedUser.id());
+        SseEmitter emitter = sseNotficationService.connect(user.id());
         
         response.setHeader("Cache-Control", "no-cache");
         response.setHeader("Connection", "keep-alive");
-        response.setHeader("X-Accel-Buffering", "no");
         return emitter;
     }
 
@@ -133,14 +118,13 @@ public class NotificacaoController {
     public ResponseEntity<Notificacao> findByIdAndSetLida(@PathVariable UUID id) {
         return ResponseEntity.ok().body(notificacaoService.findByIdAndSetLida(id));
     }
-    
-    /**
-     * Envia uma notificação para um usuário com base no seu id.
-     * Só permite que notificação seja enviada por um usuário com permissão de ADMIN ou GESTOR.
-     * @param usuarioId o id do usuário que receberá a notificação
-     * @param notificacaoRequestDTO o corpo da notificação a ser enviada
-     * @return a notificação que foi enviada.
-     */
+/**
+ * Envia uma notificação para um usuário com base no seu id.
+ * Só permite que notificação seja enviada por um usuário com permissão de ADMIN ou GESTOR.
+ * @param usuarioId o id do usuário que receberá a notificação
+ * @param notificacaoRequestDTO o corpo da notificação a ser enviada
+ * @return a notificação que foi enviada.
+ */
     @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR')")
     @PostMapping("/sendNotification/toUsuario/{usuarioId}")
     public ResponseEntity<Notificacao> sendNotificationToUsuario(@PathVariable UUID usuarioId, @Valid @RequestBody NotificacaoRequestDTO notificacaoRequestDTO) {
@@ -148,14 +132,16 @@ public class NotificacaoController {
         return ResponseEntity.ok().body(notificacaoEnviada);
     }
 
-    /**
-     * Envia uma notificação para todos os usuários baseado na permissão.
-     * Só permite que notificação seja enviada por um usuário com permissão de ADMIN ou GESTOR.
-     * 
-     * @param permissao a permissão dos usuários que receberão a notificação
-     * @param notificacaoRequestDTO o corpo da notificação a ser enviada
-     * @return a lista de notificações que foram enviadas
-     */
+
+/**
+ * Envia uma notificação para todos os usuários baseado na permissão.
+ * 
+ * Só permite que notificação seja enviada por um usuário com permissão de ADMIN ou GESTOR.
+ * 
+ * @param permissao a permissão dos usuários que receberão a notificação
+ * @param notificacaoRequestDTO o corpo da notificação a ser enviada
+ * @return a lista de notificações que foram enviadas
+ */
     @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR')")
     @PostMapping("/sendNotification/byPermissao/{permissao}")
     public ResponseEntity<List<Notificacao>> sendNotificationToPermissao(@PathVariable PermissaoEnum permissao, @Valid @RequestBody NotificacaoRequestDTO notificacaoRequestDTO) {
@@ -163,14 +149,14 @@ public class NotificacaoController {
         return ResponseEntity.ok().body(notificacoesEnviadas);
     }
 
-    /**
-     * Marca uma notificação como lida.
-     * Só o próprio usuário dono da notificação ou um usuário com permissão de ADMIN pode marcar a notificação como lida.
-     * @param userAuthenticated o usuário autenticado.
-     * @param notificacaoId o id da notificação a ser marcada como lida.
-     * @return a notificação que foi marcada como lida.
-     * 
-     */
+/**
+ * Marca uma notificação como lida.
+ * Só o próprio usuário dono da notificação ou um usuário com permissão de ADMIN pode marcar a notificação como lida.
+ * @param userAuthenticated o usuário autenticado.
+ * @param notificacaoId o id da notificação a ser marcada como lida.
+ * @return a notificação que foi marcada como lida.
+ * 
+ */
     @PatchMapping("/lida/{notificacaoId}")
     public ResponseEntity<Notificacao> marcarComoLida(@AuthenticationPrincipal UserAuthenticated userAuthenticated, @PathVariable UUID notificacaoId) {
         UUID usuarioId = userAuthenticated.id();
@@ -179,15 +165,16 @@ public class NotificacaoController {
         return ResponseEntity.ok().body(notificacaoLida);
     }
 
-    /**
-     * Marca as notificações com base no id do usuário e lista de ids de notificações como lidas.
-     * Só permite que as notificações sejam marcadas como lidas pelo próprio dono ou por um usuário com permissão de ADMIN
-     * 
-     * @param usuarioId o id do usuário
-     * @param userAuthenticated o usuário autenticado
-     * @param listaNotificacaoId a lista de ids de notificações a ser marcadas como lidas
-     * @return a lista de notificações que foram marcadas como lidas
-     */
+/**
+ * Marca as notificações com base no id do usuário e lista de ids de notificações como lidas.
+
+ * Só  permite que as notificações sejam marcadas como lidas pelo próprio dono ou por um usuário com permissão de ADMIN
+ * 
+ * @param usuarioId o id do usuário
+ * @param userAuthenticated o usuário autenticado
+ * @param listaNotificacaoId a lista de ids de notificações a ser marcadas como lidas
+ * @return a lista de notificações que foram marcadas como lidas
+ */
     @PreAuthorize("#usuarioId == authentication.principal.id")
     @PatchMapping("/marcarSelecionadasComoLida/{usuarioId}")
     public ResponseEntity<List<Notificacao>> marcarSelecionadasComoLida(@PathVariable UUID usuarioId, @AuthenticationPrincipal UserAuthenticated userAuthenticated, @RequestParam(required = true) List<UUID> listaNotificacaoId) {
@@ -196,7 +183,7 @@ public class NotificacaoController {
 
     /**
      * Deleta uma notificação com base no id do usuário e no id da notificação.
-     * Só permite que a notificação seja deletada pelo próprio dono ou por um usuário com permissão de ADMIN ou GESTOR.
+     * Só  permite que a notificação seja deletada pelo próprio dono ou por um usuário com permissão de ADMIN ou GESTOR.
      * @param usuarioId o id do usuário
      * @param notificacaoId o id da notificação a ser deletada
      * @return vazio, pois a notificação foi deletada
@@ -210,7 +197,7 @@ public class NotificacaoController {
 
     /**
      * Deleta as notificações com base no id do usuário e lista de ids de notificações.
-     * Só permite que as notificações sejam deletadas pelo próprio dono ou por um usuário com permissão de ADMIN ou GESTOR.
+     * Só  permite que as notificações sejam deletadas pelo próprio dono ou por um usuário com permissão de ADMIN ou GESTOR.
      * 
      * @param usuarioId o id do usuário
      * @param listaNotificacaoId a lista de ids de notificações a ser deletadas
@@ -238,13 +225,13 @@ public class NotificacaoController {
         return ResponseEntity.ok().body(Map.of("message", "Token registrado com sucesso!"));
     }
 
-    /**
-     * Visualiza o status de um token de push com base no token e no id do usuário.
-     * Só permite que o status do token seja visualizado por um usuário autenticado com permissão de ADMIN, GESTOR, AGENTE, EMPRESA ou MOTORISTA.
-     * @param userAuthenticated o usuário autenticado
-     * @param token o token a ser visualizado
-     * @return o token a ser visualizado
-     */
+/**
+ * Visualiza o status de um token de push com base no token e no id do usuário.
+ * Só permite que o status do token seja visualizado por um usuário autenticado com permissão de ADMIN, GESTOR, AGENTE, EMPRESA ou MOTORISTA.
+ * @param userAuthenticated o usuário autenticado
+ * @param token o token a ser visualizado
+ * @return o token a ser visualizado
+ */
     @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR', 'AGENTE', 'EMPRESA', 'MOTORISTA')")
     @GetMapping("/pushToken/byToken")
     public ResponseEntity<PushTokenResponseDTO> visualizarStatusByTokenAndUsuario(@AuthenticationPrincipal UserAuthenticated userAuthenticated, @RequestParam(required = true) String token) {
@@ -252,12 +239,12 @@ public class NotificacaoController {
         return ResponseEntity.ok(pushToken.toResponseDTO());
     }
 
-    /**
-     * Visualiza o status de todos os tokens de push de um usuário com base no id do usuário.
-     * Só permite que o status do token seja visualizado por um usuário autenticado com permissão de ADMIN, GESTOR, AGENTE, EMPRESA ou MOTORISTA.
-     * @param userAuthenticated o usuário autenticado
-     * @return a lista de tokens a serem visualizados
-     */
+/**
+ * Visualiza o status de todos os tokens de push de um usuário com base no id do usuário.
+ * Só permite que o status do token seja visualizado por um usuário autenticado com permissão de ADMIN, GESTOR, AGENTE, EMPRESA ou MOTORISTA.
+ * @param userAuthenticated o usuário autenticado
+ * @return a lista de tokens a serem visualizados
+ */
     @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR', 'AGENTE', 'EMPRESA', 'MOTORISTA')")
     @GetMapping("/pushToken/byUsuarioId")
     public ResponseEntity<List<PushTokenResponseDTO>> visualizarStatusByUsuario(@AuthenticationPrincipal UserAuthenticated userAuthenticated) {
