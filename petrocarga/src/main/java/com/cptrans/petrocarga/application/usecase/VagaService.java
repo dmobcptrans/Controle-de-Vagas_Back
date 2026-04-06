@@ -124,6 +124,8 @@ public class VagaService {
         }
         EnderecoVaga enderecoVaga = enderecoVagaService.cadastrarEnderecoVaga(novaVaga.getEndereco());
         novaVaga.setEndereco(enderecoVaga);
+
+        novaVaga.setStatus(StatusVagaEnum.INDISPONIVEL);
         
         Vaga vagaCadastrada= vagaRepository.save(novaVaga);
 
