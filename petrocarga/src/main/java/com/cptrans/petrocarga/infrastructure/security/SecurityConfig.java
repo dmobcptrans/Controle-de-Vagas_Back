@@ -80,23 +80,36 @@ public class SecurityConfig {
      * Permite os seguintes headers: Authorization, Content-Type, Accept, Cache-Control, Last-Event-ID.
      * Também permite o envio de cookies e outras credenciais nas requisições CORS, o que é importante para autenticação de sessões.
      */
-//     @Bean
-//     public CorsConfigurationSource corsConfigurationSource() {
-//         CorsConfiguration corsConfig = new CorsConfiguration();
-//         corsConfig.setAllowedOriginPatterns(allowedOrigins);
-//         corsConfig.setAllowedMethods(java.util.List.of("GET", "PATCH", "POST", "PUT", "DELETE", "OPTIONS"));
-//         corsConfig.setAllowedHeaders(java.util.List.of( 
-//             "Authorization",
-//             "Content-Type",
-//             "Accept",
-//             "Cache-Control",
-//             "Last-Event-ID"));
-//         corsConfig.setAllowCredentials(true);
+    // @Bean
+    // public CorsConfigurationSource corsConfigurationSource() {
+    //     CorsConfiguration corsConfig = new CorsConfiguration();
 
-//         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-//         source.registerCorsConfiguration("/**", corsConfig);
-//         return source;
-// }
+    //     corsConfig.setAllowedOriginPatterns(allowedOrigins);
+
+    //     corsConfig.setAllowedMethods(List.of(
+    //         "GET",
+    //         "POST",
+    //         "PATCH",
+    //         "DELETE",
+    //         "OPTIONS"
+    //     ));
+
+    //     corsConfig.setAllowedHeaders(List.of(
+    //         "Authorization",
+    //         "Content-Type",
+    //         "Accept",
+    //         "Cache-Control",
+    //         "Last-Event-ID",
+    //         "ngrok-skip-browser-warning"
+    //     ));
+
+    //     corsConfig.setAllowCredentials(true);
+
+    //     UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    //     source.registerCorsConfiguration("/**", corsConfig);
+
+    //     return source;
+    // }
 
     /**
      * Retorna o gerenciador de autenticação da API.
