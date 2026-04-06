@@ -155,4 +155,29 @@ public class ReservaUtils {
     public Boolean existsByUsuarioId(UUID usuarioId) {
         return reservaRepository.existsByCriadoPorIdOrMotoristaUsuarioId(usuarioId);
     }
+
+    public static void validarFiltrosData(LocalDate data, Integer mes, Integer ano) {
+        boolean informouData = data != null;
+        boolean informouMesOuAno = mes != null || ano != null;
+
+        if (informouData && informouMesOuAno) {
+            throw new IllegalArgumentException("Informe ou a data completa ou mês e ano.");
+        }
+
+        if (mes != null && ano == null) {
+            throw new IllegalArgumentException("Ao informar o mês, o ano também deve ser informado.");
+        }
+
+        if (ano != null && mes == null) {
+            throw new IllegalArgumentException("Ao informar o ano, o mês também deve ser informado.");
+        }
+
+        if(mes != null && (mes < 1 || mes > 12)) {
+            throw new IllegalArgumentException("Mês deve ser um valor entre 1 e 12.");
+        }
+
+        if (ano != null && (ano < 2026 || ano > 2100)) {
+            throw new IllegalArgumentException("Ano deve ser um valor entre 2026 e 2100.");
+        }
+    }
 }

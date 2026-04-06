@@ -31,6 +31,7 @@ import com.cptrans.petrocarga.shared.utils.DateUtils;
 import com.cptrans.petrocarga.shared.utils.ReservaRapidaUtils;
 import com.cptrans.petrocarga.shared.utils.ReservaUtils;
 
+
 @Service
 public class ReservaRapidaService {
     
@@ -63,6 +64,10 @@ public class ReservaRapidaService {
 
     public ReservaRapida save (ReservaRapida reservaRapida) {
         return reservaRapidaRepository.save(reservaRapida);
+    }
+
+    public List<ReservaRapida> findAllWithFilters(UUID usuarioId, UUID vagaId, String placaVeiculo, LocalDate data, Integer mes, Integer ano, List<StatusReservaEnum> listaStatus) {
+        return reservaRapidaRepository.findAll(ReservaRapidaSpecification.filtrar(usuarioId, vagaId, placaVeiculo, data, mes, ano, listaStatus));
     }
 
     public List<ReservaRapida> findAllByData(LocalDate data, List<StatusReservaEnum> status) {
@@ -117,9 +122,9 @@ public class ReservaRapidaService {
         return reservaRapidaRepository.findByAgenteId(agenteId, pageable);
     }
     
-    public Page<ReservaRapida> findByAgenteWithFilters(Agente agente, UUID vagaId, String placaVeiculo, LocalDate data, List<StatusReservaEnum> listaStatus, Integer numeroPagina, Integer tamanhoPagina) {
+    public Page<ReservaRapida> findByAgenteWithFilters(Agente agente, UUID vagaId, String placaVeiculo, LocalDate data, List<StatusReservaEnum> listaStatus, Integer mes, Integer ano, Integer numeroPagina, Integer tamanhoPagina) {
         Pageable pageable = PageRequest.of(numeroPagina, tamanhoPagina, Sort.by("inicio").descending());
-        return reservaRapidaRepository.findAll(ReservaRapidaSpecification.filtrar(agente.getUsuario().getId(), vagaId, placaVeiculo, data, listaStatus), pageable);
+        return reservaRapidaRepository.findAll(ReservaRapidaSpecification.filtrar(agente.getUsuario().getId(), vagaId, placaVeiculo, data, mes, ano, listaStatus), pageable);
     }
 
     public ReservaRapida create(ReservaRapida novaReservaRapida) {

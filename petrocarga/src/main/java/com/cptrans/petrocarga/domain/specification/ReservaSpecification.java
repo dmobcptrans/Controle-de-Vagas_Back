@@ -8,28 +8,14 @@ import java.util.UUID;
 
 import org.springframework.data.jpa.domain.Specification;
 
-import com.cptrans.petrocarga.domain.entities.ReservaRapida;
+import com.cptrans.petrocarga.domain.entities.Reserva;
 import com.cptrans.petrocarga.domain.enums.StatusReservaEnum;
 import com.cptrans.petrocarga.shared.utils.DateUtils;
 
 import jakarta.persistence.criteria.Predicate;
 
-
-public class ReservaRapidaSpecification {
-    /**
-     * Cria uma Specification para filtrar reservas rápidas com base nos filtros passados.
-     * Os filtros são: usuarioId, vagaId, placaVeiculo, data e listaStatus.
-     * Se nenhum filtro for passado, então retorna uma Specification que não filtra nada.
-     *
-     * @param usuarioId o id do usuário para buscar as reservas rápidas
-     * @param vagaId o id da vaga para filtrar as reservas
-     * @param placaVeiculo a placa do veículo para filtrar as reservas
-     * @param data a data da reserva para filtrar as reservas
-     * @param listaStatus a lista de status para filtrar as reservas
-     * @return a Specification que filtra as reservas r pidas com base nos filtros passados
-     * 
-     */
-    public static Specification<ReservaRapida> filtrar(
+public class ReservaSpecification {
+    public static Specification<Reserva> filtrar(
         UUID usuarioId,
         UUID vagaId,
         String placaVeiculo,
@@ -42,9 +28,9 @@ public class ReservaRapidaSpecification {
 
             List<Predicate> predicates = new ArrayList<>();
 
-            if (usuarioId != null) {
+            if(usuarioId != null) {
                 predicates.add(
-                    cb.equal(root.get("agente").get("usuario").get("id"), usuarioId)
+                    cb.equal(root.get("motorista").get("id"), usuarioId )
                 );
             }
 
@@ -56,7 +42,7 @@ public class ReservaRapidaSpecification {
 
             if (placaVeiculo != null) {
                 predicates.add(
-                    cb.equal(root.get("placa"), placaVeiculo.toUpperCase())
+                    cb.equal(root.get("veiculo").get("placa"), placaVeiculo.toUpperCase())
                 );
             }
 
