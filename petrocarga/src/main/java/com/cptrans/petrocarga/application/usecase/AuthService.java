@@ -58,6 +58,7 @@ public class AuthService {
     public AuthResponseDTO login(AuthRequestDTO request) {
         if((request.getEmail() == null && request.getCpf() == null) || (request.getEmail() != null && request.getCpf() != null)) throw new IllegalArgumentException("Informe um email OU CPF.");
        
+        if(request.getEmail() != null ) request.setEmail(request.getEmail().trim().toLowerCase());
         
         Usuario usuario = usuarioRepository.findByEmailHashOrCpfHash(request.getEmail() == null ? null : hashService.hash(request.getEmail()), request.getCpf() == null ? null : hashService.hash(request.getCpf())).orElseThrow(() -> new IllegalArgumentException("Credenciais inválidas."));
 
