@@ -124,7 +124,7 @@ public class VeiculoService {
         }
 
         if (novoVeiculo.getPlaca() != null){
-            Optional<Veiculo> veiculoByPlaca = veiculoRepository.findByPlacaAndUsuario(novoVeiculo.getPlaca().toUpperCase(), usuarioRegistrado);
+            Optional<Veiculo> veiculoByPlaca = veiculoRepository.findByPlacaAndUsuario(novoVeiculo.getPlaca().trim().toUpperCase(), usuarioRegistrado);
             if(veiculoByPlaca.isPresent() && !veiculoByPlaca.get().getId().equals(veiculoRegistrado.getId())) {
                 if(!veiculoByPlaca.get().isAtivo()){
                     veiculoByPlaca.get().setAtivo(true);
@@ -133,12 +133,11 @@ public class VeiculoService {
                 }
                 throw new IllegalArgumentException("Você já possui um veículo cadastrado com essa placa.");
             }else{
-                veiculoRegistrado.setPlaca(novoVeiculo.getPlaca().toUpperCase());
+                veiculoRegistrado.setPlaca(novoVeiculo.getPlaca().trim().toUpperCase());
             }
         }
         if (novoVeiculo.getTipo() != null){
             veiculoRegistrado.setTipo(novoVeiculo.getTipo());
-            veiculoRegistrado.setComprimento(novoVeiculo.getTipo().getComprimento());
         }
         if (novoVeiculo.getMarca() != null) veiculoRegistrado.setMarca(novoVeiculo.getMarca());
         if (novoVeiculo.getModelo() != null) veiculoRegistrado.setModelo(novoVeiculo.getModelo());

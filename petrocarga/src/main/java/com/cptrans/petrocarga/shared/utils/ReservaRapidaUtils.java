@@ -72,7 +72,7 @@ public class ReservaRapidaUtils {
                     throw new IllegalArgumentException("Veículo com placa " + novaReservaRapida.getPlaca() + " já possui uma reserva ativa nesta vaga.");
                 }
                 if(reservaSobrepostas){
-                    tamanhoDisponivelVaga -= reserva.getVeiculo().getComprimento();
+                    tamanhoDisponivelVaga -= reserva.getVeiculo().getTipo().getComprimento();
                     if(tamanhoDisponivelVaga < 0) throw new IllegalArgumentException("Não há espaço suficiente na vaga para a reserva no período solicitado. Espaço disponível: " + (tamanhoDisponivelVaga + novaReservaRapida.getTipoVeiculo().getComprimento()) + " metros.");
                 }
             }
