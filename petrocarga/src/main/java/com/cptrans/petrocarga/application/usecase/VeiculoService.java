@@ -6,7 +6,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -41,9 +40,6 @@ public class VeiculoService {
 
     @Autowired
     private CriptoService cpfCriptoService;
-
-    @Value("${app.security.aes-criptography.active-key-version}")
-    private Integer activeKeyVersion;
 
     public List<Veiculo> findAll() {
         return veiculoRepository.findAll();
@@ -102,7 +98,6 @@ public class VeiculoService {
             novoVeiculo.setCpfProprietarioHash(cpfHashService.hash(cpfString));
             novoVeiculo.setCpfProprietarioCripto(cpfCriptoService.encrypt(cpfString));
             novoVeiculo.setCpfProprietarioLast5(UsuarioUtils.gerarLastN(cpfString, 5));
-            novoVeiculo.setCpfProprietarioKeyVersion(activeKeyVersion);
         }
 
         novoVeiculo.setUsuario(usuarioVeiculo);
@@ -145,7 +140,6 @@ public class VeiculoService {
             veiculoRegistrado.setCpfProprietarioHash(cpfHashService.hash(novoVeiculo.getCpfProprietario()));
             veiculoRegistrado.setCpfProprietarioCripto(cpfCriptoService.encrypt(novoVeiculo.getCpfProprietario()));
             veiculoRegistrado.setCpfProprietarioLast5(UsuarioUtils.gerarLastN(novoVeiculo.getCpfProprietario(), 5));
-            veiculoRegistrado.setCpfProprietarioKeyVersion(activeKeyVersion);
             if  ( veiculoRegistrado.getCnpjProprietario() != null ) veiculoRegistrado.setCnpjProprietario(null);
         }
         if (novoVeiculo.getCnpjProprietario() != null){
