@@ -42,7 +42,7 @@ public class AgenteSpecification {
 
             if (filtros.email() != null) {
                 predicates.add(
-                    cb.equal(root.get("usuario").get("email"), filtros.email())
+                    cb.equal(root.get("usuario").get("email"), filtros.email().trim().toLowerCase())
                 );
             }
 

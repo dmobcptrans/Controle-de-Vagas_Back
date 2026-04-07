@@ -34,7 +34,7 @@ public class AgenteRequestDTO {
 
     public Agente toEntity() {
         String primeiraSenha = this.cpf;
-        Usuario usuario = new Usuario(this.nome, this.cpf, this.telefone, this.email, primeiraSenha, PermissaoEnum.AGENTE);
+        Usuario usuario = new Usuario(this.nome, this.cpf, this.telefone, this.email.trim().toLowerCase(), primeiraSenha, PermissaoEnum.AGENTE);
         Agente agente = new Agente();
         agente.setUsuario(usuario);
         agente.setMatricula(this.matricula);

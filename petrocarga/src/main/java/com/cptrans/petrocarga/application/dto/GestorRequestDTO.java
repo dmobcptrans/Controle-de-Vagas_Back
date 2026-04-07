@@ -28,7 +28,7 @@ public class GestorRequestDTO {
     public Usuario toEntity() {
         Usuario usuario = new Usuario();
         usuario.setNome(this.nome);
-        usuario.setEmailHash(this.email);
+        usuario.setEmailHash(this.email != null ? this.email.trim().toLowerCase() : null);
         usuario.setCpfHash(this.cpf);
         usuario.setSenha(this.cpf);
         usuario.setTelefoneHash(this.telefone);

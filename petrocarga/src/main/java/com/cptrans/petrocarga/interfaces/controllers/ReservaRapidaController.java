@@ -27,6 +27,7 @@ import com.cptrans.petrocarga.domain.entities.Agente;
 import com.cptrans.petrocarga.domain.entities.ReservaRapida;
 import com.cptrans.petrocarga.domain.entities.Vaga;
 import com.cptrans.petrocarga.domain.enums.StatusReservaEnum;
+import com.cptrans.petrocarga.shared.utils.ReservaUtils;
 
 
 @RestController
@@ -68,11 +69,14 @@ public class ReservaRapidaController {
      */
     @PreAuthorize("#usuarioId == authentication.principal.id or hasAnyRole('ADMIN', 'GESTOR')")
     @GetMapping("/{usuarioId}")
-    public ResponseEntity<PageResponseDTO> getReservasRapidasByUsuarioId(@PathVariable UUID usuarioId, @RequestParam(required = false) UUID vagaId, @RequestParam(required = false) String placaVeiculo, @RequestParam(required = false) LocalDate data, @RequestParam(required = false) List<StatusReservaEnum> listaStatus, @RequestParam(defaultValue = "0") Integer numeroPagina, @RequestParam(defaultValue = "10") Integer tamanhoPagina) {
+    public ResponseEntity<PageResponseDTO> getReservasRapidasByUsuarioId(@PathVariable UUID usuarioId, @RequestParam(required = false) UUID vagaId, @RequestParam(required = false) String placaVeiculo, @RequestParam(required = false) LocalDate data, @RequestParam(required = false) List<StatusReservaEnum> listaStatus, @RequestParam(required = false) Integer mes, @RequestParam(required = false) Integer ano, @RequestParam(defaultValue = "0") Integer numeroPagina, @RequestParam(defaultValue = "10") Integer tamanhoPagina) {
+        ReservaUtils.validarFiltrosData(data,mes, ano);
+
         Agente agente = agenteService.findByUsuarioId(usuarioId);
+        
         if(vagaId != null || placaVeiculo != null || data != null || (listaStatus != null && !listaStatus.isEmpty())) {
             placaVeiculo = placaVeiculo != null ? placaVeiculo.trim().toUpperCase() : null;
-            Page<ReservaRapidaResponseDTO> reservasRapidas = reservaRapidaService.findByAgenteWithFilters(agente, vagaId, placaVeiculo, data, listaStatus, numeroPagina, tamanhoPagina).map(ReservaRapida::toResponse);
+            Page<ReservaRapidaResponseDTO> reservasRapidas = reservaRapidaService.findByAgenteWithFilters(agente, vagaId, placaVeiculo, data, listaStatus, mes, ano, numeroPagina, tamanhoPagina).map(ReservaRapida::toResponse);
             return ResponseEntity.ok().body(new PageResponseDTO(reservasRapidas));
         }
         Page<ReservaRapidaResponseDTO> reservasRapidas = reservaRapidaService.findByAgente(agente.getId(), numeroPagina, tamanhoPagina).map(ReservaRapida::toResponse);

@@ -46,7 +46,7 @@ public class GestorSpecification {
 
             if (filtros.email() != null) {
                 predicates.add(
-                    cb.equal(root.get("email"), filtros.email())
+                    cb.equal(root.get("email"), filtros.email().trim().toLowerCase())
                 );
             }
 

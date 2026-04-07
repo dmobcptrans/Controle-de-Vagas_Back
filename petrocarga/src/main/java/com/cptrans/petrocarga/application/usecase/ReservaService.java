@@ -35,6 +35,7 @@ import com.cptrans.petrocarga.domain.enums.StatusReservaEnum;
 import com.cptrans.petrocarga.domain.enums.TipoNotificacaoEnum;
 import com.cptrans.petrocarga.domain.enums.TipoVeiculoEnum;
 import com.cptrans.petrocarga.domain.repositories.ReservaRepository;
+import com.cptrans.petrocarga.domain.specification.ReservaSpecification;
 import com.cptrans.petrocarga.infrastructure.scheduler.handlers.NotificacaoSchedulerService;
 import com.cptrans.petrocarga.infrastructure.scheduler.handlers.ReservaSchedulerService;
 import com.cptrans.petrocarga.infrastructure.security.UserAuthenticated;
@@ -71,24 +72,13 @@ public class ReservaService {
     // private DisponibilidadeVagaService disponibilidadeVagaService;
 
 
-    public List<Reserva> findAll(List<StatusReservaEnum> status, UUID vagaId) {
+    public List<ReservaDTO> findAll(List<StatusReservaEnum> status, UUID vagaId, String placa, LocalDate data,  UUID usuarioId, Integer mes, Integer ano) {
         if(status == null) status = new ArrayList<>();
-        if(vagaId != null) {
-            return findByVagaId(vagaId, status);
-        }
-        if(!status.isEmpty()) {
-            return findByStatus(status);
-        }
-        return reservaRepository.findAll();
-    }
 
-    public List<Reserva> findAllByData(LocalDate data, List<StatusReservaEnum> status, UUID vagaId) {
-        List<Reserva> reservas = findAll(status, vagaId);
-        if(reservas.isEmpty()) return reservas;
-        if(data != null) {
-            return reservas.stream().filter(reserva -> DateUtils.toLocalDateInBrazil(reserva.getInicio()).equals(data) || DateUtils.toLocalDateInBrazil(reserva.getFim()).equals(data)).toList();
-        }
-        return reservas;
+        List<Reserva> reservas = reservaRepository.findAll(ReservaSpecification.filtrar(usuarioId, vagaId, placa, data, mes, ano, status));
+        List<ReservaRapida> reservasRapidas = reservaRapidaService.findAllWithFilters(usuarioId, vagaId, placa, data, mes, ano, status);
+        List<ReservaDTO> reservasDTO = ReservaUtils.juntarReservas(reservas, reservasRapidas);
+        return reservasDTO;
     }
 
     public List<Reserva> findByStatus(List<StatusReservaEnum> status) {
@@ -195,22 +185,8 @@ public class ReservaService {
         return listaFinalReservas;
     }
 
-    public List<ReservaDTO> getAllReservasByData(LocalDate data, List<StatusReservaEnum> status) {
-        List<Reserva> reservas = findAllByData(data, status, null);
-        List<ReservaRapida> reservasRapidas = reservaRapidaService.findAllByData(data, status);
-        List<ReservaDTO> listaFinalReservas = ReservaUtils.juntarReservas(reservas, reservasRapidas);
-        return listaFinalReservas;
-    }
-
     public List<ReservaDTO> getReservasByVagaIdDataAndPlaca(UUID vagaId, LocalDate data, String placa, List<StatusReservaEnum> status) {
         List<ReservaDTO> reservas = getReservasByVagaIdAndData(vagaId, data, status);
-        return reservas.stream()
-                .filter(r -> r.getPlacaVeiculo().equalsIgnoreCase(placa))
-                .toList();
-    }
-
-    public List<ReservaDTO> getAllReservasByDataAndPlaca(LocalDate data, String placa, List<StatusReservaEnum> status) {
-        List<ReservaDTO> reservas = getAllReservasByData( data, status);
         return reservas.stream()
                 .filter(r -> r.getPlacaVeiculo().equalsIgnoreCase(placa))
                 .toList();
@@ -317,6 +293,7 @@ public static class Intervalo {
      *  - Não altera o campo "fim" para evitar impacto em relatórios existentes
      */
     public ReservaDTO finalizarForcado(UUID reservaId) {
+        UUID usuarioIdLogado = ((UserAuthenticated) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).id();
         Optional<Reserva> reserva = reservaRepository.findById(reservaId);
         Optional<ReservaRapida> reservaRapida = reservaRapidaService.findById(reservaId);
         ReservaDTO reservaDTO = new ReservaDTO();
@@ -339,9 +316,11 @@ public static class Intervalo {
             reservaRapidaService.save(reservaRapida.get());
             reservaDTO = new ReservaDTO(reservaRapida.get());
         }
-
-        notificacaoService.sendNotificationToUsuarioBySystem(reservaDTO.getCriadoPor().getId(), new Notificacao("Checkout Forçado","Sua reserva foi removida por um gestor. Realize uma nova reserva se necessário", TipoNotificacaoEnum.RESERVA),null);
         
+        if(!reservaDTO.getCriadoPor().getId().equals(usuarioIdLogado)) {
+            notificacaoService.sendNotificationToUsuarioBySystem(reservaDTO.getCriadoPor().getId(), new Notificacao("Checkout Forçado","Sua reserva foi removida por um agente ou gestor. Realize uma nova reserva se necessário", TipoNotificacaoEnum.RESERVA),null);
+        }
+
         if (reserva.isPresent()){
             try {
                 notificacaoSchedulerService.cancelarSchedulerCheckIn(reserva.get().getMotorista().getUsuario().getId(), reserva.get().getId());

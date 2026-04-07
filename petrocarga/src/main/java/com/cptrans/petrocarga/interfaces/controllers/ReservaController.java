@@ -38,6 +38,7 @@ import com.cptrans.petrocarga.domain.entities.Veiculo;
 import com.cptrans.petrocarga.domain.enums.StatusReservaEnum;
 import com.cptrans.petrocarga.domain.enums.TipoVeiculoEnum;
 import com.cptrans.petrocarga.infrastructure.security.UserAuthenticated;
+import com.cptrans.petrocarga.shared.utils.ReservaUtils;
 
 import jakarta.validation.Valid;
 
@@ -62,12 +63,13 @@ public class ReservaController {
      * @return lista de reservas com base na lista de status e vaga ID informado ou todas as reservas caso nenhum filtro seja informado.
      */
     @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR', 'AGENTE')")
-    @GetMapping
-    public ResponseEntity<List<ReservaResponseDTO>> getReservas(@RequestParam(required = false) List<StatusReservaEnum> status, @RequestParam(required = false) UUID vagaId) {
-        List<ReservaResponseDTO> reservas = reservaService.findAll(status, vagaId).stream()
-                .map(ReservaResponseDTO::new)
-                .collect(Collectors.toList());
+    @GetMapping("/all")
+    public ResponseEntity<List<ReservaDTO>> getAllReservas(@RequestParam(required = false) List<StatusReservaEnum> status, @RequestParam(required = false) UUID vagaId, @RequestParam(required = false) String placa, @RequestParam(required = false) LocalDate data, @RequestParam(required = false) UUID usuarioId, @RequestParam(required = false) Integer mes, @RequestParam(required = false) Integer ano) {
+        ReservaUtils.validarFiltrosData(data, mes, ano);
+
+        List<ReservaDTO> reservas = reservaService.findAll(status, vagaId, placa, data, usuarioId, mes, ano);
         return ResponseEntity.ok(reservas);
+      
     }
 
     /**
@@ -94,28 +96,6 @@ public class ReservaController {
         return ResponseEntity.ok(reservas);
     }
 
-    /**
-     * Retorna uma lista de reservas com base na lista de status, data e placa informado.
-     * 
-     * Só permite que as reservas sejam acessadas por um usuário com permissão de ADMIN, GESTOR ou AGENTE.
-     * 
-     * @param data data para filtrar as reservas
-     * @param placa placa para filtrar as reservas
-     * @param status lista de status para filtrar as reservas
-     * @return lista de reservas com base na lista de status, data e placa informado ou todas as reservas caso nenhum filtro seja informado.
-     */
-    @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR', 'AGENTE')")
-    @GetMapping("/all")
-    public ResponseEntity<List<ReservaDTO>> getAllReservasWithFilters(@RequestParam(required = false) LocalDate data, @RequestParam(required = false) String placa,@RequestParam(required = false) List<StatusReservaEnum> status) {
-        if(placa != null) {
-            placa = placa.trim().toUpperCase();
-            List<ReservaDTO> reservas = reservaService.getAllReservasByDataAndPlaca( data, placa, status);
-            return ResponseEntity.ok(reservas);
-        }
-        List<ReservaDTO> reservas = reservaService.getAllReservasByData( data, status);
-        return ResponseEntity.ok(reservas);
-    }
-    
     /**
      * Retorna uma lista de reservas com base na placa informado.
      * 
