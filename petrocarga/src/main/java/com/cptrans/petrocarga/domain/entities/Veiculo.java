@@ -52,9 +52,6 @@ public class Veiculo {
     @Column(name = "cpf_proprietario_cripto")
     private String cpfProprietarioCripto;
 
-    @Column(name = "cpf_proprietario_key_version")
-    private Integer cpfProprietarioKeyVersion;
-
     @Column(name = "cpf_proprietario_last5")
     private String cpfProprietarioLast5;
 
@@ -135,14 +132,6 @@ public class Veiculo {
 
     public void setCpfProprietarioCripto(String cpfProprietarioCripto) {
         this.cpfProprietarioCripto = cpfProprietarioCripto;
-    }
-
-    public Integer getCpfProprietarioKeyVersion() {
-        return cpfProprietarioKeyVersion;
-    }
-
-    public void setCpfProprietarioKeyVersion(Integer cpfProprietarioKeyVersion) {
-        this.cpfProprietarioKeyVersion = cpfProprietarioKeyVersion;
     }
 
     public String getCpfProprietarioLast5() {
