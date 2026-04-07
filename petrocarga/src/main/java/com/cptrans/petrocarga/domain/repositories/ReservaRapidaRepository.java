@@ -57,8 +57,8 @@ public interface ReservaRapidaRepository extends JpaRepository<ReservaRapida, UU
                             (
                                 CASE rr.tipo_veiculo
                                     WHEN 'AUTOMOVEL' THEN 5
-                                    WHEN 'VUC' THEN 7
-                                    WHEN 'CAMINHONETA' THEN 8
+                                    WHEN 'CAMINHONETA' THEN 6
+                                    WHEN 'VUC' THEN 8
                                     WHEN 'CAMINHAO_MEDIO' THEN 12
                                     WHEN 'CAMINHAO_LONGO' THEN 19
                                     ELSE 0
