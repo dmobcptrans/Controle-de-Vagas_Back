@@ -293,6 +293,7 @@ public static class Intervalo {
      *  - Não altera o campo "fim" para evitar impacto em relatórios existentes
      */
     public ReservaDTO finalizarForcado(UUID reservaId) {
+        UUID usuarioIdLogado = ((UserAuthenticated) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).id();
         Optional<Reserva> reserva = reservaRepository.findById(reservaId);
         Optional<ReservaRapida> reservaRapida = reservaRapidaService.findById(reservaId);
         ReservaDTO reservaDTO = new ReservaDTO();
@@ -315,9 +316,11 @@ public static class Intervalo {
             reservaRapidaService.save(reservaRapida.get());
             reservaDTO = new ReservaDTO(reservaRapida.get());
         }
-
-        notificacaoService.sendNotificationToUsuarioBySystem(reservaDTO.getCriadoPor().getId(), new Notificacao("Checkout Forçado","Sua reserva foi removida por um gestor. Realize uma nova reserva se necessário", TipoNotificacaoEnum.RESERVA),null);
         
+        if(!reservaDTO.getCriadoPor().getId().equals(usuarioIdLogado)) {
+            notificacaoService.sendNotificationToUsuarioBySystem(reservaDTO.getCriadoPor().getId(), new Notificacao("Checkout Forçado","Sua reserva foi removida por um agente ou gestor. Realize uma nova reserva se necessário", TipoNotificacaoEnum.RESERVA),null);
+        }
+
         if (reserva.isPresent()){
             try {
                 notificacaoSchedulerService.cancelarSchedulerCheckIn(reserva.get().getMotorista().getUsuario().getId(), reserva.get().getId());

@@ -32,7 +32,7 @@ public class EnderecoVagaRequestDTO {
     public EnderecoVaga toEntity() {
         EnderecoVaga enderecoVaga = new EnderecoVaga();
         enderecoVaga.setBairro(this.bairro);
-        enderecoVaga.setCodigoPmp(this.codigoPmp);
+        enderecoVaga.setCodigoPmp(this.codigoPmp != null ? this.codigoPmp.trim().toUpperCase() : null);
         enderecoVaga.setLogradouro(this.logradouro);
         return enderecoVaga;
     }

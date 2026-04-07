@@ -83,7 +83,8 @@ public class UsuarioService {
 
     @Transactional
     public Usuario createUsuario(Usuario novoUsuario, PermissaoEnum permissao, String cpf_string) {
-        String emailString = novoUsuario.getEmailHash();
+        String emailString = novoUsuario.getEmailHash() != null ? novoUsuario.getEmailHash().trim().toLowerCase() : null;
+
         if(usuarioRepository.findByEmailHash(hashService.hash(emailString)).isPresent()) {
             throw new IllegalArgumentException("Email já cadastrado");
         }
@@ -163,7 +164,10 @@ public class UsuarioService {
         if ((email == null && cpf == null) || (email != null && cpf != null)) {
             throw new IllegalArgumentException("Informe um email OU CPF.");
         }
-        Usuario usuario = usuarioRepository.findByEmailHashOrCpfHash(email == null ? null : hashService.hash(email), cpf == null ? null : hashService.hash(cpf)).orElseThrow(() -> new IllegalArgumentException("Credenciais inválidas."));
+
+        if (email != null) email = email.trim().toLowerCase();
+
+        Usuario usuario = usuarioRepository.findByEmailHashOrCpfHash(email != null ? hashService.hash(email) : null, cpf == null ? null : hashService.hash(cpf)).orElseThrow(() -> new IllegalArgumentException("Credenciais inválidas."));
 
         if (usuario.isAtivo() != null && usuario.isAtivo()) {
             throw new IllegalArgumentException("Usuário já ativado.");
@@ -178,10 +182,10 @@ public class UsuarioService {
         usuario.setVerificationCode(codeStr);
         usuario.setVerificationCodeExpiresAt(LocalDateTime.now().plusMinutes(10));
 
-        usuarioRepository.save(usuario);
+        Usuario usuarioSalvo = usuarioRepository.save(usuario);
         String randomPassword = null;
         // Reenvia código de ativação via email (assíncrono)
-        emailSender.sendActivationCode(email, codeStr, randomPassword);
+        emailSender.sendActivationCode((email != null ? email : criptoService.decrypt(usuarioSalvo.getEmailHash(), usuarioSalvo.getPersonalDataKeyVersion())), codeStr, randomPassword);
     }
 
     // ==================== RECUPERAÇÃO DE SENHA ====================
@@ -191,6 +195,9 @@ public class UsuarioService {
         if ((email == null && cpf == null) || (email != null && cpf != null)) {
             throw new IllegalArgumentException("Informe um email OU CPF.");
         }
+
+        if (email != null) email = email.trim().toLowerCase(); 
+
         // Busca usuário pelo email (silenciosamente ignora se não existir por segurança)
         Optional<Usuario> optUsuario = usuarioRepository.findByEmailHashOrCpfHashAndAtivo(email == null ? null : hashService.hash(email), cpf == null ? null : hashService.hash(cpf), true);
         
@@ -213,7 +220,7 @@ public class UsuarioService {
         usuarioRepository.save(usuario);
 
         // Envia email de recuperação de forma assíncrona
-        emailSender.sendPasswordResetCode(email, codeStr);
+        emailSender.sendPasswordResetCode(email != null ? email : criptoService.decrypt(usuario.getEmailHash(), usuario.getPersonalDataKeyVersion()), codeStr);
     }
 
     @Transactional
@@ -222,8 +229,7 @@ public class UsuarioService {
             throw new IllegalArgumentException("Informe um email OU CPF.");
         }
 
-        Usuario usuario = usuarioRepository.findByEmailHashOrCpfHash(email == null ? null : hashService.hash(email), cpf == null ? null : hashService.hash(cpf)).orElseThrow(() -> new IllegalArgumentException("Credenciais inválidas."));
-
+        Usuario usuario = usuarioRepository.findByEmailHashOrCpfHash(email == null ? null : hashService.hash(email.trim().toLowerCase()), cpf == null ? null : hashService.hash(cpf)).orElseThrow(() -> new IllegalArgumentException("Credenciais inválidas ou código expirado."));
 
         if (!usuario.isAtivo()) {
             throw new IllegalArgumentException("Usuário desativado.");
@@ -231,13 +237,13 @@ public class UsuarioService {
 
         // Valida código
         if (usuario.getVerificationCode() == null || !usuario.getVerificationCode().equals(code)) {
-            throw new IllegalArgumentException("Código inválido ou expirado.");
+            throw new IllegalArgumentException("Credenciais inválidas ou código expirado.");
         }
 
         // Valida expiração
         if (usuario.getVerificationCodeExpiresAt() == null || 
             usuario.getVerificationCodeExpiresAt().isBefore(LocalDateTime.now())) {
-            throw new IllegalArgumentException("Código inválido ou expirado.");
+            throw new IllegalArgumentException("Credenciais inválidas ou código expirado.");
         }
 
         // Atualiza senha
@@ -264,9 +270,11 @@ public class UsuarioService {
             usuarioExistente.setPersonalDataKeyVersion(activeKeyVersion);
         }
         if (patchRequestDTO.getEmail() != null) {
-            Optional<Usuario> usuarioByEmail = usuarioRepository.findByEmailHash(hashService.hash(patchRequestDTO.getEmail()));
+            String emailString = patchRequestDTO.getEmail().trim().toLowerCase();
+            String emailHash = hashService.hash(emailString);
+            Optional<Usuario> usuarioByEmail = usuarioRepository.findByEmailHash(emailHash);
             if (usuarioByEmail.isPresent() && !usuarioByEmail.get().getId().equals(id))  throw new IllegalArgumentException("Email já cadastrado");
-            usuarioExistente.setEmailHash(hashService.hash(patchRequestDTO.getEmail()));
+            usuarioExistente.setEmailHash(emailHash);
         }
         if (patchRequestDTO.getCpf() != null) {
             Optional<Usuario> usuarioByCpf = usuarioRepository.findByCpfHash(hashService.hash(patchRequestDTO.getCpf()));
@@ -294,6 +302,7 @@ public class UsuarioService {
 
     public Usuario createMotoristaByGoogleAccount(String name, String email, String googleId){
         Usuario novoUsuario = new Usuario();
+        if(email != null) email = email.trim().toLowerCase();
         novoUsuario.setAtivo(true);
         novoUsuario.setEmailHash(hashService.hash(email));
         novoUsuario.setEmailCripto(criptoService.encrypt(email));
