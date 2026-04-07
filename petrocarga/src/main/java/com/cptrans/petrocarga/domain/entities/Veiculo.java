@@ -42,9 +42,6 @@ public class Veiculo {
     @Enumerated(EnumType.STRING)
     private TipoVeiculoEnum tipo;
 
-    @Column(precision = 5, scale = 2)
-    private Integer comprimento;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "usuario_id", nullable = false)
     private Usuario usuario;
@@ -114,14 +111,6 @@ public class Veiculo {
 
     public void setTipo(TipoVeiculoEnum tipo) {
         this.tipo = tipo;
-    }
-
-    public Integer getComprimento() {
-        return comprimento;
-    }
-
-    public void setComprimento(Integer comprimento) {
-        this.comprimento = comprimento;
     }
 
     public Usuario getUsuario() {

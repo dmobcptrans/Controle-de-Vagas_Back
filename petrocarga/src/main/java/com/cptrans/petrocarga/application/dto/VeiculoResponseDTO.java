@@ -26,7 +26,7 @@ public class VeiculoResponseDTO {
         this.marca = veiculo.getMarca();
         this.modelo = veiculo.getModelo();
         this.tipo = veiculo.getTipo();
-        this.comprimento = veiculo.getComprimento();
+        this.comprimento = veiculo.getTipo().getComprimento();
         this.usuarioId = veiculo.getUsuario().getId();
         this.cpfProprietario = veiculo.getCpfProprietarioCripto();
         this.cnpjProprietario = veiculo.getCnpjProprietario();

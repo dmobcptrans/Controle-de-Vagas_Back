@@ -38,11 +38,10 @@ public class VeiculoRequestDTO {
 
     public Veiculo toEntity() {
         Veiculo veiculo = new Veiculo();
-        veiculo.setPlaca(this.placa.toUpperCase());
+        veiculo.setPlaca(this.placa.trim().toUpperCase());
         veiculo.setMarca(this.marca);
         veiculo.setModelo(this.modelo);
         veiculo.setTipo(this.tipo);
-        veiculo.setComprimento(this.tipo.getComprimento());
         veiculo.setCpfProprietarioHash(this.cpfProprietario);
         veiculo.setCnpjProprietario(this.cnpjProprietario);
         return veiculo;
