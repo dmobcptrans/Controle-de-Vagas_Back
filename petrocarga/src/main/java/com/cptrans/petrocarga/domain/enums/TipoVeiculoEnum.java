@@ -2,8 +2,8 @@ package com.cptrans.petrocarga.domain.enums;
 
 public enum TipoVeiculoEnum {
     AUTOMOVEL("Automóvel",5),
-    VUC("Veículo Urbano de Carga",7),
-    CAMINHONETA("Caminhoneta",8),
+    CAMINHONETA("Caminhoneta",6),
+    VUC("Veículo Urbano de Carga",8),
     CAMINHAO_MEDIO("Caminhão Médio",12),
     CAMINHAO_LONGO("Caminhão Longo",19);
 
