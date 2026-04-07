@@ -179,8 +179,8 @@ public class DashboardService {
                 byPlate.computeIfAbsent(e.getPlaca(), k -> new java.util.ArrayList<>())
                     .add(new VehicleRouteStopDTO(
                         e.getSource(),
-                        e.getInicio(),
-                        e.getFim(),
+                        e.getInicio() != null ? e.getInicio().atZone(ZONE_ID).toOffsetDateTime() : null,
+                        e.getFim() != null ? e.getFim().atZone(ZONE_ID).toOffsetDateTime() : null,
                         e.getCidadeOrigem(),
                         e.getEntradaCidade(),
                         e.getVagaId(),
@@ -199,14 +199,14 @@ public class DashboardService {
 
     private OffsetDateTime resolveStartDate(OffsetDateTime startDate) {
         if (startDate != null) {
-            return startDate;
+            return startDate.toLocalDate().atStartOfDay(ZONE_ID).toOffsetDateTime();
         }
         return LocalDate.now(ZONE_ID).atStartOfDay(ZONE_ID).toOffsetDateTime();
     }
 
     private OffsetDateTime resolveEndDate(OffsetDateTime endDate) {
         if (endDate != null) {
-            return endDate;
+            return endDate.toLocalDate().atTime(23, 59, 59).atZone(ZONE_ID).toOffsetDateTime();
         }
         return LocalDate.now(ZONE_ID).atTime(23, 59, 59).atZone(ZONE_ID).toOffsetDateTime();
     }
@@ -373,7 +373,6 @@ public class DashboardService {
     public DashboardSummaryDTO getSummary(OffsetDateTime startDate, OffsetDateTime endDate) {
         log.info("=== INÍCIO getSummary ===");
         log.info("Parâmetros: startDate={}, endDate={}", startDate, endDate);
-
         try {
             log.info("Etapa 1/10: Buscando KPIs...");
             DashboardKpiDTO kpis = getKpis(startDate, endDate);
