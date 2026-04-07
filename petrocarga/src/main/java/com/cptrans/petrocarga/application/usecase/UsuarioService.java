@@ -274,7 +274,9 @@ public class UsuarioService {
             String emailHash = hashService.hash(emailString);
             Optional<Usuario> usuarioByEmail = usuarioRepository.findByEmailHash(emailHash);
             if (usuarioByEmail.isPresent() && !usuarioByEmail.get().getId().equals(id))  throw new IllegalArgumentException("Email já cadastrado");
+            String emailCripto = criptoService.encrypt(emailString);
             usuarioExistente.setEmailHash(emailHash);
+            usuarioExistente.setEmailCripto(emailCripto);
         }
         if (patchRequestDTO.getCpf() != null) {
             Optional<Usuario> usuarioByCpf = usuarioRepository.findByCpfHash(hashService.hash(patchRequestDTO.getCpf()));
