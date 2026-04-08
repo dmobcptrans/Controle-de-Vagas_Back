@@ -52,10 +52,6 @@ public class ReservaRapidaUtils {
 
         if(!reservasRapidasAtivasNaVaga.isEmpty()){
             for(ReservaRapida reservaRapida : reservasRapidasAtivasNaVaga){
-                System.out.println(reservaRapida.getVaga().getId());
-                System.out.println(reservaRapida.getStatus());
-                System.out.println(reservaRapida.getPlaca());
-                System.out.println(reservaRapida.getInicio().atZoneSameInstant(DateUtils.FUSO_BRASIL) + " - " + reservaRapida.getFim().atZoneSameInstant(DateUtils.FUSO_BRASIL));
                 Boolean reservaSobrepostas = novaReservaRapida.getInicio().toInstant().isBefore(reservaRapida.getFim().toInstant()) && novaReservaRapida.getFim().toInstant().isAfter(reservaRapida.getInicio().toInstant());
                 validarReservaRapidaAtivaPorPlaca(reservaRapida.getPlaca(), novaReservaRapida.getPlaca());
                 if(reservaSobrepostas){
