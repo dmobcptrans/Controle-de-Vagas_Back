@@ -15,6 +15,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import com.cptrans.petrocarga.application.dto.ReservaDTO;
 import com.cptrans.petrocarga.domain.entities.Agente;
 import com.cptrans.petrocarga.domain.entities.Reserva;
 import com.cptrans.petrocarga.domain.entities.ReservaRapida;
@@ -141,7 +142,8 @@ public class ReservaRapidaService {
 
         reservaRapidaUtils.validarQuantidadeReservasPorPlaca(novaReservaRapida.toReservaDTO());
         ReservaUtils.validarTempoMaximoReserva(novaReservaRapida.toReservaDTO(), novaReservaRapida.getVaga());
-        reservaRapidaUtils.validarEspacoDisponivelNaVaga(novaReservaRapida, vagaReserva, reservasAtivasNaVaga, reservasRapidasAtivasNaVaga);
+        List<ReservaDTO> reservasTotaisAtivasNaVaga = ReservaUtils.juntarReservas(reservasAtivasNaVaga, reservasRapidasAtivasNaVaga);
+        reservaRapidaUtils.validarEspacoDisponivelNaVaga(novaReservaRapida, vagaReserva, reservasTotaisAtivasNaVaga);
         ReservaRapida reservaRapidaCriada = reservaRapidaRepository.save(novaReservaRapida);
         try {
             reservaSchedulerService.agendarFinalizacaoReserva(reservaRapidaCriada.toReservaDTO());

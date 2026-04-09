@@ -22,6 +22,7 @@ public class VagaResponseDTO {
     private String referenciaGeoInicio;
     private String referenciaGeoFim;
     private Integer comprimento;
+    private Integer quantidade;
     private StatusVagaEnum status;
 
     Comparator<OperacaoVagaResponseDTO> compararPorCodigoEnum = Comparator.comparingInt(op -> op.getDiaSemanaAsEnum().getCodigo());
@@ -40,6 +41,7 @@ public class VagaResponseDTO {
         this.referenciaGeoInicio = vaga.getReferenciaGeoInicio();
         this.referenciaGeoFim = vaga.getReferenciaGeoFim();
         this.comprimento = vaga.getComprimento();
+        this.quantidade = vaga.getQuantidade();
         this.status = vaga.getStatus();
         this.operacoesVaga = vaga.getOperacoesVaga().stream()
                 .map(operacaoVaga -> new OperacaoVagaResponseDTO(operacaoVaga))
@@ -119,6 +121,15 @@ public class VagaResponseDTO {
     public void setComprimento(Integer comprimento) { 
         this.comprimento = comprimento;
     }
+    
+    public Integer getQuantidade() {
+        return quantidade;
+    }
+
+    public void setQuantidade(Integer quantidade) {
+        this.quantidade = quantidade;
+    }
+
     public StatusVagaEnum getStatus() {
         return status;
     }

@@ -1,0 +1,2 @@
+ALTER TABLE vaga
+    ADD COLUMN IF NOT EXISTS quantidade INTEGER default NULL;

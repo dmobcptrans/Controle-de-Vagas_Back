@@ -33,6 +33,7 @@ import com.cptrans.petrocarga.domain.entities.Veiculo;
 import com.cptrans.petrocarga.domain.enums.PermissaoEnum;
 import com.cptrans.petrocarga.domain.enums.StatusReservaEnum;
 import com.cptrans.petrocarga.domain.enums.TipoNotificacaoEnum;
+import com.cptrans.petrocarga.domain.enums.TipoVagaEnum;
 import com.cptrans.petrocarga.domain.enums.TipoVeiculoEnum;
 import com.cptrans.petrocarga.domain.repositories.ReservaRepository;
 import com.cptrans.petrocarga.domain.specification.ReservaSpecification;
@@ -200,6 +201,18 @@ public class ReservaService {
     }
 
     public List<Intervalo> getIntervalosBloqueados(Vaga vaga, LocalDate data, TipoVeiculoEnum tipoVeiculo  ) {
+        if (vaga.getTipoVaga() == null) {
+            throw new IllegalArgumentException("Tipo da vaga não pode ser nulo.");
+        }
+        
+        if (vaga.getTipoVaga().equals(TipoVagaEnum.PERPENDICULAR)) {
+            return getIntervalosBloqueadosPerpendicular(vaga, data, tipoVeiculo);
+        }else{
+            return getIntervalosBloqueadosParalela(vaga, data, tipoVeiculo);
+        }
+}
+
+    private List<Intervalo> getIntervalosBloqueadosParalela(Vaga vaga, LocalDate data, TipoVeiculoEnum tipoVeiculo) {
         int capacidadeTotal = vaga.getComprimento();
         int comprimentoVeiculoDesejado = tipoVeiculo.getComprimento();
         
@@ -263,6 +276,77 @@ public class ReservaService {
         if (atual != null) intervalosBloqueados.add(atual);
 
         return intervalosBloqueados;
+}
+
+private List<Intervalo> getIntervalosBloqueadosPerpendicular(Vaga vaga, LocalDate data, TipoVeiculoEnum tipoVeiculo) {
+    if (vaga.getComprimento() == null || vaga.getComprimento() <= 0 ||
+        vaga.getQuantidade() == null || vaga.getQuantidade() <= 0) {
+        throw new IllegalArgumentException("Vaga do tipo perpendicular deve ter os campos 'comprimento' e 'quantidade' preenchidos.");
+    }
+
+    int comprimentoPorPosicao = vaga.getComprimento();
+    int quantidadePosicoes = vaga.getQuantidade();
+    int comprimentoVeiculoDesejado = tipoVeiculo.getComprimento();
+
+    if (comprimentoVeiculoDesejado > comprimentoPorPosicao) {
+        throw new IllegalArgumentException("O veículo selecionado é maior do que o tamanho permitido por posição nesta vaga.");
+    }
+
+    List<ReservaDTO> reservas = getReservasByVagaIdAndData(
+        vaga.getId(),
+        data,
+        new ArrayList<>(List.of(StatusReservaEnum.RESERVADA, StatusReservaEnum.ATIVA))
+    );
+
+    if (reservas.isEmpty()) {
+        return List.of();
+    }
+
+    TreeSet<Instant> pontos = new TreeSet<>();
+    reservas.forEach(r -> {
+        pontos.add(r.getInicio().toInstant());
+        pontos.add(r.getFim().toInstant());
+    });
+
+    List<Instant> timeline = new ArrayList<>(pontos);
+    List<Intervalo> intervalosBloqueados = new ArrayList<>();
+    Intervalo atual = null;
+
+    for (int i = 0; i < timeline.size() - 1; i++) {
+        Instant inicio = timeline.get(i);
+        Instant fim = timeline.get(i + 1);
+
+        if (inicio.equals(fim)) continue;
+
+        long ocupadas = reservas.stream()
+            .filter(res ->
+                res.getInicio().toInstant().isBefore(fim) &&
+                res.getFim().toInstant().isAfter(inicio)
+            )
+            .count();
+
+        boolean cabe = ocupadas < quantidadePosicoes;
+
+        if (!cabe) {
+            OffsetDateTime dtoIni = OffsetDateTime.ofInstant(inicio, ZoneOffset.of("-03:00"));
+            OffsetDateTime dtoFim = OffsetDateTime.ofInstant(fim, ZoneOffset.of("-03:00"));
+
+            if (atual == null) {
+                atual = new Intervalo(dtoIni, dtoFim);
+            } else {
+                atual.setFim(dtoFim);
+            }
+        } else if (atual != null) {
+            intervalosBloqueados.add(atual);
+            atual = null;
+        }
+    }
+
+    if (atual != null) {
+        intervalosBloqueados.add(atual);
+    }
+
+    return intervalosBloqueados;
 }
 
 /* Auxiliares */

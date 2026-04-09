@@ -71,8 +71,9 @@ public class Vaga {
     @OneToMany(mappedBy = "vaga", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private Set<OperacaoVaga> operacoesVaga;
 
-    // GETTERS, SETTERS, CONSTRUTOR
-    
+    @Column(nullable = true)
+    private Integer quantidade;
+
     public Vaga() {
         this.status = StatusVagaEnum.DISPONIVEL;
     }
@@ -163,6 +164,14 @@ public class Vaga {
             else this.operacoesVaga.clear();
             this.operacoesVaga.addAll(operacoesVaga);
         }
+    }
+
+    public Integer getQuantidade() {
+        return quantidade;
+    }
+
+    public void setQuantidade(Integer quantidade) {
+        this.quantidade = quantidade;
     }
 
     public VagaResponseDTO toResponseDTO() {

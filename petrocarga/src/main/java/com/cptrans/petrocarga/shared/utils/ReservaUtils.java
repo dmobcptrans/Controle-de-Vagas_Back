@@ -20,6 +20,7 @@ import com.cptrans.petrocarga.domain.entities.Vaga;
 import com.cptrans.petrocarga.domain.entities.Veiculo;
 import com.cptrans.petrocarga.domain.enums.PermissaoEnum;
 import com.cptrans.petrocarga.domain.enums.StatusReservaEnum;
+import com.cptrans.petrocarga.domain.enums.TipoVagaEnum;
 import com.cptrans.petrocarga.domain.repositories.ReservaRapidaRepository;
 import com.cptrans.petrocarga.domain.repositories.ReservaRepository;
 
@@ -76,20 +77,24 @@ public class ReservaUtils {
         
         validarLimiteReservasPorPlaca(novaReservaDTO, metodoChamador);
         validarMotoristaReserva(motoristaDaReserva.getUsuario().getId(), novaReservaDTO, metodoChamador);
-
+        
         if(!reservasVaga.isEmpty()){
             for(ReservaDTO reserva : reservasVaga){ 
                 Boolean reservaSobrepostas = novaReserva.getInicio().toInstant().isBefore(reserva.getFim().toInstant()) && novaReserva.getFim().toInstant().isAfter(reserva.getInicio().toInstant());
                 if(reservaSobrepostas){
-                    if(metodoChamador.equals(METODO_PATCH) && motoristaDaReserva.getUsuario().getId().equals(usuarioLogado.getId())){
+                    if(vagaReserva.getTipoVaga().equals(TipoVagaEnum.PERPENDICULAR)){
+                        validarCapacidadePerpendicular(vagaReserva, novaReservaDTO, reservasVaga);
+                        return;
+                    }else{
+                        if(metodoChamador.equals(METODO_PATCH) && motoristaDaReserva.getUsuario().getId().equals(usuarioLogado.getId())){
                         if(tamanhoDisponivelVaga < 0) throw new IllegalArgumentException("Não há espaço suficiente na vaga para a reserva no período solicitado devido a uma reserva existente. Espaço disponível: " + (tamanhoDisponivelVaga + veiculoDaReserva.getTipo().getComprimento()) + " metros.");
                             return;
                         }  
                     tamanhoDisponivelVaga -= reserva.getTamanhoVeiculo();
                     if(tamanhoDisponivelVaga < 0) throw new IllegalArgumentException("Não há espaço suficiente na vaga para a reserva no período solicitado devido a uma reserva existente. Espaço disponível: " + (tamanhoDisponivelVaga + veiculoDaReserva.getTipo().getComprimento()) + " metros.");
+                    }
                 }
             }
-
         }
     }
 
@@ -178,6 +183,32 @@ public class ReservaUtils {
 
         if (ano != null && (ano < 2026 || ano > 2100)) {
             throw new IllegalArgumentException("Ano deve ser um valor entre 2026 e 2100.");
+        }
+    }
+
+    public static void validarCapacidadePerpendicular(Vaga vaga, ReservaDTO novaReserva, List<ReservaDTO> reservasSobrepostas) {
+        if(vaga.getTipoVaga() == null || !vaga.getTipoVaga().equals(TipoVagaEnum.PERPENDICULAR)) {
+            throw new IllegalArgumentException("Validação de capacidade perpendicular só pode ser aplicada para vagas do tipo perpendicular.");
+        }
+        
+        if (vaga.getComprimento() == null || vaga.getComprimento() <= 0 || vaga.getQuantidade() == null || vaga.getQuantidade() <= 0) {
+            throw new IllegalArgumentException("Vaga do tipo perpendicular deve ter os campos 'comprimento' e 'quantidade' preenchidos.");
+        }
+        
+        int comprimentoPorPosicao = vaga.getComprimento();
+        int quantidadePosicoes = vaga.getQuantidade();
+
+        if (novaReserva.getTamanhoVeiculo() > comprimentoPorPosicao) {
+            throw new IllegalArgumentException("O veículo é maior do que o tamanho permitido por posição nesta vaga.");
+        }
+
+        long ocupadas = reservasSobrepostas.stream()
+            .filter(reserva -> reserva.getInicio().toInstant().isBefore(novaReserva.getFim().toInstant())
+                && reserva.getFim().toInstant().isAfter(novaReserva.getInicio().toInstant()))
+            .count();
+
+        if (ocupadas >= quantidadePosicoes) {
+            throw new IllegalArgumentException("Não há posições disponíveis nesta vaga no período solicitado.");
         }
     }
 }

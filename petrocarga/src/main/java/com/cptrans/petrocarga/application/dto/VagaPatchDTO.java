@@ -9,45 +9,33 @@ import com.cptrans.petrocarga.domain.enums.AreaVagaEnum;
 import com.cptrans.petrocarga.domain.enums.StatusVagaEnum;
 import com.cptrans.petrocarga.domain.enums.TipoVagaEnum;
 
-import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotNull;
 
-public class VagaRequestDTO {
+public class VagaPatchDTO {
 
-    @Valid
-    @NotNull(message = "O endereço é obrigatório.")
     private EnderecoVagaRequestDTO endereco;
-    
-    @Schema(description = "Área da vaga (Ex: AMARELA, VERMELHA)", example = "AMARELA")
     private AreaVagaEnum area;
+    private TipoVagaEnum tipoVaga;
+    private Set<OperacaoVagaRequestDTO> operacoesVaga;
     
-    @Schema(description = "Número de endereço dereferência da vaga", example = "07 ao 35")
+    // @NotBlank(message = "O campo 'referenciaGeoInicio' não pode ser vazio.")
+    private String referenciaGeoInicio;
+
+    // @NotBlank(message = "O campo 'referenciaGeoFim' não pode ser vazio.")
+    private String referenciaGeoFim;
+    
+    // @NotBlank(message = "O número de endereço não pode ser vazio.")
     private String numeroEndereco;
 
-    @Schema(description = "Ponto de referência para a vaga", example = "Em frente ao portão principal")
+    // @NotBlank(message = "A referência de endereço não pode ser vazia.")
     private String referenciaEndereco;
-
-    @Schema(description = "Tipo de vaga (Ex: PARALELA, PERPENDICULAR)", example="PARALELA")
-    private TipoVagaEnum tipoVaga;
-
-    @Schema(description = "Coordenada geográfica inicial da vaga", example = "-22.509135, -43.171351")
-    private String referenciaGeoInicio;
     
-    @Schema(description = "Coordenada geográfica final da vaga (se aplicável)", example = "-22.509140, -43.171355")
-    private String referenciaGeoFim;
-
-    @Valid
-    @NotNull(message = "O comprimento é obrigatório.")
-    @Schema(description = "Comprimento máximo em metros permitido para a vaga", example = "12")
+    @Min(value = 1, message = "O comprimento deve ser um número inteiro positivo entre 1 e 100.")
+    @Max(value = 100, message = "O comprimento deve ser um número inteiro positivo entre 1 e 100.")
     private Integer comprimento;
-    
-    @Valid
-    private Set<OperacaoVagaRequestDTO> operacoesVaga;
 
-    @Valid
     @Min(value = 1, message = "A quantidade deve ser um número inteiro positivo entre 1 e 15.")
     @Max(value = 15, message = "A quantidade deve ser um número inteiro positivo entre 1 e 15.")
     private Integer quantidade;
@@ -64,9 +52,9 @@ public class VagaRequestDTO {
         vaga.setReferenciaEndereco(this.referenciaEndereco);
         vaga.setReferenciaGeoFim(this.referenciaGeoFim);
         vaga.setReferenciaGeoInicio(this.referenciaGeoInicio);
-        vaga.setStatus(this.status != null ? this.status : StatusVagaEnum.INDISPONIVEL );
+        vaga.setStatus(this.status);
         vaga.setTipoVaga(this.tipoVaga);
-        vaga.setEndereco(this.endereco.toEntity());
+        vaga.setEndereco(this.endereco != null ? this.endereco.toEntity() : null);
         vaga.setQuantidade(this.quantidade);
 
         if (this.operacoesVaga != null && !this.operacoesVaga.isEmpty()) {

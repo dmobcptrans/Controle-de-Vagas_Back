@@ -17,6 +17,7 @@ import com.cptrans.petrocarga.domain.entities.OperacaoVaga;
 import com.cptrans.petrocarga.domain.entities.Vaga;
 import com.cptrans.petrocarga.domain.enums.DiaSemanaEnum;
 import com.cptrans.petrocarga.domain.enums.StatusVagaEnum;
+import com.cptrans.petrocarga.domain.enums.TipoVagaEnum;
 import com.cptrans.petrocarga.domain.repositories.VagaRepository;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -75,22 +76,39 @@ public class VagaService {
 
     @Transactional
     public Vaga updateById(UUID id, Vaga novaVaga) {
+        System.out.println("updateService - novaVaga.getQuantidade(): " + novaVaga.getQuantidade());
         Vaga vagaExistente = vagaRepository.findById(id)
             .orElseThrow(() -> new EntityNotFoundException("Vaga com ID " + id + " não encontrada."));
 
         if(novaVaga.getEndereco() != null){
             EnderecoVaga novoEndereco = enderecoVagaService.cadastrarEnderecoVaga(novaVaga.getEndereco());
             vagaExistente.setEndereco(novoEndereco);
-        } 
+        }
+
+        if (novaVaga.getTipoVaga() != null) {
+            if(novaVaga.getTipoVaga().equals(TipoVagaEnum.PERPENDICULAR)) {
+                if ((novaVaga.getQuantidade() == null || novaVaga.getQuantidade() <= 0)) {
+                    throw new IllegalArgumentException("O campo 'quantidade' é obrigatório para vagas do tipo PERPENDICULAR e deve ser um número inteiro positivo.");
+                }
+            } else {
+                novaVaga.setQuantidade(null);
+                vagaExistente.setQuantidade(null);
+            }
+            vagaExistente.setTipoVaga(novaVaga.getTipoVaga());
+        }
         
-        if(novaVaga.getArea() != null) vagaExistente.setArea(novaVaga.getArea());
-        if(novaVaga.getNumeroEndereco() != null) vagaExistente.setNumeroEndereco(novaVaga.getNumeroEndereco());
-        if(novaVaga.getReferenciaEndereco() != null) vagaExistente.setReferenciaEndereco(novaVaga.getReferenciaEndereco());
-        if(novaVaga.getTipoVaga() != null) vagaExistente.setTipoVaga(novaVaga.getTipoVaga());
-        if(novaVaga.getReferenciaGeoInicio() != null) vagaExistente.setReferenciaGeoInicio(novaVaga.getReferenciaGeoInicio());
-        if(novaVaga.getReferenciaGeoFim() != null) vagaExistente.setReferenciaGeoFim(novaVaga.getReferenciaGeoFim());
-        if(novaVaga.getComprimento() != null) vagaExistente.setComprimento(novaVaga.getComprimento());
-        if(novaVaga.getStatus() != null) vagaExistente.setStatus(novaVaga.getStatus());
+        if (novaVaga.getQuantidade() != null && novaVaga.getQuantidade() > 0 && vagaExistente.getTipoVaga().equals(TipoVagaEnum.PERPENDICULAR)) {
+            vagaExistente.setQuantidade(novaVaga.getQuantidade());
+        }
+
+        if (novaVaga.getArea() != null) vagaExistente.setArea(novaVaga.getArea());
+        if (novaVaga.getNumeroEndereco() != null) vagaExistente.setNumeroEndereco(novaVaga.getNumeroEndereco());
+        if (novaVaga.getReferenciaEndereco() != null) vagaExistente.setReferenciaEndereco(novaVaga.getReferenciaEndereco());
+        if (novaVaga.getReferenciaGeoInicio() != null) vagaExistente.setReferenciaGeoInicio(novaVaga.getReferenciaGeoInicio());
+        if (novaVaga.getReferenciaGeoFim() != null) vagaExistente.setReferenciaGeoFim(novaVaga.getReferenciaGeoFim());
+        if (novaVaga.getComprimento() != null) vagaExistente.setComprimento(novaVaga.getComprimento());
+        if (novaVaga.getStatus() != null) vagaExistente.setStatus(novaVaga.getStatus());
+
         if (novaVaga.getOperacoesVaga() != null) {
             Map<DiaSemanaEnum, OperacaoVaga> mapaExistentes = vagaExistente.getOperacoesVaga()
                 .stream()
@@ -114,6 +132,7 @@ public class VagaService {
                 operacao -> !mapaNovas.containsKey(operacao.getDiaSemana())
             );
         }
+
         return vagaRepository.save(vagaExistente);
     }
     
@@ -122,16 +141,25 @@ public class VagaService {
         if(novaVaga.getComprimento() == null) {
             throw new IllegalArgumentException("O campo 'comprimento' é obrigatório e não pode ser nulo ou vazio.");
         }
+        
+        if (!novaVaga.getTipoVaga().equals(TipoVagaEnum.PERPENDICULAR)) novaVaga.setQuantidade(null);
+        System.out.println("quantidade: " + novaVaga.getQuantidade());
+        if (novaVaga.getTipoVaga().equals(TipoVagaEnum.PERPENDICULAR) && (novaVaga.getQuantidade() == null || novaVaga.getQuantidade() <= 0)) {
+            throw new IllegalArgumentException("O campo 'quantidade' é obrigatório para vagas do tipo PERPENDICULAR e deve ser um número inteiro positivo.");
+        }
+        
         EnderecoVaga enderecoVaga = enderecoVagaService.cadastrarEnderecoVaga(novaVaga.getEndereco());
         novaVaga.setEndereco(enderecoVaga);
 
         novaVaga.setStatus(StatusVagaEnum.INDISPONIVEL);
+
         
         Vaga vagaCadastrada= vagaRepository.save(novaVaga);
 
         if(vagaCadastrada.getOperacoesVaga() == null || vagaCadastrada.getOperacoesVaga().isEmpty()) {
             vagaCadastrada.setOperacoesVaga(operacaoVagaService.setOperacoesVagaDefault(vagaCadastrada));
         }
+
         return vagaCadastrada;
     }
 }

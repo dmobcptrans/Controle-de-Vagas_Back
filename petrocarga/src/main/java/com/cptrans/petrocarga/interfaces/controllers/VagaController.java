@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.cptrans.petrocarga.application.dto.PageResponseDTO;
+import com.cptrans.petrocarga.application.dto.VagaPatchDTO;
 import com.cptrans.petrocarga.application.dto.VagaRequestDTO;
 import com.cptrans.petrocarga.application.dto.VagaResponseDTO;
 import com.cptrans.petrocarga.application.usecase.VagaService;
@@ -227,8 +228,8 @@ public class VagaController {
             @ApiResponse(responseCode = "500", description = "Erro interno no servidor")
         }
     )
-    public ResponseEntity<VagaResponseDTO> updateById(@Valid @PathVariable UUID id,@Valid @RequestBody VagaRequestDTO vagaRequest) {
-        System.out.println(vagaRequest.getStatus());
+    public ResponseEntity<VagaResponseDTO> updateById(@Valid @PathVariable UUID id, @Valid @RequestBody VagaPatchDTO vagaRequest) {
+        System.out.println("updateController - vagaRequest.getQuantidade(): " + vagaRequest.getQuantidade());
         Vaga vagaAtualizada = vagaService.updateById(id, vagaRequest.toEntity());
         return ResponseEntity.ok(new VagaResponseDTO(vagaAtualizada));
     }

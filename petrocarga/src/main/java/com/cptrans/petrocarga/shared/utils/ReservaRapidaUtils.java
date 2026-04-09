@@ -10,6 +10,7 @@ import com.cptrans.petrocarga.domain.entities.Reserva;
 import com.cptrans.petrocarga.domain.entities.ReservaRapida;
 import com.cptrans.petrocarga.domain.entities.Vaga;
 import com.cptrans.petrocarga.domain.enums.StatusReservaEnum;
+import com.cptrans.petrocarga.domain.enums.TipoVagaEnum;
 import com.cptrans.petrocarga.domain.repositories.ReservaRapidaRepository;
 import com.cptrans.petrocarga.domain.repositories.ReservaRepository;
 
@@ -29,7 +30,7 @@ public class ReservaRapidaUtils {
     public void validarQuantidadeReservasPorPlaca( ReservaDTO novaReserva) {
         Integer quantidadeReservasRapidasPorPlaca = reservaRapidaRepository.countByPlacaIgnoringCase(novaReserva.getPlacaVeiculo());
         if(quantidadeReservasRapidasPorPlaca >= LIMITE_DE_RESERVAS_POR_PLACA ){
-            throw new IllegalArgumentException("Veículo com placa " + novaReserva.getPlacaVeiculo() + " já atingiu o limite de reservas rápidas (" + LIMITE_DE_RESERVAS_POR_PLACA + ").");
+            throw new IllegalArgumentException("Veículo com placa " + novaReserva.getPlacaVeiculo() + " já atingiu o limite de " + LIMITE_DE_RESERVAS_POR_PLACA + " reservas rápidas. " + "Para novas reservas, o responsável deve realizar cadastro como motorista.");
         }
         List<StatusReservaEnum> listaStatus = List.of(StatusReservaEnum.ATIVA, StatusReservaEnum.RESERVADA);
         List<Reserva> reservasNormaisSobrepostas = reservaRepository.findByFimGreaterThanAndInicioLessThanAndStatusIn(novaReserva.getInicio(), novaReserva.getFim(), listaStatus);
@@ -45,36 +46,39 @@ public class ReservaRapidaUtils {
         }
     }
 
-    public void validarEspacoDisponivelNaVaga(ReservaRapida novaReservaRapida, Vaga vagaReserva, List<Reserva> reservasAtivasNaVaga, List<ReservaRapida> reservasRapidasAtivasNaVaga) {
+
+    public void validarEspacoDisponivelNaVaga(ReservaRapida novaReservaRapida, Vaga vagaReserva, List<ReservaDTO> reservasAtivasNaVaga) {
+        ReservaDTO novaReservaDTO = novaReservaRapida.toReservaDTO();
+
+        reservaUtils.validarLimiteReservasPorPlaca(novaReservaDTO, ReservaUtils.METODO_POST);
+
+        if (vagaReserva.getTipoVaga().equals(TipoVagaEnum.PERPENDICULAR)) {
+            ReservaUtils.validarCapacidadePerpendicular(vagaReserva, novaReservaDTO, reservasAtivasNaVaga);
+            return;
+        }
+
         Integer tamanhoDisponivelVaga = vagaReserva.getComprimento() - novaReservaRapida.getTipoVeiculo().getComprimento();
-   
-        reservaUtils.validarLimiteReservasPorPlaca(novaReservaRapida.toReservaDTO(), ReservaUtils.METODO_POST);
 
-        if(!reservasRapidasAtivasNaVaga.isEmpty()){
-            for(ReservaRapida reservaRapida : reservasRapidasAtivasNaVaga){
-                Boolean reservaSobrepostas = novaReservaRapida.getInicio().toInstant().isBefore(reservaRapida.getFim().toInstant()) && novaReservaRapida.getFim().toInstant().isAfter(reservaRapida.getInicio().toInstant());
-                validarReservaRapidaAtivaPorPlaca(reservaRapida.getPlaca(), novaReservaRapida.getPlaca());
-                if(reservaSobrepostas){
-                    tamanhoDisponivelVaga -= reservaRapida.getTipoVeiculo().getComprimento();
-                    if(tamanhoDisponivelVaga < 0) throw new IllegalArgumentException("Não há espaço suficiente na vaga para a reserva no período solicitado devido a uma reserva rápida existente. Espaço disponível: " + (tamanhoDisponivelVaga + novaReservaRapida.getTipoVeiculo().getComprimento()) + " metros.");
+        if (!reservasAtivasNaVaga.isEmpty()) {
+            for (ReservaDTO reserva : reservasAtivasNaVaga) {
+                Boolean reservaSobrepostas =
+                    novaReservaRapida.getInicio().toInstant().isBefore(reserva.getFim().toInstant()) &&
+                    novaReservaRapida.getFim().toInstant().isAfter(reserva.getInicio().toInstant());
+
+                if (reservaSobrepostas) {
+                    validarReservaRapidaAtivaPorPlaca(reserva.getPlacaVeiculo(), novaReservaRapida.getPlaca());
+
+                    tamanhoDisponivelVaga -= reserva.getTamanhoVeiculo();
+
+                    if (tamanhoDisponivelVaga < 0) {
+                        throw new IllegalArgumentException(
+                            "Não há espaço suficiente na vaga para a reserva no período solicitado devido a ocupações existentes. Espaço disponível: "
+                            + (tamanhoDisponivelVaga + novaReservaRapida.getTipoVeiculo().getComprimento()) + " metros."
+                        );
+                    }
                 }
             }
         }
-        if(!reservasAtivasNaVaga.isEmpty()){
-            for(Reserva reserva : reservasAtivasNaVaga){
-                Boolean reservaSobrepostas = novaReservaRapida.getInicio().toInstant().isBefore(reserva.getFim().toInstant()) && novaReservaRapida.getFim().toInstant().isAfter(reserva.getInicio().toInstant());
-    
-                if(reserva.getVeiculo().getPlaca().equalsIgnoreCase(novaReservaRapida.getPlaca())) {
-                    throw new IllegalArgumentException("Veículo com placa " + novaReservaRapida.getPlaca() + " já possui uma reserva ativa nesta vaga.");
-                }
-                if(reservaSobrepostas){
-                    tamanhoDisponivelVaga -= reserva.getVeiculo().getTipo().getComprimento();
-                    if(tamanhoDisponivelVaga < 0) throw new IllegalArgumentException("Não há espaço suficiente na vaga para a reserva no período solicitado. Espaço disponível: " + (tamanhoDisponivelVaga + novaReservaRapida.getTipoVeiculo().getComprimento()) + " metros.");
-                }
-            }
-
-        }
-        
     }
 
     public void validarReservaRapidaAtivaPorPlaca(String PlacaReservaAtiva, String PlacaNovaReserva) {
