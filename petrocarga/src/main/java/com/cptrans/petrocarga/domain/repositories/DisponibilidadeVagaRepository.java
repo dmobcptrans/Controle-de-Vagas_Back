@@ -1,5 +1,6 @@
 package com.cptrans.petrocarga.domain.repositories;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -12,4 +13,5 @@ import com.cptrans.petrocarga.domain.entities.DisponibilidadeVaga;
 public interface DisponibilidadeVagaRepository extends JpaRepository<DisponibilidadeVaga, UUID> {
     public List<DisponibilidadeVaga> findByVagaId(UUID vagaId);
     public List<DisponibilidadeVaga> findByVagaEnderecoCodigoPmp(String codigoPMP);
+    public List<DisponibilidadeVaga> findByInicioGreaterThanAndFimLessThan(OffsetDateTime inicio, OffsetDateTime fim);
 }

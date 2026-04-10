@@ -1,20 +1,22 @@
 package com.cptrans.petrocarga.domain.enums;
 
 public enum DiaSemanaEnum {
-    DOMINGO (1, "Domingo"),
-    SEGUNDA (2, "Segunda-feira"),
-    TERCA (3, "Terça-feira"),
-    QUARTA (4, "Quarta-feira"),
-    QUINTA (5, "Quinta-feira"),
-    SEXTA (6, "Sexta-feira"),
-    SABADO (7, "Sábado");
+    DOMINGO (1, "Domingo","SUNDAY"),
+    SEGUNDA (2, "Segunda-feira","MONDAY"),
+    TERCA (3, "Terça-feira","TUESDAY"),
+    QUARTA (4, "Quarta-feira","WEDNESDAY"),
+    QUINTA (5, "Quinta-feira","THURSDAY"),
+    SEXTA (6, "Sexta-feira","FRIDAY"),
+    SABADO (7, "Sábado","SATURDAY");
 
     public Integer codigo;
     public String descricao;
+    public String descricaoIngles;
 
-    private DiaSemanaEnum(Integer codigo, String descricao){
+    private DiaSemanaEnum(Integer codigo, String descricao, String descricaoIngles){
         this.codigo = codigo;
         this.descricao = descricao;
+        this.descricaoIngles = descricaoIngles;
     }
 
     public static DiaSemanaEnum toEnumByCodigo(Integer codigo){
@@ -50,5 +52,8 @@ public enum DiaSemanaEnum {
     }
     public String getDescricao(){
         return this.descricao;
+    }
+    public String getDescricaoIngles(){
+        return this.descricaoIngles;
     }
 }

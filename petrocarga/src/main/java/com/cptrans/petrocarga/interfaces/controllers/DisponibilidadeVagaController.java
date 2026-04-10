@@ -1,6 +1,7 @@
 package com.cptrans.petrocarga.interfaces.controllers;
 
 
+import java.sql.Date;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -24,6 +25,8 @@ import com.cptrans.petrocarga.application.dto.DisponibilidadeVagaResponseDTO;
 import com.cptrans.petrocarga.application.dto.MultiplasDisponibilidadesVagaRequestDTO;
 import com.cptrans.petrocarga.application.usecase.DisponibilidadeVagaService;
 import com.cptrans.petrocarga.domain.entities.DisponibilidadeVaga;
+import com.cptrans.petrocarga.shared.utils.DateUtils;
+import com.cptrans.petrocarga.shared.utils.ReservaUtils;
 
 import jakarta.validation.Valid;
 
@@ -41,7 +44,17 @@ public class DisponibilidadeVagaController {
      */
     @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR', 'AGENTE', 'MOTORISTA', 'EMPRESA')")
     @GetMapping
-    public ResponseEntity<List<DisponibilidadeVagaResponseDTO>> getAllDisponibilidadeVagas() {
+    public ResponseEntity<List<DisponibilidadeVagaResponseDTO>> getAllDisponibilidadeVagas(@RequestParam(required = false) Integer mes, @RequestParam(required = false) Integer ano) {
+        if(ano != null || mes != null) {
+            if(mes == null) throw new IllegalArgumentException("Ao informar o ano, o mês também deve ser informado.");
+            if(ano == null) throw new IllegalArgumentException("Ao informar o mês, o ano também deve ser informado.");
+            DateUtils.validarMesEAno(mes, ano);
+            List<DisponibilidadeVagaResponseDTO> disponibilidadeVagas = disponibilidadeVagaService.findByMes(mes, ano).stream()
+                    .map(DisponibilidadeVagaResponseDTO::new)
+                    .collect(Collectors.toList());
+            return ResponseEntity.ok(disponibilidadeVagas);
+        }
+        DateUtils.validarMesEAno(mes, ano);
         List<DisponibilidadeVagaResponseDTO> disponibilidadeVagas = disponibilidadeVagaService.findAll().stream()
                 .map(DisponibilidadeVagaResponseDTO::new)
                 .collect(Collectors.toList());

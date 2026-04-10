@@ -41,6 +41,7 @@ import com.cptrans.petrocarga.infrastructure.scheduler.handlers.NotificacaoSched
 import com.cptrans.petrocarga.infrastructure.scheduler.handlers.ReservaSchedulerService;
 import com.cptrans.petrocarga.infrastructure.security.UserAuthenticated;
 import com.cptrans.petrocarga.shared.utils.DateUtils;
+import com.cptrans.petrocarga.shared.utils.OperacaoVagaUtils;
 import com.cptrans.petrocarga.shared.utils.ReservaUtils;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -148,6 +149,7 @@ public class ReservaService {
     }
 
     public Reserva createReserva(Reserva novaReserva) {
+        OperacaoVagaUtils.verificarLimiteHorarioOperacaoVaga(novaReserva.getVaga());
         UserAuthenticated userAuthenticated = (UserAuthenticated) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Usuario usuarioLogado = usuarioService.findById(userAuthenticated.id());
         novaReserva.setCriadoPor(usuarioLogado);

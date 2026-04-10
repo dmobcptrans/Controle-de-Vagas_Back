@@ -29,6 +29,7 @@ import com.cptrans.petrocarga.domain.specification.ReservaRapidaSpecification;
 import com.cptrans.petrocarga.infrastructure.scheduler.handlers.ReservaSchedulerService;
 import com.cptrans.petrocarga.infrastructure.security.UserAuthenticated;
 import com.cptrans.petrocarga.shared.utils.DateUtils;
+import com.cptrans.petrocarga.shared.utils.OperacaoVagaUtils;
 import com.cptrans.petrocarga.shared.utils.ReservaRapidaUtils;
 import com.cptrans.petrocarga.shared.utils.ReservaUtils;
 
@@ -129,6 +130,7 @@ public class ReservaRapidaService {
     }
 
     public ReservaRapida create(ReservaRapida novaReservaRapida) {
+        OperacaoVagaUtils.verificarLimiteHorarioOperacaoVaga(novaReservaRapida.getVaga());
         Vaga vagaReserva = vagaService.findById(novaReservaRapida.getVaga().getId());
         List<StatusReservaEnum> listaStatus = new ArrayList<>(List.of(StatusReservaEnum.ATIVA, StatusReservaEnum.RESERVADA));
         List<Reserva>  reservasAtivasNaVaga = reservaRepository.findByVagaIdAndStatusIn(vagaReserva.getId(), listaStatus);

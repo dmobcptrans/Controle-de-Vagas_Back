@@ -1,6 +1,7 @@
 package com.cptrans.petrocarga.application.usecase;
 
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -53,6 +54,13 @@ public class DisponibilidadeVagaService {
 
     public List<DisponibilidadeVaga> findByVagaId(UUID vagaId) {
         return disponibilidadeVagaRepository.findByVagaId(vagaId);
+    }
+
+    public List<DisponibilidadeVaga> findByMes(Integer mes, Integer ano) {
+        OffsetDateTime inicioMes = DateUtils.toLocalDateInBrazil(OffsetDateTime.of((int)ano, (int)mes, 1, 0, 0, 0, 0, ZoneOffset.of(DateUtils.FUSO_BRASIL.toString()))).atStartOfDay(DateUtils.FUSO_BRASIL).withDayOfMonth(1).toOffsetDateTime();
+        Integer ultimoDiaMes = DateUtils.toLocalDateInBrazil(inicioMes).lengthOfMonth();
+        OffsetDateTime fimMes = DateUtils.toLocalDateInBrazil(inicioMes).withDayOfMonth(ultimoDiaMes).atTime(23, 59, 59).atZone(DateUtils.FUSO_BRASIL).toOffsetDateTime();
+        return disponibilidadeVagaRepository.findByInicioGreaterThanAndFimLessThan(inicioMes, fimMes);
     }
 
     public DisponibilidadeVaga createDisponibilidadeVaga(DisponibilidadeVaga novaDisponibilidadeVaga, UUID vagaId) {

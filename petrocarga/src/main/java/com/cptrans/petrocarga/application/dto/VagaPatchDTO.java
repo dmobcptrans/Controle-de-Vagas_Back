@@ -20,16 +20,12 @@ public class VagaPatchDTO {
     private TipoVagaEnum tipoVaga;
     private Set<OperacaoVagaRequestDTO> operacoesVaga;
     
-    // @NotBlank(message = "O campo 'referenciaGeoInicio' não pode ser vazio.")
     private String referenciaGeoInicio;
 
-    // @NotBlank(message = "O campo 'referenciaGeoFim' não pode ser vazio.")
     private String referenciaGeoFim;
     
-    // @NotBlank(message = "O número de endereço não pode ser vazio.")
     private String numeroEndereco;
 
-    // @NotBlank(message = "A referência de endereço não pode ser vazia.")
     private String referenciaEndereco;
     
     @Min(value = 1, message = "O comprimento deve ser um número inteiro positivo entre 1 e 100.")

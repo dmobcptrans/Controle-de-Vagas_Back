@@ -19,6 +19,16 @@ public class DateUtils {
      */
     public static LocalDate toLocalDateInBrazil(OffsetDateTime data) {
         if (data == null) return null;
-        return data.atZoneSameInstant(ZoneOffset.of("-03:00")).toLocalDate();
+        return data.atZoneSameInstant(ZoneOffset.of(FUSO_BRASIL.toString())).toLocalDate();
+    }
+
+    public static void validarMesEAno(Integer mes, Integer ano) {
+        if(mes != null && (mes < 1 || mes > 12)) {
+            throw new IllegalArgumentException("Mês deve ser um valor entre 1 e 12.");
+        }
+
+        if (ano != null && (ano < 2026 || ano > 2100)) {
+            throw new IllegalArgumentException("Ano deve ser um valor entre 2026 e 2100.");
+        }
     }
 }
