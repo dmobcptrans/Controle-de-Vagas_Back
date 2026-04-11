@@ -161,14 +161,12 @@ public class UsuarioService {
 
     @Transactional
     public void resendActivationCode(String email, String cpf) {
-        if ((email == null && cpf == null) || (email != null && cpf != null)) {
-            throw new IllegalArgumentException("Informe um email OU CPF.");
-        }
+        Optional<Usuario> usuarioOptional = findByEmailOrCpf(email, cpf);
 
-        if (email != null) email = email.trim().toLowerCase();
+        if (usuarioOptional.isEmpty()) return;
 
-        Usuario usuario = usuarioRepository.findByEmailHashOrCpfHash(email != null ? hashService.hash(email) : null, cpf == null ? null : hashService.hash(cpf)).orElseThrow(() -> new IllegalArgumentException("Credenciais inválidas."));
-
+        Usuario usuario = usuarioOptional.get();
+        
         if (usuario.isAtivo() != null && usuario.isAtivo()) {
             throw new IllegalArgumentException("Usuário já ativado.");
         }
@@ -192,14 +190,7 @@ public class UsuarioService {
 
     @Transactional
     public void forgotPassword(String email, String cpf) {
-        if ((email == null && cpf == null) || (email != null && cpf != null)) {
-            throw new IllegalArgumentException("Informe um email OU CPF.");
-        }
-
-        if (email != null) email = email.trim().toLowerCase(); 
-
-        // Busca usuário pelo email (silenciosamente ignora se não existir por segurança)
-        Optional<Usuario> optUsuario = usuarioRepository.findByEmailHashOrCpfHashAndAtivo(email == null ? null : hashService.hash(email), cpf == null ? null : hashService.hash(cpf), true);
+        Optional<Usuario> optUsuario = findByEmailOrCpf(email, cpf);
         
         if (optUsuario.isEmpty()) {
             // Por segurança, não revelamos se o email/cpf existe ou não
@@ -225,12 +216,9 @@ public class UsuarioService {
 
     @Transactional
     public void resetPassword(String email, String cpf, String code, String novaSenha) {
-        if ((email == null && cpf == null) || (email != null && cpf != null)) {
-            throw new IllegalArgumentException("Informe um email OU CPF.");
-        }
-
-        Usuario usuario = usuarioRepository.findByEmailHashOrCpfHash(email == null ? null : hashService.hash(email.trim().toLowerCase()), cpf == null ? null : hashService.hash(cpf)).orElseThrow(() -> new IllegalArgumentException("Credenciais inválidas ou código expirado."));
-
+        
+        Usuario usuario = findByEmailOrCpf(email, cpf).orElseThrow(() -> new EntityNotFoundException("Credenciais inválidas ou código expirado."));
+        
         if (!usuario.isAtivo()) {
             throw new IllegalArgumentException("Usuário desativado.");
         }
@@ -362,5 +350,24 @@ public class UsuarioService {
         usuario.setDesativadoEm(null);
         usuario.setAtivo(true);
         usuarioRepository.save(usuario);
+    }
+
+    public Optional<Usuario> findByEmailOrCpf(String email, String cpf) {
+        if ((email == null && cpf == null) || (email != null && cpf != null)) {
+            throw new IllegalArgumentException("Informe um email OU CPF.");
+        }
+
+        Optional<Usuario> usuarOptional = Optional.empty();
+
+        if (email != null) {
+            email = email.trim().toLowerCase();
+            usuarOptional = usuarioRepository.findByEmailHash(hashService.hash(email));
+        }
+
+        if (cpf != null) {
+            usuarOptional = usuarioRepository.findByCpfHash(hashService.hash(cpf));
+        }
+
+        return usuarOptional;
     }
 }
