@@ -17,7 +17,6 @@ import com.cptrans.petrocarga.domain.enums.PermissaoEnum;
 public interface UsuarioRepository extends JpaRepository<Usuario, UUID>, JpaSpecificationExecutor<Usuario> {
     public Optional<Usuario> findByEmailHash(String emailHash);
     public Optional<Usuario> findByEmailHashOrGoogleId(String emailHash, String google_id);
-    public Optional<Usuario> findByEmailHashOrCpfHash(String emailHash, String cpfHash);
     public Optional<Usuario> findByCpfHash(String cpfHash);
     public Boolean existsByEmailHash(String emailHash);
     public Boolean existsByCpfHash(String cpfHash);
