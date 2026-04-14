@@ -51,6 +51,8 @@ public class ReservaRapidaService {
     private AgenteService agenteService;
     @Autowired
     private ReservaSchedulerService reservaSchedulerService;
+    @Autowired
+    private DisponibilidadeVagaService disponibilidadeVagaService;
     
     public List<ReservaRapida> findAll(List<StatusReservaEnum> status) {
         if(status == null ) status = new ArrayList<>();
@@ -130,7 +132,10 @@ public class ReservaRapidaService {
     }
 
     public ReservaRapida create(ReservaRapida novaReservaRapida) {
-        OperacaoVagaUtils.verificarLimiteHorarioOperacaoVaga(novaReservaRapida.getVaga());
+        if(!disponibilidadeVagaService.existsByVagaIdAndInicioAndFim(novaReservaRapida.getVaga().getId(), novaReservaRapida.getInicio(), novaReservaRapida.getFim())) {
+            throw new IllegalArgumentException("A vaga não está disponível para o período selecionado.");
+        }
+        OperacaoVagaUtils.verificarLimiteHorarioOperacaoVaga(novaReservaRapida.getVaga(), novaReservaRapida.getInicio(), novaReservaRapida.getFim());
         Vaga vagaReserva = vagaService.findById(novaReservaRapida.getVaga().getId());
         List<StatusReservaEnum> listaStatus = new ArrayList<>(List.of(StatusReservaEnum.ATIVA, StatusReservaEnum.RESERVADA));
         List<Reserva>  reservasAtivasNaVaga = reservaRepository.findByVagaIdAndStatusIn(vagaReserva.getId(), listaStatus);

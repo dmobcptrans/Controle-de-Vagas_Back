@@ -1,9 +1,11 @@
 package com.cptrans.petrocarga.application.usecase;
 
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.quartz.SchedulerException;
@@ -17,6 +19,7 @@ import com.cptrans.petrocarga.domain.entities.Usuario;
 import com.cptrans.petrocarga.domain.entities.Vaga;
 import com.cptrans.petrocarga.domain.enums.StatusVagaEnum;
 import com.cptrans.petrocarga.domain.repositories.DisponibilidadeVagaRepository;
+import com.cptrans.petrocarga.domain.repositories.VagaRepository;
 import com.cptrans.petrocarga.infrastructure.scheduler.handlers.DisponibilidadeVagaScheduler;
 import com.cptrans.petrocarga.infrastructure.security.UserAuthenticated;
 import com.cptrans.petrocarga.shared.utils.DateUtils;
@@ -35,6 +38,8 @@ public class DisponibilidadeVagaService {
     private UsuarioService usuarioService;
     @Autowired
     private DisponibilidadeVagaScheduler disponibilidadeVagaScheduler;
+    @Autowired
+    private VagaRepository vagaRepository;
 
     public DisponibilidadeVaga save (DisponibilidadeVaga disponibilidadeVaga) {
         return disponibilidadeVagaRepository.save(disponibilidadeVaga); 
@@ -60,7 +65,7 @@ public class DisponibilidadeVagaService {
         OffsetDateTime inicioMes = DateUtils.toLocalDateInBrazil(OffsetDateTime.of((int)ano, (int)mes, 1, 0, 0, 0, 0, ZoneOffset.of(DateUtils.FUSO_BRASIL.toString()))).atStartOfDay(DateUtils.FUSO_BRASIL).withDayOfMonth(1).toOffsetDateTime();
         Integer ultimoDiaMes = DateUtils.toLocalDateInBrazil(inicioMes).lengthOfMonth();
         OffsetDateTime fimMes = DateUtils.toLocalDateInBrazil(inicioMes).withDayOfMonth(ultimoDiaMes).atTime(23, 59, 59).atZone(DateUtils.FUSO_BRASIL).toOffsetDateTime();
-        return disponibilidadeVagaRepository.findByInicioGreaterThanAndFimLessThan(inicioMes, fimMes);
+        return disponibilidadeVagaRepository.findByFimGreaterThanAndInicioLessThan(inicioMes, fimMes);
     }
 
     public DisponibilidadeVaga createDisponibilidadeVaga(DisponibilidadeVaga novaDisponibilidadeVaga, UUID vagaId) {
@@ -76,6 +81,10 @@ public class DisponibilidadeVagaService {
         agendarInicioEfim(disponibilidadeCriada);
 
         return disponibilidadeCriada;
+    }
+
+    public boolean existsByVagaIdAndInicioAndFim(UUID vagaId, OffsetDateTime inicio, OffsetDateTime fim) {
+        return disponibilidadeVagaRepository.existsByVagaIdAndFimGreaterThanAndInicioLessThan(vagaId, inicio, fim);
     }
 
     public List<DisponibilidadeVaga> createMultipleDisponibilidadeVagas(DisponibilidadeVaga novaDisponibilidadeVaga, List<UUID> listaVagaId) {
@@ -177,6 +186,12 @@ public class DisponibilidadeVagaService {
             disponibilidadeVagaScheduler.cancelarScheduler(disponibilidadeVaga.getId(), StatusVagaEnum.INDISPONIVEL);
         } catch (SchedulerException e) {
                 throw new RuntimeException("Erro ao cancelar scheduler de disponibilidade de vaga.", e);
+        }
+        OffsetDateTime dataHoje = OffsetDateTime.now(DateUtils.FUSO_BRASIL);
+        if (disponibilidadeVaga.getFim().isAfter(dataHoje) && disponibilidadeVaga.getInicio().isBefore(dataHoje)) {
+            Vaga vaga = disponibilidadeVaga.getVaga();
+            vaga.setStatus(StatusVagaEnum.INDISPONIVEL);
+            vagaRepository.save(vaga);
         }
     }
 

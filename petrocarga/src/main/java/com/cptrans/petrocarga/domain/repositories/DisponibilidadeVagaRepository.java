@@ -13,5 +13,6 @@ import com.cptrans.petrocarga.domain.entities.DisponibilidadeVaga;
 public interface DisponibilidadeVagaRepository extends JpaRepository<DisponibilidadeVaga, UUID> {
     public List<DisponibilidadeVaga> findByVagaId(UUID vagaId);
     public List<DisponibilidadeVaga> findByVagaEnderecoCodigoPmp(String codigoPMP);
-    public List<DisponibilidadeVaga> findByInicioGreaterThanAndFimLessThan(OffsetDateTime inicio, OffsetDateTime fim);
+    public List<DisponibilidadeVaga> findByFimGreaterThanAndInicioLessThan(OffsetDateTime inicio, OffsetDateTime fim);
+    public boolean existsByVagaIdAndFimGreaterThanAndInicioLessThan(UUID vagaId, OffsetDateTime inicio, OffsetDateTime fim);
 }

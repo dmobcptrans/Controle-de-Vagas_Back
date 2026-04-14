@@ -11,6 +11,7 @@ public class ReservaResponseDTO {
     private UUID id;
     private UUID vagaId;
     private String logradouro;
+    private String numeroEndereco;
     private String bairro;
     private UUID motoristaId;
     private UUID veiculoId;
@@ -32,6 +33,7 @@ public class ReservaResponseDTO {
         this.id = reserva.getId();
         this.vagaId = reserva.getVaga().getId();
         this.logradouro = reserva.getVaga().getEndereco().getLogradouro();
+        this.numeroEndereco = reserva.getVaga().getNumeroEndereco();
         this.bairro = reserva.getVaga().getEndereco().getBairro();
         this.motoristaId = reserva.getMotorista().getId();
         this.veiculoId = reserva.getVeiculo().getId();
@@ -70,6 +72,14 @@ public class ReservaResponseDTO {
 
     public void setLogradouro(String logradouro) {
         this.logradouro = logradouro;
+    }
+
+    public String getNumeroEndereco() {
+        return numeroEndereco;
+    }
+
+    public void setNumeroEndereco(String numeroEndereco) {
+        this.numeroEndereco = numeroEndereco;
     }
 
     public String getBairro() {

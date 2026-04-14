@@ -70,8 +70,8 @@ public class ReservaService {
     private ReservaSchedulerService reservaSchedulerService;
     @Autowired
     private NotificacaoSchedulerService notificacaoSchedulerService;
-    // @Autowired
-    // private DisponibilidadeVagaService disponibilidadeVagaService;
+    @Autowired
+    private DisponibilidadeVagaService disponibilidadeVagaService;
 
 
     public List<ReservaDTO> findAll(List<StatusReservaEnum> status, UUID vagaId, String placa, LocalDate data,  UUID usuarioId, Integer mes, Integer ano) {
@@ -149,7 +149,10 @@ public class ReservaService {
     }
 
     public Reserva createReserva(Reserva novaReserva) {
-        OperacaoVagaUtils.verificarLimiteHorarioOperacaoVaga(novaReserva.getVaga());
+        if (!disponibilidadeVagaService.existsByVagaIdAndInicioAndFim(novaReserva.getVaga().getId(), novaReserva.getInicio(), novaReserva.getFim())) {
+            throw new IllegalArgumentException("A vaga não está disponível para o período selecionado.");
+        }
+        OperacaoVagaUtils.verificarLimiteHorarioOperacaoVaga(novaReserva.getVaga(), novaReserva.getInicio(), novaReserva.getFim());
         UserAuthenticated userAuthenticated = (UserAuthenticated) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Usuario usuarioLogado = usuarioService.findById(userAuthenticated.id());
         novaReserva.setCriadoPor(usuarioLogado);
