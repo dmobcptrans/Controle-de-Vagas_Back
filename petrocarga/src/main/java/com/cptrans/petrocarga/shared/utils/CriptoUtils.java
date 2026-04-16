@@ -1,6 +1,5 @@
 package com.cptrans.petrocarga.shared.utils;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.cptrans.petrocarga.application.dto.DenunciaResponseDTO;
@@ -11,10 +10,14 @@ import com.cptrans.petrocarga.infrastructure.security.CriptoService;
 
 @Component
 public class CriptoUtils {
-    @Autowired
-    private CriptoService criptoService;
+    
+    private static CriptoService criptoService;
 
-    public UsuarioResponseDTO decrypt(UsuarioResponseDTO userResponse, Integer keyVersion){
+    public CriptoUtils(CriptoService criptoService) {
+        CriptoUtils.criptoService = criptoService;
+     }
+
+    public static  UsuarioResponseDTO decrypt(UsuarioResponseDTO userResponse, Integer keyVersion){
         if(userResponse != null){
             if(userResponse.getCpf() != null) userResponse.setCpf(criptoService.decrypt(userResponse.getCpf(), keyVersion));
             if(userResponse.getTelefone() != null) userResponse.setTelefone(criptoService.decrypt(userResponse.getTelefone(), keyVersion));
@@ -23,7 +26,7 @@ public class CriptoUtils {
         return userResponse;   
     }
 
-    public MotoristaResponseDTO decrypt(MotoristaResponseDTO motoristaResponse, Integer keyVersion){
+    public static  MotoristaResponseDTO decrypt(MotoristaResponseDTO motoristaResponse, Integer keyVersion){
         if(motoristaResponse != null){
             if(motoristaResponse.getUsuario() != null){
                 UsuarioResponseDTO usuarioResponse = motoristaResponse.getUsuario();
@@ -36,14 +39,14 @@ public class CriptoUtils {
         return motoristaResponse;
     }
 
-    public VeiculoResponseDTO decrypt(VeiculoResponseDTO veiculoResponse, Integer keyVersion){
+    public static  VeiculoResponseDTO decrypt(VeiculoResponseDTO veiculoResponse, Integer keyVersion){
         if(veiculoResponse != null){
             if(veiculoResponse.getCpfProprietario() != null) veiculoResponse.setCpfProprietario(criptoService.decrypt(veiculoResponse.getCpfProprietario(), keyVersion));
         }
         return veiculoResponse;
     }
     
-    public DenunciaResponseDTO decrypt (DenunciaResponseDTO denunciaResponse, Integer keyVersion) {
+    public static  DenunciaResponseDTO decrypt (DenunciaResponseDTO denunciaResponse, Integer keyVersion) {
         if(denunciaResponse != null) {
             if(denunciaResponse.getTelefoneMotorista() != null) {
                 denunciaResponse.setTelefoneMotorista(criptoService.decrypt(denunciaResponse.getTelefoneMotorista(), keyVersion));

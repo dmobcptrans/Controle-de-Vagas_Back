@@ -53,9 +53,6 @@ public class AuthController {
     @Autowired
     private VeiculoRepository veiculoRepository;
     
-    @Autowired
-    private CriptoUtils criptoUtils;
-    
     @Value("${app.cookie-settings.secure:true}")
     private boolean secure;
 
@@ -152,7 +149,7 @@ public class AuthController {
             Boolean possuiVeiculo = veiculoRepository.existsByUsuarioIdAndAtivo(usuarioIdFromToken, true);
             response.setVeiculoCadastrado(possuiVeiculo);
         }
-        return ResponseEntity.ok(criptoUtils.decrypt(response, usuarioLogado.getPersonalDataKeyVersion()));
+        return ResponseEntity.ok(CriptoUtils.decrypt(response, usuarioLogado.getPersonalDataKeyVersion()));
     }
 
     /**

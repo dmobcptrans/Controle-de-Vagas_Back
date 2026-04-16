@@ -36,9 +36,6 @@ public class AgenteController {
     @Autowired
     private AgenteService agenteService;
 
-    @Autowired
-    private CriptoUtils criptoUtils;
-
     /**
      * Retorna uma lista de agentes com base nos filtros passados.
      *
@@ -60,7 +57,7 @@ public class AgenteController {
             List<Agente> agentesFiltrados = agenteService.findByFiltros(filtros);
             List<AgenteResponseDTO> responseFiltrado = agentesFiltrados.stream().map((agente) -> {
                 AgenteResponseDTO response = agente.toResponseDTO();
-                response.setUsuario(response.getUsuario() == null ? null : criptoUtils.decrypt(response.getUsuario(), agente.getUsuario().getPersonalDataKeyVersion()));
+                response.setUsuario(response.getUsuario() == null ? null : CriptoUtils.decrypt(response.getUsuario(), agente.getUsuario().getPersonalDataKeyVersion()));
                 return response;
             }).toList();
             return ResponseEntity.ok(responseFiltrado);
@@ -68,7 +65,7 @@ public class AgenteController {
         List<Agente> agentes = agenteService.findAll();
         List<AgenteResponseDTO> response = agentes.stream().map(agente -> {
             AgenteResponseDTO responseDTO = agente.toResponseDTO();
-            responseDTO.setUsuario(responseDTO.getUsuario() == null ? null : criptoUtils.decrypt(responseDTO.getUsuario(), agente.getUsuario().getPersonalDataKeyVersion()));
+            responseDTO.setUsuario(responseDTO.getUsuario() == null ? null : CriptoUtils.decrypt(responseDTO.getUsuario(), agente.getUsuario().getPersonalDataKeyVersion()));
             return responseDTO;
         }).toList();
         return ResponseEntity.ok(response);
@@ -86,7 +83,7 @@ public class AgenteController {
     public ResponseEntity<AgenteResponseDTO> getAgenteById(@PathVariable UUID usuarioId) {
         Agente agente = agenteService.findByUsuarioId(usuarioId);
         AgenteResponseDTO response = agente.toResponseDTO();
-        response.setUsuario(response.getUsuario() == null ? null : criptoUtils.decrypt(response.getUsuario(), agente.getUsuario().getPersonalDataKeyVersion()));
+        response.setUsuario(response.getUsuario() == null ? null : CriptoUtils.decrypt(response.getUsuario(), agente.getUsuario().getPersonalDataKeyVersion()));
         return ResponseEntity.ok(response);
     }
 

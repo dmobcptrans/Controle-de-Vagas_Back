@@ -22,6 +22,7 @@ import com.cptrans.petrocarga.application.dto.VeiculoResponseDTO;
 import com.cptrans.petrocarga.application.usecase.VeiculoService;
 import com.cptrans.petrocarga.domain.entities.Veiculo;
 import com.cptrans.petrocarga.shared.utils.CriptoUtils;
+import com.cptrans.petrocarga.shared.utils.VeiculoUtils;
 
 import jakarta.validation.Valid;
 
@@ -31,8 +32,7 @@ public class VeiculoController {
 
     @Autowired
     private VeiculoService veiculoService;
-    @Autowired
-    private CriptoUtils criptoUtils;
+
     /**
      * Retorna uma lista de todos os veículos registrados.,
      * 
@@ -45,7 +45,7 @@ public class VeiculoController {
     @GetMapping
     public ResponseEntity<List<VeiculoResponseDTO>> getAllVeiculos() {
         List<VeiculoResponseDTO> veiculos = veiculoService.findAll().stream()
-                .map(veiculo -> criptoUtils.decrypt(veiculo.toResponseDTO(), veiculo.getUsuario().getPersonalDataKeyVersion()))
+                .map(veiculo -> CriptoUtils.decrypt(veiculo.toResponseDTO(), veiculo.getUsuario().getPersonalDataKeyVersion()))
                 .collect(Collectors.toList());
         return ResponseEntity.ok(veiculos);
     }
@@ -61,7 +61,7 @@ public class VeiculoController {
     @GetMapping("/usuario/{usuarioId}")
     public ResponseEntity<List<VeiculoResponseDTO>> getVeiculoByUsuarioId(@PathVariable UUID usuarioId) {
         List<VeiculoResponseDTO> veiculos = veiculoService.findByUsuarioId(usuarioId).stream()
-                .map(veiculo -> criptoUtils.decrypt(veiculo.toResponseDTO(), veiculo.getUsuario().getPersonalDataKeyVersion()))
+                .map(veiculo -> CriptoUtils.decrypt(veiculo.toResponseDTO(), veiculo.getUsuario().getPersonalDataKeyVersion()))
                 .collect(Collectors.toList());
         return ResponseEntity.ok(veiculos);
     }
@@ -92,7 +92,7 @@ public class VeiculoController {
     @GetMapping("/{id}")
     public ResponseEntity<VeiculoResponseDTO> getVeiculoById(@PathVariable UUID id) {
         Veiculo veiculo = veiculoService.findById(id);
-        return ResponseEntity.ok(criptoUtils.decrypt(veiculo.toResponseDTO(), veiculo.getUsuario().getPersonalDataKeyVersion()));
+        return ResponseEntity.ok(CriptoUtils.decrypt(veiculo.toResponseDTO(), veiculo.getUsuario().getPersonalDataKeyVersion()));
     }
 
     /**
@@ -107,7 +107,10 @@ public class VeiculoController {
     @PatchMapping("/{id}/{usuarioId}")
     public ResponseEntity<VeiculoResponseDTO> updateVeiculo(@PathVariable UUID id, @PathVariable UUID usuarioId, @RequestBody @Valid VeiculoRequestDTO veiculoRequestDTO) {
         Veiculo veiculo = veiculoService.updateVeiculo(id, usuarioId, veiculoRequestDTO);
-        return ResponseEntity.ok(veiculo.toResponseDTO());
+        VeiculoResponseDTO response = CriptoUtils.decrypt(veiculo.toResponseDTO(), veiculo.getUsuario().getPersonalDataKeyVersion());
+    
+
+        return ResponseEntity.ok(response);
     }
 
     /**

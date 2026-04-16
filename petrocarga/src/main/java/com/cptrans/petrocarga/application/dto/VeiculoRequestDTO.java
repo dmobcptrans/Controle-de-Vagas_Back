@@ -17,10 +17,10 @@ public class VeiculoRequestDTO {
     @Size(min=7, max=7, message="Placa deve ter exatamente 7 caracteres.")
     private String placa;
     
-    @Size(min=2, max=20, message="Marca deve ter entre 2 e 20 caracteres.")
+    @Size(min=3, max=20, message="Marca deve ter entre 3 e 20 caracteres.")
     private String marca;
 
-    @Size(min=3, max=20, message="Modelo deve ter entre 3 e 20 caracteres.")
+    @Size(min=2, max=20, message="Modelo deve ter entre 2 e 20 caracteres.")
     private String modelo;
 
     @NotNull(message = "Tipo do veículo deve ser informado.")
@@ -39,8 +39,8 @@ public class VeiculoRequestDTO {
     public Veiculo toEntity() {
         Veiculo veiculo = new Veiculo();
         veiculo.setPlaca(this.placa.trim().toUpperCase());
-        veiculo.setMarca(this.marca);
-        veiculo.setModelo(this.modelo);
+        veiculo.setMarca(this.marca.trim().toUpperCase());
+        veiculo.setModelo(this.modelo.trim().toUpperCase());
         veiculo.setTipo(this.tipo);
         veiculo.setCpfProprietarioHash(this.cpfProprietario);
         veiculo.setCnpjProprietario(this.cnpjProprietario);

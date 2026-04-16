@@ -32,8 +32,6 @@ import jakarta.validation.Valid;
 public class GestorController {
     @Autowired
     private GestorService gestorService;
-    @Autowired
-    private CriptoUtils criptoUtils;
 
     /**
      * Retorna uma lista de gestores com base nos filtros passados.
@@ -53,12 +51,12 @@ public class GestorController {
         if(nome != null || telefone != null || email != null || ativo != null) {
             GestorFiltrosDTO filtros = new GestorFiltrosDTO(nome, telefone, email, ativo);
             return ResponseEntity.ok(gestorService.findAllWithFiltros(filtros).stream()
-                    .map(gestor -> criptoUtils.decrypt(gestor.toResponseDTO(), gestor.getPersonalDataKeyVersion()))
+                    .map(gestor -> CriptoUtils.decrypt(gestor.toResponseDTO(), gestor.getPersonalDataKeyVersion()))
                     .toList());
         }
 
         List<UsuarioResponseDTO> gestores = gestorService.findAll().stream()
-                .map(gestor -> criptoUtils.decrypt(gestor.toResponseDTO(), gestor.getPersonalDataKeyVersion()))
+                .map(gestor -> CriptoUtils.decrypt(gestor.toResponseDTO(), gestor.getPersonalDataKeyVersion()))
                 .toList();
         return ResponseEntity.ok(gestores);
     }
@@ -74,7 +72,7 @@ public class GestorController {
     public ResponseEntity<UsuarioResponseDTO> getGestorById(@PathVariable UUID usuarioId) {
         Usuario gestor = gestorService.findByUsuarioId(usuarioId);
         UsuarioResponseDTO response = gestor.toResponseDTO();
-        return ResponseEntity.ok(criptoUtils.decrypt(response, gestor.getPersonalDataKeyVersion()));
+        return ResponseEntity.ok(CriptoUtils.decrypt(response, gestor.getPersonalDataKeyVersion()));
     }
 
     /**
