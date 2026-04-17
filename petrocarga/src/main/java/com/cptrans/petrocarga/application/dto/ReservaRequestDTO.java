@@ -29,7 +29,7 @@ public class ReservaRequestDTO {
     private OffsetDateTime inicio;
     @NotNull(message = "O campo 'fim' é obrigatório.")
     private OffsetDateTime fim;
-
+    private Integer posicaoPerpendicular;
 
     public Reserva toEntity(Vaga vaga, Motorista motorista, Veiculo veiculo) {
         Reserva reserva = new Reserva();
@@ -40,6 +40,7 @@ public class ReservaRequestDTO {
         reserva.setEntradaCidade(this.entradaCidade);
         reserva.setInicio(this.inicio);
         reserva.setFim(this.fim);
+        reserva.setPosicaoPerpendicular(this.posicaoPerpendicular);
         return reserva;
     }
 
@@ -49,7 +50,8 @@ public class ReservaRequestDTO {
         reserva.setEntradaCidade(this.entradaCidade);
         reserva.setInicio(this.inicio);
         reserva.setFim(this.fim);
-        reserva.setStatus(StatusReservaEnum.ATIVA);
+        reserva.setStatus(StatusReservaEnum.RESERVADA);
+        reserva.setPosicaoPerpendicular(this.posicaoPerpendicular);
         return reserva;
     }
 
@@ -74,5 +76,8 @@ public class ReservaRequestDTO {
     }
     public OffsetDateTime getFim() {
         return fim;
+    }
+    public Integer getPosicaoPerpendicular() {
+        return posicaoPerpendicular;
     }
 }

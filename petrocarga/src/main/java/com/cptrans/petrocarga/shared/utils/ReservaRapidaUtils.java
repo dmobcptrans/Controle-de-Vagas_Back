@@ -53,7 +53,8 @@ public class ReservaRapidaUtils {
         reservaUtils.validarLimiteReservasPorPlaca(novaReservaDTO, ReservaUtils.METODO_POST);
 
         if (vagaReserva.getTipoVaga().equals(TipoVagaEnum.PERPENDICULAR)) {
-            ReservaUtils.validarCapacidadePerpendicular(vagaReserva, novaReservaDTO, reservasAtivasNaVaga);
+            ReservaUtils.validarPosicaoPerpendicular(vagaReserva.getTipoVaga(), vagaReserva.getQuantidade(), novaReservaRapida.getPosicaoPerpendicular());
+            ReservaUtils.validarCapacidadePerpendicularPorPosicao(vagaReserva, novaReservaDTO, reservasAtivasNaVaga, novaReservaRapida.getPosicaoPerpendicular());
             return;
         }
 

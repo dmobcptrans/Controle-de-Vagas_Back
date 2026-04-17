@@ -25,6 +25,7 @@ public class ReservaResponseDTO {
     private Boolean checkedIn;
     private OffsetDateTime checkInEm;
     private OffsetDateTime checkOutEm;
+    private Integer posicaoPerpendicular;
 
     public ReservaResponseDTO() {
     }
@@ -47,6 +48,7 @@ public class ReservaResponseDTO {
         this.checkedIn = reserva.isCheckedIn();
         this.checkInEm = reserva.getCheckInEm();
         this.checkOutEm = reserva.getCheckOutEm();
+        this.posicaoPerpendicular = reserva.getPosicaoPerpendicular();
     }
 
     // Getters and Setters
@@ -184,5 +186,13 @@ public class ReservaResponseDTO {
 
     public void setCheckOutEm(OffsetDateTime checkOutEm) {
         this.checkOutEm = checkOutEm;
+    }
+
+    public Integer getPosicaoPerpendicular() {
+        return posicaoPerpendicular;
+    }
+
+    public void setPosicaoPerpendicular(Integer posicaoPerpendicular) {
+        this.posicaoPerpendicular = posicaoPerpendicular;
     }
 }

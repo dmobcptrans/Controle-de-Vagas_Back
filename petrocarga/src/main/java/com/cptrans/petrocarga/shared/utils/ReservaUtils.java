@@ -78,21 +78,22 @@ public class ReservaUtils {
         validarLimiteReservasPorPlaca(novaReservaDTO, metodoChamador);
         validarMotoristaReserva(motoristaDaReserva.getUsuario().getId(), novaReservaDTO, metodoChamador);
         
+        if(vagaReserva.getTipoVaga().equals(TipoVagaEnum.PERPENDICULAR)){
+            validarPosicaoPerpendicular(vagaReserva.getTipoVaga(), vagaReserva.getQuantidade(), novaReserva.getPosicaoPerpendicular());
+            validarCapacidadePerpendicularPorPosicao(vagaReserva, novaReservaDTO, reservasVaga, novaReserva.getPosicaoPerpendicular());
+            return;
+        }
+
         if(!reservasVaga.isEmpty()){
             for(ReservaDTO reserva : reservasVaga){ 
                 Boolean reservaSobrepostas = novaReserva.getInicio().toInstant().isBefore(reserva.getFim().toInstant()) && novaReserva.getFim().toInstant().isAfter(reserva.getInicio().toInstant());
                 if(reservaSobrepostas){
-                    if(vagaReserva.getTipoVaga().equals(TipoVagaEnum.PERPENDICULAR)){
-                        validarCapacidadePerpendicular(vagaReserva, novaReservaDTO, reservasVaga);
+                    if(metodoChamador.equals(METODO_PATCH) && motoristaDaReserva.getUsuario().getId().equals(usuarioLogado.getId())){
+                    if(tamanhoDisponivelVaga < 0) throw new IllegalArgumentException("Não há espaço suficiente na vaga para a reserva no período solicitado devido a uma reserva existente. Espaço disponível: " + (tamanhoDisponivelVaga + veiculoDaReserva.getTipo().getComprimento()) + " metros.");
                         return;
-                    }else{
-                        if(metodoChamador.equals(METODO_PATCH) && motoristaDaReserva.getUsuario().getId().equals(usuarioLogado.getId())){
-                        if(tamanhoDisponivelVaga < 0) throw new IllegalArgumentException("Não há espaço suficiente na vaga para a reserva no período solicitado devido a uma reserva existente. Espaço disponível: " + (tamanhoDisponivelVaga + veiculoDaReserva.getTipo().getComprimento()) + " metros.");
-                            return;
-                        }  
+                    }  
                     tamanhoDisponivelVaga -= reserva.getTamanhoVeiculo();
                     if(tamanhoDisponivelVaga < 0) throw new IllegalArgumentException("Não há espaço suficiente na vaga para a reserva no período solicitado devido a uma reserva existente. Espaço disponível: " + (tamanhoDisponivelVaga + veiculoDaReserva.getTipo().getComprimento()) + " metros.");
-                    }
                 }
             }
         }
@@ -147,11 +148,11 @@ public class ReservaUtils {
         List<ReservaDTO> listaFinalReservas = new ArrayList<>(); 
 
         if(reservasRapidas != null && !reservasRapidas.isEmpty()) {
-                reservasRapidas.forEach(rr -> listaFinalReservas.add(new ReservaDTO(rr.getId(), rr.getVaga().getId(), rr.getVaga().getNumeroEndereco(), rr.getVaga().getReferenciaEndereco(), rr.getVaga().getEndereco().toResponseDTO(), rr.getInicio(), rr.getFim(), rr.getTipoVeiculo().getComprimento(), rr.getPlaca(), rr.getStatus(), rr.getAgente().getUsuario(), rr.getCriadoEm())));
+                reservasRapidas.forEach(rr -> listaFinalReservas.add(new ReservaDTO(rr.getId(), rr.getVaga().getId(), rr.getVaga().getNumeroEndereco(), rr.getVaga().getReferenciaEndereco(), rr.getVaga().getEndereco().toResponseDTO(), rr.getInicio(), rr.getFim(), rr.getTipoVeiculo().getComprimento(), rr.getPlaca(), rr.getStatus(), rr.getAgente().getUsuario(), rr.getCriadoEm(), rr.getPosicaoPerpendicular(), rr.getCidadeOrigem(), rr.getEntradaCidade())));
         }
     
         if(reservas != null && !reservas.isEmpty()) {
-            reservas.forEach(r-> listaFinalReservas.add(new ReservaDTO(r.getId(), r.getCidadeOrigem(), r.getEntradaCidade(), r.isCheckedIn(), r.getCheckInEm(), r.getCheckOutEm(), r.getVaga(), r.getInicio(), r.getFim(), r.getVeiculo(), r.getStatus(), r.getCriadoPor(), r.getCriadoEm(), r.getMotorista())));
+            reservas.forEach(r-> listaFinalReservas.add(new ReservaDTO(r.getId(), r.getCidadeOrigem(), r.getEntradaCidade(), r.isCheckedIn(), r.getCheckInEm(), r.getCheckOutEm(), r.getVaga(), r.getInicio(), r.getFim(), r.getVeiculo(), r.getStatus(), r.getCriadoPor(), r.getCriadoEm(), r.getMotorista(), r.getPosicaoPerpendicular())));
         }
     
         return listaFinalReservas;
@@ -180,29 +181,90 @@ public class ReservaUtils {
         DateUtils.validarMesEAno(mes, ano);
     }
 
-    public static void validarCapacidadePerpendicular(Vaga vaga, ReservaDTO novaReserva, List<ReservaDTO> reservasSobrepostas) {
-        if(vaga.getTipoVaga() == null || !vaga.getTipoVaga().equals(TipoVagaEnum.PERPENDICULAR)) {
-            throw new IllegalArgumentException("Validação de capacidade perpendicular só pode ser aplicada para vagas do tipo perpendicular.");
-        }
-        
-        if (vaga.getComprimento() == null || vaga.getComprimento() <= 0 || vaga.getQuantidade() == null || vaga.getQuantidade() <= 0) {
-            throw new IllegalArgumentException("Vaga do tipo perpendicular deve ter os campos 'comprimento' e 'quantidade' preenchidos.");
-        }
-        
-        int comprimentoPorPosicao = vaga.getComprimento();
-        int quantidadePosicoes = vaga.getQuantidade();
-
-        if (novaReserva.getTamanhoVeiculo() > comprimentoPorPosicao) {
-            throw new IllegalArgumentException("O veículo é maior do que o tamanho permitido por posição nesta vaga.");
+    public static void validarCapacidadePerpendicularPorPosicao(
+        Vaga vaga,
+        ReservaDTO novaReserva,
+        List<ReservaDTO> reservasAtivasNaVaga,
+        Integer posicaoPerpendicular
+    ) {
+        if (!TipoVagaEnum.PERPENDICULAR.equals(vaga.getTipoVaga())) {
+            throw new IllegalArgumentException("Validação de posição perpendicular só pode ser aplicada para vagas perpendiculares.");
         }
 
-        long ocupadas = reservasSobrepostas.stream()
-            .filter(reserva -> reserva.getInicio().toInstant().isBefore(novaReserva.getFim().toInstant())
-                && reserva.getFim().toInstant().isAfter(novaReserva.getInicio().toInstant()))
-            .count();
-
-        if (ocupadas >= quantidadePosicoes) {
-            throw new IllegalArgumentException("Não há posições disponíveis nesta vaga no período solicitado.");
+        if (vaga.getComprimento() == null || vaga.getComprimento() <= 0) {
+            throw new IllegalArgumentException("Vaga perpendicular deve ter comprimento válido por posição.");
         }
+
+        if (novaReserva.getTamanhoVeiculo() > vaga.getComprimento()) {
+            throw new IllegalArgumentException("O veículo é maior do que o tamanho permitido para esta posição.");
+        }
+
+        int ocupacaoAtual = reservasAtivasNaVaga.stream()
+            .filter(reserva -> posicaoPerpendicular.equals(reserva.getPosicaoPerpendicular()))
+            .filter(reserva ->
+                reserva.getInicio().toInstant().isBefore(novaReserva.getFim().toInstant()) &&
+                reserva.getFim().toInstant().isAfter(novaReserva.getInicio().toInstant())
+            )
+            .mapToInt(ReservaDTO::getTamanhoVeiculo)
+            .sum();
+
+        int ocupacaoFinal = ocupacaoAtual + novaReserva.getTamanhoVeiculo();
+
+        if (ocupacaoFinal > vaga.getComprimento()) {
+            throw new IllegalArgumentException(
+                "Não há espaço suficiente na posição " + posicaoPerpendicular +
+                " para o período solicitado. Capacidade da posição: " + vaga.getComprimento() +
+                " metros. Ocupação já existente: " + ocupacaoAtual + " metros."
+            );
+        }
+    }
+
+    public static void validarPosicaoPerpendicular(TipoVagaEnum tipoVaga, Integer quantidadePosicoesVaga, Integer posicaoPerpendicular) {
+        if (!TipoVagaEnum.PERPENDICULAR.equals(tipoVaga)) {
+            if (posicaoPerpendicular != null) {
+                throw new IllegalArgumentException("Posição só pode ser informada para vaga do tipo perpendicular.");
+            }
+            return;
+        }
+
+        if (quantidadePosicoesVaga == null || quantidadePosicoesVaga <= 0) {
+            throw new IllegalArgumentException("Vaga perpendicular deve ter quantidade de posições válida.");
+        }
+
+        if (posicaoPerpendicular == null) {
+            throw new IllegalArgumentException("Para vaga perpendicular, a posição é obrigatória.");
+        }
+
+        if (posicaoPerpendicular < 1 || posicaoPerpendicular > quantidadePosicoesVaga) {
+            throw new IllegalArgumentException("Posição inválida para esta vaga. Informe um valor entre 1 e " + quantidadePosicoesVaga + ".");
+        }
+    }
+
+    public static Integer encontrarPosicaoDisponivel(
+        Integer quantidadePosicoesVaga,
+        Integer comprimentoVaga,
+        ReservaDTO novaReserva,
+        List<ReservaDTO> reservasAtivas
+    ) {
+        if(quantidadePosicoesVaga == null || quantidadePosicoesVaga <= 0) {
+            throw new IllegalArgumentException("Quantidade de posições da vaga deve ser informada e maior que zero.");
+        }
+        for (int posicao = 1; posicao <= quantidadePosicoesVaga; posicao++) {
+            final int posicaoAtual = posicao;
+            int ocupado = reservasAtivas.stream()
+                .filter(reserva -> posicaoAtual == reserva.getPosicaoPerpendicular())
+                .filter(reserva ->
+                    reserva.getInicio().toInstant().isBefore(novaReserva.getFim().toInstant()) &&
+                    reserva.getFim().toInstant().isAfter(novaReserva.getInicio().toInstant())
+                )
+                .mapToInt(ReservaDTO::getTamanhoVeiculo)
+                .sum();
+
+            if (ocupado + novaReserva.getTamanhoVeiculo() <= comprimentoVaga) {
+                return posicaoAtual;
+            }
+        }
+
+        throw new IllegalArgumentException("Não há posições disponíveis nesta vaga no período solicitado.");
     }
 }

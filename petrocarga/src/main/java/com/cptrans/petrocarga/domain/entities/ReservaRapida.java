@@ -53,9 +53,18 @@ public class ReservaRapida {
     @Column(name = "criado_em", columnDefinition = "TIMESTAMP WITH TIME ZONE")
     private OffsetDateTime criadoEm;
 
+    @Column(name = "cidade_origem")
+    private String cidadeOrigem;
+
+    @Column(name = "entrada_cidade", nullable = true)
+    private String entradaCidade;
+
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private StatusReservaEnum status;
+
+    @Column(name = "posicao_perpendicular")
+    private Integer posicaoPerpendicular;
 
     // Constructors
     public ReservaRapida() {
@@ -128,6 +137,22 @@ public class ReservaRapida {
         this.criadoEm = criadoEm;
     }
 
+    public String getCidadeOrigem() {
+        return cidadeOrigem;
+    }
+
+    public void setCidadeOrigem(String cidadeOrigem) {
+        this.cidadeOrigem = cidadeOrigem;
+    }
+
+    public String getEntradaCidade() {
+        return entradaCidade;
+    }
+
+    public void setEntradaCidade(String entradaCidade) {
+        this.entradaCidade = entradaCidade;
+    }
+
     public StatusReservaEnum getStatus() {
         return status;
     }
@@ -136,11 +161,19 @@ public class ReservaRapida {
         this.status = status;
     }
 
+    public Integer getPosicaoPerpendicular() {
+        return posicaoPerpendicular;
+    }
+
+    public void setPosicaoPerpendicular(Integer posicaoPerpendicular) {
+        this.posicaoPerpendicular = posicaoPerpendicular;
+    }
+
     public ReservaRapidaResponseDTO toResponse() {
         return new ReservaRapidaResponseDTO(this);
     }
 
     public ReservaDTO toReservaDTO() {
-        return new ReservaDTO(this.id, this.vaga.getId(), this.vaga.getNumeroEndereco(), this.vaga.getReferenciaEndereco(), this.vaga.getEndereco().toResponseDTO(), this.inicio, this.fim, this.tipoVeiculo.getComprimento(), this.placa, this.status, this.agente.getUsuario(), this.criadoEm);
+        return new ReservaDTO(this.id, this.vaga.getId(), this.vaga.getNumeroEndereco(), this.vaga.getReferenciaEndereco(), this.vaga.getEndereco().toResponseDTO(), this.inicio, this.fim, this.tipoVeiculo.getComprimento(), this.placa, this.status, this.agente.getUsuario(), this.criadoEm, this.posicaoPerpendicular, this.cidadeOrigem, this.entradaCidade);
     }
 }

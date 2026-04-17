@@ -11,6 +11,8 @@ import com.cptrans.petrocarga.domain.entities.Vaga;
 import com.cptrans.petrocarga.domain.entities.Veiculo;
 import com.cptrans.petrocarga.domain.enums.StatusReservaEnum;
 
+import jakarta.persistence.criteria.CriteriaBuilder.In;
+
 
 public class ReservaDTO {
     private UUID id;
@@ -37,13 +39,14 @@ public class ReservaDTO {
     private OffsetDateTime checkOutEm;
     private UsuarioResponseDTO criadoPor;
     private OffsetDateTime criadoEm;
+    private Integer posicaoPerpendicular;
 
     public ReservaDTO() {
     }
     public ReservaDTO(UUID reservaId, UUID vagaId, String numeroEndereco,
         String referenciaEndereco, EnderecoVagaResponseDTO enderecoVaga, OffsetDateTime inicio,
         OffsetDateTime fim, Integer tamanhoVeiculo, String placaVeiculo, StatusReservaEnum status,
-        Usuario criadoPor, OffsetDateTime criadoEm) {
+        Usuario criadoPor, OffsetDateTime criadoEm, Integer posicaoPerpendicular, String cidadeOrigem, String entradaCidade) {
         this.id = reservaId;
         this.vagaId = vagaId;
         this.numeroEndereco = numeroEndereco;
@@ -56,9 +59,12 @@ public class ReservaDTO {
         this.status = status;
         this.criadoPor = criadoPor.toResponseDTO();
         this.criadoEm = criadoEm;
+        this.posicaoPerpendicular = posicaoPerpendicular;
+        this.cidadeOrigem = cidadeOrigem;
+        this.entradaCidade = entradaCidade;
     }
 
-    public ReservaDTO(UUID reservaId, String cidadeOrigem, String entradaCidade, Boolean checkedIn, OffsetDateTime checkInEm, OffsetDateTime checkOutEm,  Vaga vaga, OffsetDateTime inicio, OffsetDateTime fim, Veiculo veiculo, StatusReservaEnum status, Usuario criadoPor, OffsetDateTime criadoEm, Motorista motorista) {
+    public ReservaDTO(UUID reservaId, String cidadeOrigem, String entradaCidade, Boolean checkedIn, OffsetDateTime checkInEm, OffsetDateTime checkOutEm,  Vaga vaga, OffsetDateTime inicio, OffsetDateTime fim, Veiculo veiculo, StatusReservaEnum status, Usuario criadoPor, OffsetDateTime criadoEm, Motorista motorista, Integer posicaoPerpendicular) {
         this.id = reservaId;
         this.vagaId = vaga.getId();
         this.motoristaId = motorista.getId();
@@ -83,6 +89,7 @@ public class ReservaDTO {
         this.checkOutEm = checkOutEm;
         this.criadoPor = criadoPor.toResponseDTO();
         this.criadoEm = criadoEm;
+        this.posicaoPerpendicular = posicaoPerpendicular;
     }
 
     public ReservaDTO(Reserva reserva){
@@ -110,6 +117,7 @@ public class ReservaDTO {
         this.checkOutEm = reserva.getCheckOutEm();
         this.criadoPor = reserva.getCriadoPor().toResponseDTO();
         this.criadoEm = reserva.getCriadoEm();
+        this.posicaoPerpendicular = reserva.getPosicaoPerpendicular();
     }
 
     public ReservaDTO (ReservaRapida reservaRapida) {
@@ -125,6 +133,9 @@ public class ReservaDTO {
         this.status = reservaRapida.getStatus();
         this.criadoPor = reservaRapida.getAgente().getUsuario().toResponseDTO();
         this.criadoEm = reservaRapida.getCriadoEm();
+        this.posicaoPerpendicular = reservaRapida.getPosicaoPerpendicular();
+        this.cidadeOrigem = reservaRapida.getCidadeOrigem();
+        this.entradaCidade = reservaRapida.getEntradaCidade();
     }
     public UUID getId() {
         return id;
@@ -177,37 +188,30 @@ public class ReservaDTO {
     public void setPlacaVeiculo(String placaVeiculo) {
         this.placaVeiculo = placaVeiculo;
     }
-
     public String getCidadeOrigem() {
         return cidadeOrigem;
     }
-
     public void setCidadeOrigem(String cidadeOrigem) {
         this.cidadeOrigem = cidadeOrigem;
     }
-
     public String getEntradaCidade() {
         return entradaCidade;
     }
     public void setEntradaCidade(String entradaCidade) {
         this.entradaCidade = entradaCidade;
     }
-
     public StatusReservaEnum getStatus() {
         return status;
     }
     public void setStatus(StatusReservaEnum status) {
         this.status = status;
     }
-
     public Boolean isCheckedIn() {
         return checkedIn;
     }
-
     public void setCheckedIn(Boolean checkedIn) {
         this.checkedIn = checkedIn;
     }
-
     public OffsetDateTime getCheckInEm() {
         return checkInEm;
     }
@@ -220,7 +224,6 @@ public class ReservaDTO {
     public void setCheckOutEm(OffsetDateTime checkOutEm) {
         this.checkOutEm = checkOutEm;
     }
-
     public UsuarioResponseDTO getCriadoPor() {
         return criadoPor;
     }
@@ -283,5 +286,11 @@ public class ReservaDTO {
     }
     public void setEnderecoVaga(EnderecoVagaResponseDTO enderecoVaga) {
         this.enderecoVaga = enderecoVaga;
+    }
+    public Integer getPosicaoPerpendicular() {
+        return posicaoPerpendicular;
+    }
+    public void setPosicaoPerpendicular(Integer posicaoPerpendicular) {
+        this.posicaoPerpendicular = posicaoPerpendicular;
     }
 }

@@ -19,7 +19,7 @@ public class ReservaRapidaRequestDTO {
     @Valid
     private TipoVeiculoEnum tipoVeiculo;
 
-    @Size(min = 7, max = 10, message = "Placa deve ter entre 7 e 10 caracteres.")
+    @Size(min = 7, max = 7, message = "Placa deve ter 7 caracteres.")
     private String placa;
 
     @NotNull
@@ -27,6 +27,12 @@ public class ReservaRapidaRequestDTO {
 
     @NotNull
     private OffsetDateTime fim;
+
+    private Integer posicaoPerpendicular;
+
+    private String cidadeOrigem;
+
+    private String entradaCidade;
 
     public ReservaRapidaRequestDTO() {
         
@@ -39,6 +45,9 @@ public class ReservaRapidaRequestDTO {
         reservaRapida.setPlaca(this.placa != null ? this.placa.trim().toUpperCase() : null);
         reservaRapida.setInicio(this.inicio);
         reservaRapida.setFim(this.fim);
+        reservaRapida.setPosicaoPerpendicular(this.posicaoPerpendicular);
+        reservaRapida.setCidadeOrigem(this.cidadeOrigem);
+        reservaRapida.setEntradaCidade(this.entradaCidade);
         return reservaRapida;
     }
 
@@ -47,39 +56,31 @@ public class ReservaRapidaRequestDTO {
         return vagaId;
     }
 
-    public void setVagaId(UUID vagaId) {
-        this.vagaId = vagaId;
-    }
-
     public TipoVeiculoEnum getTipoVeiculo() {
         return tipoVeiculo;
-    }
-
-    public void setTipoVeiculo(TipoVeiculoEnum tipoVeiculo) {
-        this.tipoVeiculo = tipoVeiculo;
     }
 
     public String getPlaca() {
         return placa;
     }
 
-    public void setPlaca(String placa) {
-        this.placa = placa;
-    }
-
     public OffsetDateTime getInicio() {
         return inicio;
-    }
-
-    public void setInicio(OffsetDateTime inicio) {
-        this.inicio = inicio;
     }
 
     public OffsetDateTime getFim() {
         return fim;
     }
 
-    public void setFim(OffsetDateTime fim) {
-        this.fim = fim;
+    public Integer getPosicaoPerpendicular() {
+        return posicaoPerpendicular;
+    }
+
+    public String getCidadeOrigem() {
+        return cidadeOrigem;
+    }
+
+    public String getEntradaCidade() {
+        return entradaCidade;
     }
 }

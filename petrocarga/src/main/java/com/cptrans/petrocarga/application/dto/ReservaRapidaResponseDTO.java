@@ -20,6 +20,9 @@ public class ReservaRapidaResponseDTO {
     private OffsetDateTime fim;
     private OffsetDateTime criadoEm;
     private StatusReservaEnum status;
+    private Integer posicaoPerpendicular;
+    private String cidadeOrigem;
+    private String entradaCidade;
 
     public ReservaRapidaResponseDTO() {
     }
@@ -36,6 +39,9 @@ public class ReservaRapidaResponseDTO {
         this.fim = reservaRapida.getFim();
         this.criadoEm = reservaRapida.getCriadoEm();
         this.status = reservaRapida.getStatus();
+        this.posicaoPerpendicular = reservaRapida.getPosicaoPerpendicular();
+        this.cidadeOrigem = reservaRapida.getCidadeOrigem();
+        this.entradaCidade = reservaRapida.getEntradaCidade();
     }
 
     // Getters and Setters
@@ -123,5 +129,23 @@ public class ReservaRapidaResponseDTO {
     }
     public void setStatus(StatusReservaEnum status) {
         this.status = status;
+    }
+    public Integer getPosicaoPerpendicular() {
+        return posicaoPerpendicular;
+    }
+    public void setPosicaoPerpendicular(Integer posicaoPerpendicular) {
+        this.posicaoPerpendicular = posicaoPerpendicular;
+    }
+    public String getCidadeOrigem() {
+        return cidadeOrigem;
+    }
+    public void setCidadeOrigem(String cidadeOrigem) {
+        this.cidadeOrigem = cidadeOrigem;
+    }
+    public String getEntradaCidade() {
+        return entradaCidade;
+    }
+    public void setEntradaCidade(String entradaCidade) {
+        this.entradaCidade = entradaCidade;
     }
 }

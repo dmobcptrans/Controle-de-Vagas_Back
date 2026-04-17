@@ -72,6 +72,9 @@ public class Reserva {
     @Column(name = "check_out_em", nullable = false)
     private OffsetDateTime checkOutEm;
 
+    @Column(name = "posicao_perpendicular")
+    private Integer posicaoPerpendicular;
+
     // Constructors
     public Reserva() {
         this.criadoEm = OffsetDateTime.now();
@@ -192,10 +195,18 @@ public class Reserva {
         this.checkOutEm = checkOutEm;
     }
 
+    public Integer getPosicaoPerpendicular() {
+        return posicaoPerpendicular;
+    }
+
+    public void setPosicaoPerpendicular(Integer posicaoPerpendicular) {
+        this.posicaoPerpendicular = posicaoPerpendicular;
+    }
+
     public ReservaResponseDTO toResponseDTO() {
         return new ReservaResponseDTO(this);
     }
     public ReservaDTO toReservaDTO(){
-        return new ReservaDTO(this.id, this.cidadeOrigem, this.entradaCidade, this.checkedIn, this.checkInEm, this.checkOutEm, this.vaga, this.inicio, this.fim, this.veiculo, this.status, this.criadoPor, this.criadoEm, this.motorista);
+        return new ReservaDTO(this.id, this.cidadeOrigem, this.entradaCidade, this.checkedIn, this.checkInEm, this.checkOutEm, this.vaga, this.inicio, this.fim, this.veiculo, this.status, this.criadoPor, this.criadoEm, this.motorista, this.posicaoPerpendicular);
     }
 }

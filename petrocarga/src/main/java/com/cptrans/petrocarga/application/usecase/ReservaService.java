@@ -6,7 +6,9 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.TreeSet;
 import java.util.UUID;
@@ -156,6 +158,9 @@ public class ReservaService {
         UserAuthenticated userAuthenticated = (UserAuthenticated) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Usuario usuarioLogado = usuarioService.findById(userAuthenticated.id());
         novaReserva.setCriadoPor(usuarioLogado);
+
+        
+
         checarExcecoesReserva(novaReserva, novaReserva.getCriadoPor(), novaReserva.getMotorista(), novaReserva.getVeiculo(), ReservaUtils.METODO_POST);
         Reserva reservaSalva = reservaRepository.save(novaReserva);
         try {
@@ -179,6 +184,13 @@ public class ReservaService {
         List<StatusReservaEnum> listaStatus = new ArrayList<>(List.of(StatusReservaEnum.ATIVA, StatusReservaEnum.RESERVADA));
         List<Reserva> reservasAtivasNaVaga = reservaRepository.findByVagaIdAndStatusIn(vagaNovaReserva.getId(), listaStatus);
         List<ReservaRapida> reservasRapidasAtivasNaVaga = reservaRapidaService.findByVagaIdAndStatusIn(vagaNovaReserva.getId(), listaStatus);
+        List<ReservaDTO> reservasTotaisAtivasNaVaga = ReservaUtils.juntarReservas(reservasAtivasNaVaga, reservasRapidasAtivasNaVaga);
+        if (novaReserva.getVaga() != null && novaReserva.getVaga().getTipoVaga().equals(TipoVagaEnum.PERPENDICULAR)) {
+            if (novaReserva.getPosicaoPerpendicular() == null) {
+                Integer novaPosicao = ReservaUtils.encontrarPosicaoDisponivel(novaReserva.getVaga().getQuantidade(), novaReserva.getVaga().getComprimento(), novaReserva.toReservaDTO(), reservasTotaisAtivasNaVaga);
+                novaReserva.setPosicaoPerpendicular(novaPosicao);
+            }
+        }
         ReservaUtils.validarTempoMaximoReserva(novaReserva.toReservaDTO(), vagaNovaReserva);
         reservaUtils.validarEspacoDisponivelNaVaga(novaReserva, usuarioLogado, reservasAtivasNaVaga, reservasRapidasAtivasNaVaga, metodoChamador);
         reservaUtils.validarPermissoesReserva(usuarioLogado, motoristaDaReserva, veiculoDaReserva);
@@ -215,7 +227,7 @@ public class ReservaService {
         }else{
             return getIntervalosBloqueadosParalela(vaga, data, tipoVeiculo);
         }
-}
+    }
 
     private List<Intervalo> getIntervalosBloqueadosParalela(Vaga vaga, LocalDate data, TipoVeiculoEnum tipoVeiculo) {
         int capacidadeTotal = vaga.getComprimento();
@@ -281,95 +293,119 @@ public class ReservaService {
         if (atual != null) intervalosBloqueados.add(atual);
 
         return intervalosBloqueados;
-}
-
-private List<Intervalo> getIntervalosBloqueadosPerpendicular(Vaga vaga, LocalDate data, TipoVeiculoEnum tipoVeiculo) {
-    if (vaga.getComprimento() == null || vaga.getComprimento() <= 0 ||
-        vaga.getQuantidade() == null || vaga.getQuantidade() <= 0) {
-        throw new IllegalArgumentException("Vaga do tipo perpendicular deve ter os campos 'comprimento' e 'quantidade' preenchidos.");
     }
 
-    int comprimentoPorPosicao = vaga.getComprimento();
-    int quantidadePosicoes = vaga.getQuantidade();
-    int comprimentoVeiculoDesejado = tipoVeiculo.getComprimento();
-
-    if (comprimentoVeiculoDesejado > comprimentoPorPosicao) {
-        throw new IllegalArgumentException("O veículo selecionado é maior do que o tamanho permitido por posição nesta vaga.");
-    }
-
-    List<ReservaDTO> reservas = getReservasByVagaIdAndData(
-        vaga.getId(),
-        data,
-        new ArrayList<>(List.of(StatusReservaEnum.RESERVADA, StatusReservaEnum.ATIVA))
-    );
-
-    if (reservas.isEmpty()) {
-        return List.of();
-    }
-
-    TreeSet<Instant> pontos = new TreeSet<>();
-    reservas.forEach(r -> {
-        pontos.add(r.getInicio().toInstant());
-        pontos.add(r.getFim().toInstant());
-    });
-
-    List<Instant> timeline = new ArrayList<>(pontos);
-    List<Intervalo> intervalosBloqueados = new ArrayList<>();
-    Intervalo atual = null;
-
-    for (int i = 0; i < timeline.size() - 1; i++) {
-        Instant inicio = timeline.get(i);
-        Instant fim = timeline.get(i + 1);
-
-        if (inicio.equals(fim)) continue;
-
-        long ocupadas = reservas.stream()
-            .filter(res ->
-                res.getInicio().toInstant().isBefore(fim) &&
-                res.getFim().toInstant().isAfter(inicio)
-            )
-            .count();
-
-        boolean cabe = ocupadas < quantidadePosicoes;
-
-        if (!cabe) {
-            OffsetDateTime dtoIni = OffsetDateTime.ofInstant(inicio, ZoneOffset.of("-03:00"));
-            OffsetDateTime dtoFim = OffsetDateTime.ofInstant(fim, ZoneOffset.of("-03:00"));
-
-            if (atual == null) {
-                atual = new Intervalo(dtoIni, dtoFim);
-            } else {
-                atual.setFim(dtoFim);
-            }
-        } else if (atual != null) {
-            intervalosBloqueados.add(atual);
-            atual = null;
+    private List<Intervalo> getIntervalosBloqueadosPerpendicular(
+        Vaga vaga,
+        LocalDate data,
+        TipoVeiculoEnum tipoVeiculo
+    ) {
+        if (vaga.getComprimento() == null || vaga.getComprimento() <= 0 ||
+            vaga.getQuantidade() == null || vaga.getQuantidade() <= 0 ||
+            vaga.getTipoVaga() == null || !vaga.getTipoVaga().equals(TipoVagaEnum.PERPENDICULAR)) {
+            throw new IllegalArgumentException("Vaga do tipo perpendicular deve ter os campos 'comprimento' e 'quantidade' preenchidos.");
         }
+
+        int comprimentoPorPosicao = vaga.getComprimento();
+        int quantidadePosicoes = vaga.getQuantidade();
+        int comprimentoVeiculoDesejado = tipoVeiculo.getComprimento();
+
+        if (comprimentoVeiculoDesejado > comprimentoPorPosicao) {
+            throw new IllegalArgumentException("O veículo selecionado é maior do que o tamanho permitido por posição nesta vaga.");
+        }
+
+        List<ReservaDTO> reservas = getReservasByVagaIdAndData(
+            vaga.getId(),
+            data,
+            new ArrayList<>(List.of(StatusReservaEnum.RESERVADA, StatusReservaEnum.ATIVA))
+        );
+
+        if (reservas.isEmpty()) {
+            return List.of();
+        }
+
+        TreeSet<Instant> pontos = new TreeSet<>();
+        reservas.forEach(r -> {
+            pontos.add(r.getInicio().toInstant());
+            pontos.add(r.getFim().toInstant());
+        });
+
+        List<Instant> timeline = new ArrayList<>(pontos);
+        List<Intervalo> intervalosBloqueados = new ArrayList<>();
+        Intervalo atual = null;
+
+        for (int i = 0; i < timeline.size() - 1; i++) {
+            Instant inicio = timeline.get(i);
+            Instant fim = timeline.get(i + 1);
+
+            if (inicio.equals(fim)) continue;
+
+            Map<Integer, Integer> ocupacaoPorPosicao = new HashMap<>();
+
+            for (ReservaDTO res : reservas) {
+                boolean sobrepoe =
+                    res.getInicio().toInstant().isBefore(fim) &&
+                    res.getFim().toInstant().isAfter(inicio);
+
+                if (sobrepoe) {
+                    Integer posicao = res.getPosicaoPerpendicular();
+                    if (posicao == null) {
+                        throw new IllegalArgumentException("Reserva perpendicular sem posição definida.");
+                    }
+
+                    ocupacaoPorPosicao.merge(posicao, res.getTamanhoVeiculo(), Integer::sum);
+                }
+            }
+
+            boolean cabeEmAlgumaPosicao = false;
+
+            for (int posicao = 1; posicao <= quantidadePosicoes; posicao++) {
+                int ocupado = ocupacaoPorPosicao.getOrDefault(posicao, 0);
+
+                if (ocupado + comprimentoVeiculoDesejado <= comprimentoPorPosicao) {
+                    cabeEmAlgumaPosicao = true;
+                    break;
+                }
+            }
+
+            if (!cabeEmAlgumaPosicao) {
+                OffsetDateTime dtoIni = OffsetDateTime.ofInstant(inicio, ZoneOffset.of("-03:00"));
+                OffsetDateTime dtoFim = OffsetDateTime.ofInstant(fim, ZoneOffset.of("-03:00"));
+
+                if (atual == null) {
+                    atual = new Intervalo(dtoIni, dtoFim);
+                } else {
+                    atual.setFim(dtoFim);
+                }
+            } else if (atual != null) {
+                intervalosBloqueados.add(atual);
+                atual = null;
+            }
+        }
+
+        if (atual != null) {
+            intervalosBloqueados.add(atual);
+        }
+
+        return intervalosBloqueados;
     }
 
-    if (atual != null) {
-        intervalosBloqueados.add(atual);
+    /* Auxiliares */
+
+    public static class Intervalo {
+        private OffsetDateTime inicio;
+        private OffsetDateTime fim;
+
+        public Intervalo(OffsetDateTime inicio, OffsetDateTime fim) {
+            this.inicio = inicio;
+            this.fim = fim;
+        }
+
+        public OffsetDateTime getInicio() { return inicio; }
+        public OffsetDateTime getFim() { return fim; }
+        public void setInicio(OffsetDateTime inicio) { this.inicio = inicio; }
+        public void setFim(OffsetDateTime fim) { this.fim = fim; }
     }
-
-    return intervalosBloqueados;
-}
-
-/* Auxiliares */
-
-public static class Intervalo {
-    private OffsetDateTime inicio;
-    private OffsetDateTime fim;
-
-    public Intervalo(OffsetDateTime inicio, OffsetDateTime fim) {
-        this.inicio = inicio;
-        this.fim = fim;
-    }
-
-    public OffsetDateTime getInicio() { return inicio; }
-    public OffsetDateTime getFim() { return fim; }
-    public void setInicio(OffsetDateTime inicio) { this.inicio = inicio; }
-    public void setFim(OffsetDateTime fim) { this.fim = fim; }
-}
 
     /**
      * Finaliza uma reserva de forma forçada por um AGENTE/ADMIN ou pelo job automático.

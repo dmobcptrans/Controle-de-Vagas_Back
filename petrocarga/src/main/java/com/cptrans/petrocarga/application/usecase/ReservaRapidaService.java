@@ -23,6 +23,7 @@ import com.cptrans.petrocarga.domain.entities.Usuario;
 import com.cptrans.petrocarga.domain.entities.Vaga;
 import com.cptrans.petrocarga.domain.enums.PermissaoEnum;
 import com.cptrans.petrocarga.domain.enums.StatusReservaEnum;
+import com.cptrans.petrocarga.domain.enums.TipoVagaEnum;
 import com.cptrans.petrocarga.domain.repositories.ReservaRapidaRepository;
 import com.cptrans.petrocarga.domain.repositories.ReservaRepository;
 import com.cptrans.petrocarga.domain.specification.ReservaRapidaSpecification;
@@ -146,10 +147,19 @@ public class ReservaRapidaService {
             Agente agenteLogado = agenteService.findByUsuarioId(usuarioLogado.getId());
             novaReservaRapida.setAgente(agenteLogado);
         }
+        if (novaReservaRapida.getCidadeOrigem() == null ){
+            novaReservaRapida.setCidadeOrigem("Petrópolis - RJ");
+        }
 
         reservaRapidaUtils.validarQuantidadeReservasPorPlaca(novaReservaRapida.toReservaDTO());
         ReservaUtils.validarTempoMaximoReserva(novaReservaRapida.toReservaDTO(), novaReservaRapida.getVaga());
         List<ReservaDTO> reservasTotaisAtivasNaVaga = ReservaUtils.juntarReservas(reservasAtivasNaVaga, reservasRapidasAtivasNaVaga);
+        
+        if (vagaReserva.getTipoVaga().equals(TipoVagaEnum.PERPENDICULAR) && novaReservaRapida.getPosicaoPerpendicular() == null) {
+            Integer novaPosicao = ReservaUtils.encontrarPosicaoDisponivel(vagaReserva.getQuantidade(), vagaReserva.getComprimento(), novaReservaRapida.toReservaDTO(), reservasTotaisAtivasNaVaga);
+            novaReservaRapida.setPosicaoPerpendicular(novaPosicao);
+        }
+        
         reservaRapidaUtils.validarEspacoDisponivelNaVaga(novaReservaRapida, vagaReserva, reservasTotaisAtivasNaVaga);
         ReservaRapida reservaRapidaCriada = reservaRapidaRepository.save(novaReservaRapida);
         try {
