@@ -187,6 +187,7 @@ public class Vaga {
         dto.setReferenciaGeoInicio(this.referenciaGeoInicio);
         dto.setReferenciaGeoFim(this.referenciaGeoFim);
         dto.setComprimento(this.comprimento);
+        dto.setQuantidade(this.quantidade);
         dto.setStatus(this.status);
         if (this.operacoesVaga != null) {
             dto.setOperacoesVaga(
