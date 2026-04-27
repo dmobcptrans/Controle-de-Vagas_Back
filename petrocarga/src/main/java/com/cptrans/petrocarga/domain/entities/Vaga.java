@@ -59,6 +59,18 @@ public class Vaga {
 
     @Column(name = "referencia_geo_fim")
     private String referenciaGeoFim;
+
+    @Column(name = "latitude_inicio")
+    private Double latitudeInicio;
+
+    @Column(name = "longitude_inicio")
+    private Double longitudeInicio;
+
+    @Column(name = "latitude_fim")
+    private Double latitudeFim;
+
+    @Column(name = "longitude_fim")
+    private Double longitudeFim;
     
     @Schema(description = "Comprimento máximo da vaga em metros", example = "5", minimum = "5")
     @Column(nullable=false, precision = 5, scale = 2)
@@ -138,6 +150,38 @@ public class Vaga {
         this.referenciaGeoFim = referenciaGeoFim;
     }
 
+    public Double getLatitudeInicio() {
+        return latitudeInicio;
+    }
+
+    public void setLatitudeInicio(Double latitudeInicio) {
+        this.latitudeInicio = latitudeInicio;
+    }
+
+    public Double getLongitudeInicio() {
+        return longitudeInicio;
+    }
+
+    public void setLongitudeInicio(Double longitudeInicio) {
+        this.longitudeInicio = longitudeInicio;
+    }
+
+    public Double getLatitudeFim() {
+        return latitudeFim;
+    }
+
+    public void setLatitudeFim(Double latitudeFim) {
+        this.latitudeFim = latitudeFim;
+    }
+
+    public Double getLongitudeFim() {
+        return longitudeFim;
+    }
+
+    public void setLongitudeFim(Double longitudeFim) {
+        this.longitudeFim = longitudeFim;
+    }
+
     public Integer getComprimento() {
         return comprimento;
     }
@@ -186,6 +230,13 @@ public class Vaga {
         dto.setTipoVaga(this.tipoVaga);
         dto.setReferenciaGeoInicio(this.referenciaGeoInicio);
         dto.setReferenciaGeoFim(this.referenciaGeoFim);
+
+        dto.setLatitudeInicio(this.latitudeInicio);
+        dto.setLatitudeFim(this.latitudeFim);
+
+        dto.setLongitudeInicio(this.longitudeInicio);
+        dto.setLongitudeFim(this.longitudeFim);
+
         dto.setComprimento(this.comprimento);
         dto.setQuantidade(this.quantidade);
         dto.setStatus(this.status);
