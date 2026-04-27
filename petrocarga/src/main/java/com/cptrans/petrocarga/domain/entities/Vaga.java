@@ -54,12 +54,6 @@ public class Vaga {
     @Enumerated(EnumType.STRING)
     private TipoVagaEnum tipoVaga;
     
-    @Column(name = "referencia_geo_inicio")
-    private String referenciaGeoInicio;
-
-    @Column(name = "referencia_geo_fim")
-    private String referenciaGeoFim;
-
     @Column(name = "latitude_inicio")
     private Double latitudeInicio;
 
@@ -132,22 +126,6 @@ public class Vaga {
 
     public void setTipoVaga(TipoVagaEnum tipoVaga) {
         this.tipoVaga = tipoVaga;
-    }
-
-    public String getReferenciaGeoInicio() {
-        return referenciaGeoInicio;
-    }
-
-    public void setReferenciaGeoInicio(String referenciaGeoInicio) {
-        this.referenciaGeoInicio = referenciaGeoInicio;
-    }
-
-    public String getReferenciaGeoFim() {
-        return referenciaGeoFim;
-    }
-
-    public void setReferenciaGeoFim(String referenciaGeoFim) {
-        this.referenciaGeoFim = referenciaGeoFim;
     }
 
     public Double getLatitudeInicio() {
@@ -228,8 +206,6 @@ public class Vaga {
         dto.setNumeroEndereco(this.numeroEndereco);
         dto.setReferenciaEndereco(this.referenciaEndereco);
         dto.setTipoVaga(this.tipoVaga);
-        dto.setReferenciaGeoInicio(this.referenciaGeoInicio);
-        dto.setReferenciaGeoFim(this.referenciaGeoFim);
 
         dto.setLatitudeInicio(this.latitudeInicio);
         dto.setLatitudeFim(this.latitudeFim);

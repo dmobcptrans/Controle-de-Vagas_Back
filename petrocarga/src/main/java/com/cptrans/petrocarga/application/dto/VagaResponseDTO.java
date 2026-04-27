@@ -19,8 +19,6 @@ public class VagaResponseDTO {
     private String numeroEndereco;
     private String referenciaEndereco;
     private TipoVagaEnum tipoVaga;
-    private String referenciaGeoInicio;
-    private String referenciaGeoFim;
     private Double latitudeInicio;
     private Double longitudeInicio;
     private Double latitudeFim;
@@ -42,8 +40,6 @@ public class VagaResponseDTO {
         this.numeroEndereco = vaga.getNumeroEndereco();
         this.referenciaEndereco = vaga.getReferenciaEndereco();
         this.tipoVaga = vaga.getTipoVaga();
-        this.referenciaGeoInicio = vaga.getReferenciaGeoInicio();
-        this.referenciaGeoFim = vaga.getReferenciaGeoFim();
         this.latitudeInicio = vaga.getLatitudeInicio();
         this.latitudeFim = vaga.getLatitudeFim();
         this.longitudeInicio = vaga.getLongitudeInicio();
@@ -104,22 +100,6 @@ public class VagaResponseDTO {
 
     public void setTipoVaga(TipoVagaEnum tipoVaga) {
         this.tipoVaga = tipoVaga;
-    }
-
-    public String getReferenciaGeoInicio() {
-        return referenciaGeoInicio;
-    }
-
-    public void setReferenciaGeoInicio(String referenciaGeoInicio) {
-        this.referenciaGeoInicio = referenciaGeoInicio;
-    }
-
-    public String getReferenciaGeoFim() {
-        return referenciaGeoFim;
-    }
-
-    public void setReferenciaGeoFim(String referenciaGeoFim) {
-        this.referenciaGeoFim = referenciaGeoFim;
     }
 
     public Double getLatitudeInicio() {

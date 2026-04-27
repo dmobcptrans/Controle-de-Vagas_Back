@@ -20,9 +20,11 @@ public class VagaPatchDTO {
     private TipoVagaEnum tipoVaga;
     private Set<OperacaoVagaRequestDTO> operacoesVaga;
     
-    private String referenciaGeoInicio;
+    private Double latitudeInicio;
+    private Double latitudeFim;
+    private Double longitudeInicio;
+    private Double longitudeFim;
 
-    private String referenciaGeoFim;
     
     private String numeroEndereco;
 
@@ -46,8 +48,10 @@ public class VagaPatchDTO {
         vaga.setComprimento(this.comprimento);
         vaga.setNumeroEndereco(this.numeroEndereco);
         vaga.setReferenciaEndereco(this.referenciaEndereco);
-        vaga.setReferenciaGeoFim(this.referenciaGeoFim);
-        vaga.setReferenciaGeoInicio(this.referenciaGeoInicio);
+        vaga.setLatitudeFim(this.latitudeFim);
+        vaga.setLatitudeInicio(this.latitudeInicio);
+        vaga.setLongitudeFim(this.longitudeFim);
+        vaga.setLongitudeInicio(this.longitudeInicio);
         vaga.setStatus(this.status);
         vaga.setTipoVaga(this.tipoVaga);
         vaga.setEndereco(this.endereco != null ? this.endereco.toEntity() : null);
@@ -106,22 +110,6 @@ public class VagaPatchDTO {
         this.tipoVaga = tipoVaga;
     }
 
-    public String getReferenciaGeoInicio() {
-        return referenciaGeoInicio;
-    }
-
-    public void setReferenciaGeoInicio(String referenciaGeoInicio) {
-        this.referenciaGeoInicio = referenciaGeoInicio;
-    }
-
-    public String getReferenciaGeoFim() {
-        return referenciaGeoFim;
-    }
-
-    public void setReferenciaGeoFim(String referenciaGeoFim) {
-        this.referenciaGeoFim = referenciaGeoFim;
-    }
-
     public Integer getComprimento() {
         return comprimento;
     }
@@ -153,4 +141,37 @@ public class VagaPatchDTO {
     public void setStatus(StatusVagaEnum status){
         this.status = status;
     }
+
+    public Double getLatitudeInicio() {
+        return latitudeInicio;
+    }
+
+    public void setLatitudeInicio(Double latitudeInicio) {
+        this.latitudeInicio = latitudeInicio;
+    }
+
+    public Double getLatitudeFim() {
+        return latitudeFim;
+    }
+
+    public void setLatitudeFim(Double latitudeFim) {
+        this.latitudeFim = latitudeFim;
+    }
+
+    public Double getLongitudeInicio() {
+        return longitudeInicio;
+    }
+
+    public void setLongitudeInicio(Double longitudeInicio) {
+        this.longitudeInicio = longitudeInicio;
+    }
+
+    public Double getLongitudeFim() {
+        return longitudeFim;
+    }
+
+    public void setLongitudeFim(Double longitudeFim) {
+        this.longitudeFim = longitudeFim;
+    }
+
 }
