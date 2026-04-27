@@ -21,6 +21,10 @@ public class VagaResponseDTO {
     private TipoVagaEnum tipoVaga;
     private String referenciaGeoInicio;
     private String referenciaGeoFim;
+    private Double latitudeInicio;
+    private Double longitudeInicio;
+    private Double latitudeFim;
+    private Double longitudeFim;
     private Integer comprimento;
     private Integer quantidade;
     private StatusVagaEnum status;
@@ -40,6 +44,10 @@ public class VagaResponseDTO {
         this.tipoVaga = vaga.getTipoVaga();
         this.referenciaGeoInicio = vaga.getReferenciaGeoInicio();
         this.referenciaGeoFim = vaga.getReferenciaGeoFim();
+        this.latitudeInicio = vaga.getLatitudeInicio();
+        this.latitudeFim = vaga.getLatitudeFim();
+        this.longitudeInicio = vaga.getLongitudeInicio();
+        this.longitudeFim = vaga.getLongitudeFim();
         this.comprimento = vaga.getComprimento();
         this.quantidade = vaga.getQuantidade();
         this.status = vaga.getStatus();
@@ -114,7 +122,39 @@ public class VagaResponseDTO {
         this.referenciaGeoFim = referenciaGeoFim;
     }
 
-    public Integer getComprimento() { 
+    public Double getLatitudeInicio() {
+        return latitudeInicio;
+    }
+
+    public void setLatitudeInicio(Double latitudeInicio) {
+        this.latitudeInicio = latitudeInicio;
+    }
+
+    public Double getLongitudeInicio() {
+        return longitudeInicio;
+    }
+
+    public void setLongitudeInicio(Double longitudeInicio) {
+        this.longitudeInicio = longitudeInicio;
+    }
+
+    public Double getLatitudeFim() {
+        return latitudeFim;
+    }
+
+    public void setLatitudeFim(Double latitudeFim) {
+        this.latitudeFim = latitudeFim;
+    }
+
+    public Double getLongitudeFim() {
+        return longitudeFim;
+    }
+
+    public void setLongitudeFim(Double longitudeFim) {
+        this.longitudeFim = longitudeFim;
+    }
+
+    public Integer getComprimento() {
         return comprimento;
     }
 
