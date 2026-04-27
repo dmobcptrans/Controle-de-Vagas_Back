@@ -97,18 +97,13 @@ public class VagaController {
             throw new IllegalArgumentException("Parâmetros de bounding box inválidos.");
         }
 
-        if (status != null) {
-            vagas = vagaService.buscarPorMapa(north, south, east, west, status)
-                    .stream()
-                    .map(VagaResponseDTO::new)
-                    .toList();
-        } else {
-            vagas = vagaService.buscarPorMapa(north, south, east, west, status)
-                    .stream()
-                    .map(VagaResponseDTO::new)
-                    .toList();
-        }
+        StatusVagaEnum statusBusca = status != null ? status : StatusVagaEnum.DISPONIVEL;
 
+        vagas = vagaService.buscarPorMapa(north, south, east, west, statusBusca)
+                .stream()
+                .map(VagaResponseDTO::new)
+                .toList();
+      
         return ResponseEntity.ok(vagas);
     }
 
