@@ -1,7 +1,6 @@
 package com.cptrans.petrocarga.interfaces.controllers;
 
 
-import java.sql.Date;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -26,7 +25,6 @@ import com.cptrans.petrocarga.application.dto.MultiplasDisponibilidadesVagaReque
 import com.cptrans.petrocarga.application.usecase.DisponibilidadeVagaService;
 import com.cptrans.petrocarga.domain.entities.DisponibilidadeVaga;
 import com.cptrans.petrocarga.shared.utils.DateUtils;
-import com.cptrans.petrocarga.shared.utils.ReservaUtils;
 
 import jakarta.validation.Valid;
 

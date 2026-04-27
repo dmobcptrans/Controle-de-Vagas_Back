@@ -22,7 +22,6 @@ import com.cptrans.petrocarga.application.dto.VeiculoResponseDTO;
 import com.cptrans.petrocarga.application.usecase.VeiculoService;
 import com.cptrans.petrocarga.domain.entities.Veiculo;
 import com.cptrans.petrocarga.shared.utils.CriptoUtils;
-import com.cptrans.petrocarga.shared.utils.VeiculoUtils;
 
 import jakarta.validation.Valid;
 

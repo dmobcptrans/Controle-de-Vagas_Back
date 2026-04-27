@@ -11,7 +11,6 @@ import com.cptrans.petrocarga.domain.entities.Vaga;
 import com.cptrans.petrocarga.domain.entities.Veiculo;
 import com.cptrans.petrocarga.domain.enums.StatusReservaEnum;
 
-import jakarta.persistence.criteria.CriteriaBuilder.In;
 
 
 public class ReservaDTO {

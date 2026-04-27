@@ -1,11 +1,9 @@
 package com.cptrans.petrocarga.application.usecase;
 
-import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 import org.quartz.SchedulerException;

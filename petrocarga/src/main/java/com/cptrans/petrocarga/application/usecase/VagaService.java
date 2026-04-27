@@ -4,8 +4,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import com.cptrans.petrocarga.application.dto.VagaResponseDTO;
-import com.cptrans.petrocarga.shared.utils.VagaUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -78,7 +76,6 @@ public class VagaService {
 
     @Transactional
     public Vaga updateById(UUID id, Vaga novaVaga) {
-        System.out.println("updateService - novaVaga.getQuantidade(): " + novaVaga.getQuantidade());
         Vaga vagaExistente = vagaRepository.findById(id)
             .orElseThrow(() -> new EntityNotFoundException("Vaga com ID " + id + " não encontrada."));
 
@@ -106,8 +103,10 @@ public class VagaService {
         if (novaVaga.getArea() != null) vagaExistente.setArea(novaVaga.getArea());
         if (novaVaga.getNumeroEndereco() != null) vagaExistente.setNumeroEndereco(novaVaga.getNumeroEndereco());
         if (novaVaga.getReferenciaEndereco() != null) vagaExistente.setReferenciaEndereco(novaVaga.getReferenciaEndereco());
-        if (novaVaga.getReferenciaGeoInicio() != null) vagaExistente.setReferenciaGeoInicio(novaVaga.getReferenciaGeoInicio());
-        if (novaVaga.getReferenciaGeoFim() != null) vagaExistente.setReferenciaGeoFim(novaVaga.getReferenciaGeoFim());
+        if (novaVaga.getLatitudeInicio() != null) vagaExistente.setLatitudeInicio(novaVaga.getLatitudeInicio());
+        if (novaVaga.getLongitudeInicio() != null) vagaExistente.setLongitudeInicio(novaVaga.getLongitudeInicio());
+        if (novaVaga.getLatitudeFim() != null) vagaExistente.setLatitudeFim(novaVaga.getLatitudeFim());
+        if (novaVaga.getLongitudeFim() != null) vagaExistente.setLongitudeFim(novaVaga.getLongitudeFim());
         if (novaVaga.getComprimento() != null) vagaExistente.setComprimento(novaVaga.getComprimento());
         if (novaVaga.getStatus() != null) vagaExistente.setStatus(novaVaga.getStatus());
 
@@ -154,7 +153,6 @@ public class VagaService {
             throw new IllegalArgumentException("O campo 'quantidade' é obrigatório para vagas do tipo PERPENDICULAR e deve ser um número inteiro positivo.");
         }
 
-        VagaUtils.preencherCoordenadasSeNecessario(novaVaga);
 
         EnderecoVaga enderecoVaga = enderecoVagaService.cadastrarEnderecoVaga(novaVaga.getEndereco());
         novaVaga.setEndereco(enderecoVaga);
@@ -183,4 +181,5 @@ public class VagaService {
                 south, north, west, east, status
         );
     }
+
 }
