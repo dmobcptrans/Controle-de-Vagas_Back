@@ -30,6 +30,19 @@ public class VagaRequestDTO {
     @Schema(description = "Ponto de referência para a vaga", example = "Em frente ao portão principal")
     private String referenciaEndereco;
 
+    @Schema(description = "Latitude inicial da vaga", example = "-22.509135")
+    private Double latitudeInicio;
+
+    @Schema(description = "Longitude inicial da vaga", example = "-43.171351")
+    private Double longitudeInicio;
+
+    @Schema(description = "Latitude final da vaga", example = "-22.509140")
+    private Double latitudeFim;
+
+    @Schema(description = "Longitude final da vaga", example = "-43.171355")
+    private Double longitudeFim;
+
+
     @Schema(description = "Tipo de vaga (Ex: PARALELA, PERPENDICULAR)", example="PARALELA")
     private TipoVagaEnum tipoVaga;
 
@@ -58,25 +71,45 @@ public class VagaRequestDTO {
 
     public Vaga toEntity() {
         Vaga vaga = new Vaga();
+
         vaga.setArea(this.area);
         vaga.setComprimento(this.comprimento);
         vaga.setNumeroEndereco(this.numeroEndereco);
         vaga.setReferenciaEndereco(this.referenciaEndereco);
-        vaga.setReferenciaGeoFim(this.referenciaGeoFim);
-        vaga.setReferenciaGeoInicio(this.referenciaGeoInicio);
-        vaga.setStatus(this.status != null ? this.status : StatusVagaEnum.INDISPONIVEL );
         vaga.setTipoVaga(this.tipoVaga);
         vaga.setEndereco(this.endereco.toEntity());
         vaga.setQuantidade(this.quantidade);
+        vaga.setStatus(this.status != null ? this.status : StatusVagaEnum.INDISPONIVEL);
+
+        if (this.latitudeInicio != null && this.longitudeInicio != null) {
+            vaga.setLatitudeInicio(this.latitudeInicio);
+            vaga.setLongitudeInicio(this.longitudeInicio);
+        } else if (this.referenciaGeoInicio != null) {
+            String[] parts = this.referenciaGeoInicio.split(",");
+            vaga.setLatitudeInicio(Double.parseDouble(parts[0].trim()));
+            vaga.setLongitudeInicio(Double.parseDouble(parts[1].trim()));
+        }
+
+        if (this.latitudeFim != null && this.longitudeFim != null) {
+            vaga.setLatitudeFim(this.latitudeFim);
+            vaga.setLongitudeFim(this.longitudeFim);
+        } else if (this.referenciaGeoFim != null) {
+            String[] parts = this.referenciaGeoFim.split(",");
+            vaga.setLatitudeFim(Double.parseDouble(parts[0].trim()));
+            vaga.setLongitudeFim(Double.parseDouble(parts[1].trim()));
+        }
+
+        // mantém campos antigos salvos
+        vaga.setReferenciaGeoInicio(this.referenciaGeoInicio);
+        vaga.setReferenciaGeoFim(this.referenciaGeoFim);
 
         if (this.operacoesVaga != null && !this.operacoesVaga.isEmpty()) {
             Set<OperacaoVaga> operacoes = this.operacoesVaga.stream()
-                    .map(dto -> {
-                        return dto.toEntity(vaga);
-                    })
+                    .map(dto -> dto.toEntity(vaga))
                     .collect(Collectors.toSet());
             vaga.setOperacoesVaga(operacoes);
         }
+
         return vaga;
     }
 
@@ -136,6 +169,38 @@ public class VagaRequestDTO {
 
     public void setReferenciaGeoFim(String referenciaGeoFim) {
         this.referenciaGeoFim = referenciaGeoFim;
+    }
+
+    public Double getLatitudeInicio() {
+        return latitudeInicio;
+    }
+
+    public void setLatitudeInicio(Double latitudeInicio) {
+        this.latitudeInicio = latitudeInicio;
+    }
+
+    public Double getLongitudeInicio() {
+        return longitudeInicio;
+    }
+
+    public void setLongitudeInicio(Double longitudeInicio) {
+        this.longitudeInicio = longitudeInicio;
+    }
+
+    public Double getLatitudeFim() {
+        return latitudeFim;
+    }
+
+    public void setLatitudeFim(Double latitudeFim) {
+        this.latitudeFim = latitudeFim;
+    }
+
+    public Double getLongitudeFim() {
+        return longitudeFim;
+    }
+
+    public void setLongitudeFim(Double longitudeFim) {
+        this.longitudeFim = longitudeFim;
     }
 
     public Integer getComprimento() {

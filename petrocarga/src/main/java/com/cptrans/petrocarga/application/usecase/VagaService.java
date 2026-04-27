@@ -4,6 +4,8 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import com.cptrans.petrocarga.application.dto.VagaResponseDTO;
+import com.cptrans.petrocarga.shared.utils.VagaUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -135,31 +137,50 @@ public class VagaService {
 
         return vagaRepository.save(vagaExistente);
     }
-    
+
     @Transactional()
     public Vaga createVaga(Vaga novaVaga){
+
         if(novaVaga.getComprimento() == null) {
             throw new IllegalArgumentException("O campo 'comprimento' é obrigatório e não pode ser nulo ou vazio.");
         }
-        
-        if (!novaVaga.getTipoVaga().equals(TipoVagaEnum.PERPENDICULAR)) novaVaga.setQuantidade(null);
-        System.out.println("quantidade: " + novaVaga.getQuantidade());
-        if (novaVaga.getTipoVaga().equals(TipoVagaEnum.PERPENDICULAR) && (novaVaga.getQuantidade() == null || novaVaga.getQuantidade() <= 0)) {
+
+        if (!novaVaga.getTipoVaga().equals(TipoVagaEnum.PERPENDICULAR)) {
+            novaVaga.setQuantidade(null);
+        }
+
+        if (novaVaga.getTipoVaga().equals(TipoVagaEnum.PERPENDICULAR) &&
+                (novaVaga.getQuantidade() == null || novaVaga.getQuantidade() <= 0)) {
             throw new IllegalArgumentException("O campo 'quantidade' é obrigatório para vagas do tipo PERPENDICULAR e deve ser um número inteiro positivo.");
         }
-        
+
+        VagaUtils.preencherCoordenadasSeNecessario(novaVaga);
+
         EnderecoVaga enderecoVaga = enderecoVagaService.cadastrarEnderecoVaga(novaVaga.getEndereco());
         novaVaga.setEndereco(enderecoVaga);
 
         novaVaga.setStatus(StatusVagaEnum.INDISPONIVEL);
 
-        
-        Vaga vagaCadastrada= vagaRepository.save(novaVaga);
+        Vaga vagaCadastrada = vagaRepository.save(novaVaga);
 
         if(vagaCadastrada.getOperacoesVaga() == null || vagaCadastrada.getOperacoesVaga().isEmpty()) {
-            vagaCadastrada.setOperacoesVaga(operacaoVagaService.setOperacoesVagaDefault(vagaCadastrada));
+            vagaCadastrada.setOperacoesVaga(
+                    operacaoVagaService.setOperacoesVagaDefault(vagaCadastrada)
+            );
         }
 
         return vagaCadastrada;
+    }
+
+    public List<Vaga> buscarPorMapa(
+            Double north,
+            Double south,
+            Double east,
+            Double west,
+            StatusVagaEnum status
+    ) {
+        return vagaRepository.buscarPorArea(
+                south, north, west, east, status
+        );
     }
 }
