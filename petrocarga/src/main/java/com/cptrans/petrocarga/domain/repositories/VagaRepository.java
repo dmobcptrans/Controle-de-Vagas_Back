@@ -22,4 +22,20 @@ public interface  VagaRepository extends JpaRepository<Vaga, UUID> {
 
     @Query("SELECT COALESCE(SUM(v.comprimento), 0) FROM Vaga v")
     Long sumTotalAvailableLengthMeters();
+
+    @Query("""
+SELECT v FROM Vaga v
+WHERE v.latitudeFim >= :south
+AND v.latitudeInicio <= :north
+AND v.longitudeFim >= :west
+AND v.longitudeInicio <= :east
+AND v.status = :status
+""")
+    List<Vaga> buscarPorArea(
+            Double south,
+            Double north,
+            Double west,
+            Double east,
+            StatusVagaEnum status
+    );
 }
