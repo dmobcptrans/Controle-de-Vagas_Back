@@ -70,6 +70,48 @@ public class VagaController {
         return ResponseEntity.ok(vagas);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR','AGENTE','MOTORISTA','EMPRESA')")
+    @GetMapping("/mapa")
+    @Operation(
+            summary = "Buscar vagas por área do mapa.",
+            description = "Retorna vagas dentro da área visível do mapa com base nos limites geográficos (bounding box).",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Lista de vagas retornada com sucesso",
+                            content = @Content(mediaType = "application/json",
+                                    array = @ArraySchema(schema = @Schema(implementation = VagaResponseDTO.class)))),
+                    @ApiResponse(responseCode = "400", description = "Parâmetros inválidos"),
+                    @ApiResponse(responseCode = "500", description = "Erro interno no servidor")
+            }
+    )
+    public ResponseEntity<List<VagaResponseDTO>> buscarPorMapa(
+            @RequestParam Double north,
+            @RequestParam Double south,
+            @RequestParam Double east,
+            @RequestParam Double west,
+            @RequestParam(required = false) StatusVagaEnum status
+    ) {
+
+        List<VagaResponseDTO> vagas;
+
+        if (north < south || east < west) {
+            throw new IllegalArgumentException("Parâmetros de bounding box inválidos.");
+        }
+
+        if (status != null) {
+            vagas = vagaService.buscarPorMapa(north, south, east, west, status)
+                    .stream()
+                    .map(VagaResponseDTO::new)
+                    .toList();
+        } else {
+            vagas = vagaService.buscarPorMapa(north, south, east, west, status)
+                    .stream()
+                    .map(VagaResponseDTO::new)
+                    .toList();
+        }
+
+        return ResponseEntity.ok(vagas);
+    }
+
     /**
      * Retorna uma lista paginada de todas as vagas disponíveis com paginação e com filtros opcionais por status e nome da rua (logradouro).
      * 
