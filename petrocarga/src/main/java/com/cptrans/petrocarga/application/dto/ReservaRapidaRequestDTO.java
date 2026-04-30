@@ -6,6 +6,7 @@ import java.util.UUID;
 import com.cptrans.petrocarga.domain.entities.ReservaRapida;
 import com.cptrans.petrocarga.domain.entities.Vaga;
 import com.cptrans.petrocarga.domain.enums.TipoVeiculoEnum;
+import com.cptrans.petrocarga.shared.utils.VeiculoUtils;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -42,7 +43,7 @@ public class ReservaRapidaRequestDTO {
         ReservaRapida reservaRapida = new ReservaRapida();
         reservaRapida.setVaga(vaga);
         reservaRapida.setTipoVeiculo(this.tipoVeiculo);
-        reservaRapida.setPlaca(this.placa != null ? this.placa.trim().toUpperCase() : null);
+        reservaRapida.setPlaca(this.placa != null ? VeiculoUtils.normalizarEValidar(this.placa) : null);
         reservaRapida.setInicio(this.inicio);
         reservaRapida.setFim(this.fim);
         reservaRapida.setPosicaoPerpendicular(this.posicaoPerpendicular);
@@ -51,8 +52,8 @@ public class ReservaRapidaRequestDTO {
         return reservaRapida;
     }
 
-    // Getters and Setters
-    public UUID getVagaId() {
+        // Getters and Setters
+        public UUID getVagaId() {
         return vagaId;
     }
 
