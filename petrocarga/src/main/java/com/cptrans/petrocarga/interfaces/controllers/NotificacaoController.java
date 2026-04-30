@@ -54,7 +54,6 @@ public class NotificacaoController {
     @Autowired
     private PushTokenService pushTokenService;
     
-/*************  ✨ Windsurf Command ⭐  *************/
 /**
  * Esse método é responsável por criar uma conexão SSE (Server-Sent Events) para o usuário autenticado, permitindo que ele receba notificações em tempo real.
  * @param User o usuário autenticado
