@@ -31,4 +31,8 @@ public class DateUtils {
             throw new IllegalArgumentException("Ano deve ser um valor entre 2026 e 2100.");
         }
     }
+
+    public static OffsetDateTime agora(){
+        return OffsetDateTime.now(FUSO_BRASIL);
+    }
 }

@@ -17,6 +17,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.async.AsyncRequestNotUsableException;
 
+import com.cptrans.petrocarga.shared.dto.response.SystemResponse;
+
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
@@ -25,6 +27,13 @@ import jakarta.validation.ConstraintViolationException;
 public class GlobalHandlerException {
     
     private static final Logger log = LoggerFactory.getLogger(GlobalHandlerException.class);
+
+    public static class TermosNotAcceptedException extends DataIntegrityViolationException {
+        public TermosNotAcceptedException() {
+            super("Os termos de uso devem ser aceitos.");
+        }
+    }
+
 
     /**
     * Trata ClientAbortException, que ocorre quando o cliente desconecta durante uma requisição, especialmente em conexões SSE (Server-Sent Events).
@@ -234,5 +243,10 @@ public class GlobalHandlerException {
         }
         error.put("cause", causeMessage);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    @ExceptionHandler(TermosNotAcceptedException.class)
+    public ResponseEntity<SystemResponse> handleTermosNotAccepted(TermosNotAcceptedException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new SystemResponse(ex.getMessage(), 400));
     }
 }
