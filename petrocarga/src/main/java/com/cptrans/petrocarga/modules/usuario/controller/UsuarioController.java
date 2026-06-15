@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.cptrans.petrocarga.modules.usuario.dto.response.UsuarioResponseDTO;
 import com.cptrans.petrocarga.modules.usuario.entity.Usuario;
 import com.cptrans.petrocarga.modules.usuario.service.UsuarioService;
-import com.cptrans.petrocarga.shared.dto.response.ApiResponse;
+import com.cptrans.petrocarga.shared.dto.response.SystemResponse;
 
 @RestController
 @RequestMapping("/usuarios")
@@ -65,9 +65,9 @@ public class UsuarioController {
      */
     @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR')")
     @PostMapping("/reativar/{id}")
-    ResponseEntity<ApiResponse> reativarUsuario(@PathVariable("id") UUID id){
+    ResponseEntity<SystemResponse> reativarUsuario(@PathVariable("id") UUID id){
         usuarioService.reativar(id);
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success("Usuário reativado com sucesso!"));
+        return ResponseEntity.status(HttpStatus.CREATED).body(new SystemResponse("Usuário reativado com sucesso!", 201));
     }
 
 }

@@ -13,7 +13,8 @@ import com.cptrans.petrocarga.enums.PermissaoEnum;
 import com.cptrans.petrocarga.enums.StatusReservaEnum;
 import com.cptrans.petrocarga.enums.TipoVagaEnum;
 import com.cptrans.petrocarga.modules.empresa.entity.Empresa;
-import com.cptrans.petrocarga.modules.empresa.service.EmpresaService;
+import com.cptrans.petrocarga.modules.empresa.exceptions.EmpresaExceptions;
+import com.cptrans.petrocarga.modules.empresa.repository.EmpresaRepository;
 import com.cptrans.petrocarga.modules.motorista.entity.Motorista;
 import com.cptrans.petrocarga.modules.reserva.dto.response.ReservaDTO;
 import com.cptrans.petrocarga.modules.reserva.entity.Reserva;
@@ -28,7 +29,7 @@ import com.cptrans.petrocarga.shared.utils.DateUtils;
 @Component
 public class ReservaUtils {
     @Autowired
-    private EmpresaService empresaService;
+    private EmpresaRepository empresaRepository;
     @Autowired
     private ReservaRepository reservaRepository;
     @Autowired
@@ -130,7 +131,7 @@ public class ReservaUtils {
         }
         
         if (usuarioLogado.getPermissao().equals(PermissaoEnum.EMPRESA)){
-            Empresa empresa = empresaService.findByUsuarioId(usuarioLogado.getId());
+            Empresa empresa = empresaRepository.findByUsuarioId(usuarioLogado.getId()).orElseThrow(() -> new EmpresaExceptions.EmpresaNotFoundException());
             if(!motoristaDaReserva.getEmpresa().getId().equals(empresa.getId())){
                 throw new IllegalArgumentException("A empresa só pode fazer reserva para motoristas associados à ela.");
             }
