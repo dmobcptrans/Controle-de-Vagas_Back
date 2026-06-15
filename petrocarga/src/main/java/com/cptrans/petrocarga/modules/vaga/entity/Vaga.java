@@ -1,0 +1,230 @@
+package com.cptrans.petrocarga.modules.vaga.entity;
+
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+import com.cptrans.petrocarga.enums.AreaVagaEnum;
+import com.cptrans.petrocarga.enums.StatusVagaEnum;
+import com.cptrans.petrocarga.enums.TipoVagaEnum;
+import com.cptrans.petrocarga.modules.enderecoVaga.entity.EnderecoVaga;
+import com.cptrans.petrocarga.modules.operacaoVaga.entity.OperacaoVaga;
+import com.cptrans.petrocarga.modules.vaga.dto.response.VagaResponseDTO;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
+
+@Entity
+@Table(name = "vaga")
+public class Vaga {
+    
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(name = "id")
+    private UUID id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "endereco_id", nullable = false)
+    @JsonManagedReference
+    private EnderecoVaga endereco;
+
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private AreaVagaEnum area;
+
+    @Column(name = "numero_endereco")
+    private String numeroEndereco;
+
+    @Column(name = "referencia_endereco")
+    private String referenciaEndereco;
+
+    @Column(name = "tipo_vaga", nullable=false)
+    @Enumerated(EnumType.STRING)
+    private TipoVagaEnum tipoVaga;
+    
+    @Column(name = "latitude_inicio")
+    private Double latitudeInicio;
+
+    @Column(name = "longitude_inicio")
+    private Double longitudeInicio;
+
+    @Column(name = "latitude_fim")
+    private Double latitudeFim;
+
+    @Column(name = "longitude_fim")
+    private Double longitudeFim;
+    
+    @Schema(description = "Comprimento máximo da vaga em metros", example = "5", minimum = "5")
+    @Column(nullable=false, precision = 5, scale = 2)
+    private Integer comprimento;
+
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private StatusVagaEnum status;
+
+    @OneToMany(mappedBy = "vaga", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private Set<OperacaoVaga> operacoesVaga;
+
+    @Column(nullable = true)
+    private Integer quantidade;
+
+    public Vaga() {
+        this.status = StatusVagaEnum.DISPONIVEL;
+    }
+
+    public UUID getId() {
+        return id;
+    }
+
+    public EnderecoVaga getEndereco() {
+        return endereco;
+    }
+
+    public void setEndereco(EnderecoVaga endereco) {
+        this.endereco = endereco;
+    }
+
+    public AreaVagaEnum getArea() {
+        return area;
+    }
+
+    public void setArea(AreaVagaEnum area) {
+        this.area = area;
+    }
+
+    public String getNumeroEndereco() {
+        return numeroEndereco;
+    }
+
+    public void setNumeroEndereco(String numeroEndereco) {
+        this.numeroEndereco = numeroEndereco;
+    }
+
+    public String getReferenciaEndereco() {
+        return referenciaEndereco;
+    }
+
+    public void setReferenciaEndereco(String referenciaEndereco) {
+        this.referenciaEndereco = referenciaEndereco;
+    }
+
+    public TipoVagaEnum getTipoVaga() {
+        return tipoVaga;
+    }
+
+    public void setTipoVaga(TipoVagaEnum tipoVaga) {
+        this.tipoVaga = tipoVaga;
+    }
+
+    public Double getLatitudeInicio() {
+        return latitudeInicio;
+    }
+
+    public void setLatitudeInicio(Double latitudeInicio) {
+        this.latitudeInicio = latitudeInicio;
+    }
+
+    public Double getLongitudeInicio() {
+        return longitudeInicio;
+    }
+
+    public void setLongitudeInicio(Double longitudeInicio) {
+        this.longitudeInicio = longitudeInicio;
+    }
+
+    public Double getLatitudeFim() {
+        return latitudeFim;
+    }
+
+    public void setLatitudeFim(Double latitudeFim) {
+        this.latitudeFim = latitudeFim;
+    }
+
+    public Double getLongitudeFim() {
+        return longitudeFim;
+    }
+
+    public void setLongitudeFim(Double longitudeFim) {
+        this.longitudeFim = longitudeFim;
+    }
+
+    public Integer getComprimento() {
+        return comprimento;
+    }
+
+    public void setComprimento(Integer comprimento) {
+        this.comprimento = comprimento;
+    }
+
+    public StatusVagaEnum getStatus() {
+        return status;
+    }
+
+    public void setStatus(StatusVagaEnum status) {
+        this.status = status;
+    }
+
+    public Set<OperacaoVaga> getOperacoesVaga() {
+        return operacoesVaga;
+    }
+
+    public void setOperacoesVaga(Set<OperacaoVaga> operacoesVaga) {
+        if(operacoesVaga != null){
+            if(this.operacoesVaga == null) this.operacoesVaga = new HashSet<>();
+            else this.operacoesVaga.clear();
+            this.operacoesVaga.addAll(operacoesVaga);
+        }
+    }
+
+    public Integer getQuantidade() {
+        return quantidade;
+    }
+
+    public void setQuantidade(Integer quantidade) {
+        this.quantidade = quantidade;
+    }
+
+    public VagaResponseDTO toResponseDTO() {
+        VagaResponseDTO dto = new VagaResponseDTO();
+        dto.setId(this.id);
+        if (this.endereco != null) {
+            dto.setEndereco(this.endereco.toResponseDTO());
+        }
+        dto.setArea(this.area);
+        dto.setNumeroEndereco(this.numeroEndereco);
+        dto.setReferenciaEndereco(this.referenciaEndereco);
+        dto.setTipoVaga(this.tipoVaga);
+
+        dto.setLatitudeInicio(this.latitudeInicio);
+        dto.setLatitudeFim(this.latitudeFim);
+
+        dto.setLongitudeInicio(this.longitudeInicio);
+        dto.setLongitudeFim(this.longitudeFim);
+
+        dto.setComprimento(this.comprimento);
+        dto.setQuantidade(this.quantidade);
+        dto.setStatus(this.status);
+        if (this.operacoesVaga != null) {
+            dto.setOperacoesVaga(
+                this.operacoesVaga.stream()
+                    .map(OperacaoVaga::toResponseDTO)
+                    .collect(Collectors.toSet())
+            );
+        }
+        return dto;
+    }
+}

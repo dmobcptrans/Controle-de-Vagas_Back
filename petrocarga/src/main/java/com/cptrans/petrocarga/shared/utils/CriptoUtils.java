@@ -2,11 +2,11 @@ package com.cptrans.petrocarga.shared.utils;
 
 import org.springframework.stereotype.Component;
 
-import com.cptrans.petrocarga.application.dto.DenunciaResponseDTO;
-import com.cptrans.petrocarga.application.dto.MotoristaResponseDTO;
-import com.cptrans.petrocarga.application.dto.UsuarioResponseDTO;
-import com.cptrans.petrocarga.application.dto.VeiculoResponseDTO;
-import com.cptrans.petrocarga.infrastructure.security.CriptoService;
+import com.cptrans.petrocarga.modules.cripto.CriptoService;
+import com.cptrans.petrocarga.modules.denuncia.dto.response.DenunciaResponseDTO;
+import com.cptrans.petrocarga.modules.motorista.dto.response.MotoristaResponseDTO;
+import com.cptrans.petrocarga.modules.usuario.dto.response.UsuarioResponseDTO;
+import com.cptrans.petrocarga.modules.veiculo.dto.response.VeiculoResponseDTO;
 
 @Component
 public class CriptoUtils {
