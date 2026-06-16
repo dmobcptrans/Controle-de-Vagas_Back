@@ -9,10 +9,13 @@ import org.springframework.stereotype.Service;
 
 import com.cptrans.petrocarga.enums.PermissaoEnum;
 import com.cptrans.petrocarga.modules.agente.dto.request.AgenteFiltrosDTO;
+import com.cptrans.petrocarga.modules.agente.dto.request.AgenteRequestDTO;
 import com.cptrans.petrocarga.modules.agente.entity.Agente;
+import com.cptrans.petrocarga.modules.agente.exceptions.AgenteExceptions;
 import com.cptrans.petrocarga.modules.agente.repository.AgenteRepository;
 import com.cptrans.petrocarga.modules.agente.specification.AgenteSpecification;
 import com.cptrans.petrocarga.modules.usuario.dto.request.UsuarioPATCHRequestDTO;
+import com.cptrans.petrocarga.modules.usuario.dto.request.UsuarioRequestDTO;
 import com.cptrans.petrocarga.modules.usuario.entity.Usuario;
 import com.cptrans.petrocarga.modules.usuario.service.UsuarioService;
 
@@ -76,11 +79,13 @@ public class AgenteService {
      * @throws IllegalArgumentException se a matrícula do agente já estiver cadastrada
      */
     @Transactional
-    public Agente createAgente(Agente novoAgente) {
-        if(agenteRepository.existsByMatricula(novoAgente.getMatricula())) {
-            throw new IllegalArgumentException("Matrícula já cadastrada");
-        }
-        Usuario usuario = usuarioService.createUsuario(novoAgente.getUsuario(), PermissaoEnum.AGENTE,novoAgente.getUsuario().getCpfHash());
+    public Agente createAgente(AgenteRequestDTO request) {
+        if (agenteRepository.existsByMatricula(request.getMatricula())) throw new AgenteExceptions.MatriculaAlreadyExists();
+
+        Usuario usuario = usuarioService.createUsuario(new UsuarioRequestDTO(request.getNome(), request.getCpf(), request.getTelefone(), request.getEmail(), null), PermissaoEnum.AGENTE);
+        
+        Agente novoAgente = new Agente();
+        
         novoAgente.setUsuario(usuario);
         novoAgente.setMatricula(novoAgente.getMatricula());
         return agenteRepository.save(novoAgente);

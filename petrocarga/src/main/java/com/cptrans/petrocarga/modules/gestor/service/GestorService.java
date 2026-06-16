@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import com.cptrans.petrocarga.enums.PermissaoEnum;
 import com.cptrans.petrocarga.modules.gestor.dto.request.GestorFiltrosDTO;
 import com.cptrans.petrocarga.modules.usuario.dto.request.UsuarioPATCHRequestDTO;
+import com.cptrans.petrocarga.modules.usuario.dto.request.UsuarioRequestDTO;
 import com.cptrans.petrocarga.modules.usuario.entity.Usuario;
 import com.cptrans.petrocarga.modules.usuario.service.UsuarioService;
 
@@ -29,8 +30,8 @@ public class GestorService {
         return usuarioService.findByIdAndAtivo(usuarioId, true);
     }
 
-    public Usuario createGestor(Usuario novoGestor) {
-        return usuarioService.createUsuario(novoGestor, PermissaoEnum.GESTOR, novoGestor.getCpfHash());
+    public Usuario createGestor(UsuarioRequestDTO request) {
+        return usuarioService.createUsuario(request, PermissaoEnum.GESTOR);
     }
 
     public Usuario updateGestor(UUID id, UsuarioPATCHRequestDTO novoGestor) {

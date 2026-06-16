@@ -20,7 +20,7 @@ public class EmpresaExceptions {
 
     public static class EmpresaNotFoundException extends EntityNotFoundException{
         public EmpresaNotFoundException() {
-            super("Empresa não encontrada.");
+            super("Empresa não encontrada ou desativada.");
         }
     }
 
