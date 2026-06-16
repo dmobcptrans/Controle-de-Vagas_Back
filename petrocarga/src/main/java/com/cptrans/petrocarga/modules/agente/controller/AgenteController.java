@@ -96,7 +96,7 @@ public class AgenteController {
     @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR')")
     @PostMapping
     public ResponseEntity<AgenteResponseDTO> createAgente(@RequestBody @Valid AgenteRequestDTO agenteRequestDTO) {
-        Agente savedAgente = agenteService.createAgente(agenteRequestDTO.toEntity());
+        Agente savedAgente = agenteService.createAgente(agenteRequestDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(savedAgente.toResponseDTO());
     }
 

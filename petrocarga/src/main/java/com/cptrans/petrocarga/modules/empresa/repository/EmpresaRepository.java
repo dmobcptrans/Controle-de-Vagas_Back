@@ -12,6 +12,9 @@ import java.util.UUID;
 
 @Repository
 public interface EmpresaRepository extends JpaRepository<Empresa, UUID>, JpaSpecificationExecutor<Empresa> {
-    public Optional<Empresa> findByUsuarioId(UUID id);
+    public Optional<Empresa> findByUsuarioId(UUID usuarioId);
+    public Optional<Empresa> findByUsuarioIdAndUsuarioAtivoTrue(UUID usuarioId);
+    public Optional<Empresa> findByUsuarioIdAndUsuarioAtivoFalse(UUID usuarioId);
     public boolean existsByCnpj(String cnpj);
+    public boolean existsByCnpjAndIdNot(String cnpj, UUID id);
 }

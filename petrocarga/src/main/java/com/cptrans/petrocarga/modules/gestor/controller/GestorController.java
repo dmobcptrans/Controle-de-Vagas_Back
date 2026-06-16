@@ -18,9 +18,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.cptrans.petrocarga.modules.gestor.dto.request.GestorFiltrosDTO;
-import com.cptrans.petrocarga.modules.gestor.dto.request.GestorRequestDTO;
 import com.cptrans.petrocarga.modules.gestor.service.GestorService;
 import com.cptrans.petrocarga.modules.usuario.dto.request.UsuarioPATCHRequestDTO;
+import com.cptrans.petrocarga.modules.usuario.dto.request.UsuarioRequestDTO;
 import com.cptrans.petrocarga.modules.usuario.dto.response.UsuarioResponseDTO;
 import com.cptrans.petrocarga.modules.usuario.entity.Usuario;
 import com.cptrans.petrocarga.shared.utils.CriptoUtils;
@@ -83,8 +83,8 @@ public class GestorController {
      */
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping()
-    public ResponseEntity<UsuarioResponseDTO> createGestor(@RequestBody @Valid GestorRequestDTO gestorRequestDTO) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(gestorService.createGestor(gestorRequestDTO.toEntity()).toResponseDTO());
+    public ResponseEntity<UsuarioResponseDTO> createGestor(@RequestBody @Valid UsuarioRequestDTO request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(gestorService.createGestor(request).toResponseDTO());
     }
 
     /**

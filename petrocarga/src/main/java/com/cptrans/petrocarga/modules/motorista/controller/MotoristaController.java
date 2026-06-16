@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -24,6 +25,7 @@ import com.cptrans.petrocarga.modules.motorista.dto.response.MotoristaResponseDT
 import com.cptrans.petrocarga.modules.motorista.entity.Motorista;
 import com.cptrans.petrocarga.modules.motorista.service.MotoristaService;
 import com.cptrans.petrocarga.modules.usuario.dto.request.UsuarioPATCHRequestDTO;
+import com.cptrans.petrocarga.security.UserAuthenticated;
 import com.cptrans.petrocarga.shared.utils.CriptoUtils;
 
 import jakarta.validation.Valid;
@@ -101,9 +103,9 @@ public class MotoristaController {
      * @return o motorista criado com status CREATED
      */
     @PostMapping("/cadastro")
-    public ResponseEntity<MotoristaResponseDTO> createMotorista(@RequestBody @Valid MotoristaRequestDTO motoristaRequestDTO) {
-        Motorista savedMotorista = motoristaService.createMotorista(motoristaRequestDTO.toEntity(null));
-        return ResponseEntity.status(HttpStatus.CREATED).body(savedMotorista.toResponseDTO());
+    public ResponseEntity<MotoristaResponseDTO> createMotorista(@RequestBody @Valid MotoristaRequestDTO request) {
+        Motorista motorista = motoristaService.createMotorista(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(CriptoUtils.decrypt(motorista.toResponseDTO(), motorista.getUsuario().getPersonalDataKeyVersion()));
     }
 
     /**
@@ -119,8 +121,8 @@ public class MotoristaController {
      */
     @PreAuthorize("#usuarioId == authentication.principal.id or hasRole('ADMIN')")
     @PatchMapping("/{usuarioId}")
-    public ResponseEntity<MotoristaResponseDTO> updateMotorista(@PathVariable UUID usuarioId,  @RequestBody @Valid UsuarioPATCHRequestDTO motoristaRequestDTO) {
-        Motorista updatedMotorista = motoristaService.updateMotorista(usuarioId, motoristaRequestDTO);
+    public ResponseEntity<MotoristaResponseDTO> updateMotorista(@AuthenticationPrincipal UserAuthenticated usuarioAutenticado, @PathVariable UUID usuarioId,  @RequestBody @Valid UsuarioPATCHRequestDTO motoristaRequestDTO) {
+        Motorista updatedMotorista = motoristaService.updateMotorista(usuarioAutenticado, usuarioId, motoristaRequestDTO);
         return ResponseEntity.ok(new MotoristaResponseDTO(updatedMotorista));
     }
 

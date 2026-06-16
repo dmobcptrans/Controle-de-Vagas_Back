@@ -24,8 +24,11 @@ import com.cptrans.petrocarga.modules.events.UsuarioCriadoEvent;
 import com.cptrans.petrocarga.modules.gestor.dto.request.GestorFiltrosDTO;
 import com.cptrans.petrocarga.modules.gestor.specification.GestorSpecification;
 import com.cptrans.petrocarga.modules.reserva.utils.ReservaUtils;
+import com.cptrans.petrocarga.modules.usuario.dto.mapper.UsuarioMapper;
 import com.cptrans.petrocarga.modules.usuario.dto.request.UsuarioPATCHRequestDTO;
+import com.cptrans.petrocarga.modules.usuario.dto.request.UsuarioRequestDTO;
 import com.cptrans.petrocarga.modules.usuario.entity.Usuario;
+import com.cptrans.petrocarga.modules.usuario.exceptions.UsuarioExceptions;
 import com.cptrans.petrocarga.modules.usuario.repository.UsuarioRepository;
 import com.cptrans.petrocarga.modules.usuario.utils.UsuarioUtils;
 import com.cptrans.petrocarga.shared.utils.DateUtils;
@@ -82,51 +85,64 @@ public class UsuarioService {
     }
 
     @Transactional
-    public Usuario createUsuario(Usuario novoUsuario, PermissaoEnum permissao, String cpf_string) {
-        String emailString = novoUsuario.getEmailHash() != null ? novoUsuario.getEmailHash().trim().toLowerCase() : null;
-
-        if(usuarioRepository.findByEmailHash(hashService.hash(emailString)).isPresent()) {
-            throw new IllegalArgumentException("Email já cadastrado");
+    public Usuario createUsuario(UsuarioRequestDTO request, PermissaoEnum permissao) {
+        String emailString = request.getEmail().trim().toLowerCase();
+        String emailHash = hashService.hash(emailString);
+        String cpfString = request.getCpf().trim();
+        String cpfHash = hashService.hash(cpfString);
+        
+        Usuario novoUsuario = UsuarioMapper.toEntity(request);
+        
+        if(usuarioRepository.existsByEmailHash(emailHash)) {
+            throw new UsuarioExceptions.EmailAlreadyExistsException();
         }
-        if(usuarioRepository.findByCpfHash(hashService.hash(cpf_string)).isPresent()) {
-            throw new IllegalArgumentException("CPF já cadastrado");
+        if(usuarioRepository.existsByCpfHash(cpfHash)) {
+            throw new UsuarioExceptions.CpfAlreadyExistsException();
         }
+        
         novoUsuario.setPermissao(permissao);
-        novoUsuario.setSenha(passwordEncoder.encode(novoUsuario.getSenha()));
-        // Ensure user is created as inactive and generate activation code
+        novoUsuario.setSenha(passwordEncoder.encode(request.getSenha()));
         novoUsuario.setAtivo(false);
-
+        
         SecureRandom random = new SecureRandom();
         int code = random.nextInt(1_000_000);
         String codeStr = String.format("%06d", code);
+        
         novoUsuario.setVerificationCode(codeStr);
         novoUsuario.setVerificationCodeExpiresAt(LocalDateTime.now().plusMinutes(10));
-        String password = null;
-        if(novoUsuario.getPermissao().equals(PermissaoEnum.GESTOR) || novoUsuario.getPermissao().equals(PermissaoEnum.AGENTE)) {
+        
+        String firstPassword = null;
+        if (novoUsuario.getPermissao().equals(PermissaoEnum.GESTOR) || novoUsuario.getPermissao().equals(PermissaoEnum.AGENTE)) {
             SecureRandom randomPassword = new SecureRandom();
-            password = String.format("%06d", randomPassword.nextInt(1_000_000));
-            novoUsuario.setSenha(passwordEncoder.encode(password));
+            firstPassword = String.format("%06d", randomPassword.nextInt(1_000_000));
+            novoUsuario.setSenha(passwordEncoder.encode(firstPassword));
         }
-        if(novoUsuario.getPermissao().equals(PermissaoEnum.ADMIN)){
+
+        if (novoUsuario.getPermissao().equals(PermissaoEnum.ADMIN)){
             novoUsuario.setAtivo(true);
             novoUsuario.setVerificationCode(null);
             novoUsuario.setVerificationCodeExpiresAt(null);
         }
-        novoUsuario.setEmailHash(hashService.hash(emailString));
-        novoUsuario.setEmailCripto(criptoService.encrypt(emailString));
-        novoUsuario.setCpfHash(hashService.hash(cpf_string));
-        novoUsuario.setCpfCripto(criptoService.encrypt(cpf_string));
+
+        String emailCripto = criptoService.encrypt(emailString);
+        novoUsuario.setEmailHash(emailHash);
+        novoUsuario.setEmailCripto(emailCripto);
+
+        String cpfCripto = criptoService.encrypt(cpfString);
+        novoUsuario.setCpfHash(cpfHash);
+        novoUsuario.setCpfCripto(cpfCripto);
         novoUsuario.setPersonalDataKeyVersion(activeKeyVersion);
-        novoUsuario.setCpfLast5(UsuarioUtils.gerarLastN(cpf_string, 5));
-        String telefone = novoUsuario.getTelefoneHash();
-        novoUsuario.setTelefoneHash(hashService.hash(telefone));
-        novoUsuario.setTelefoneCripto(criptoService.encrypt(telefone));
-        novoUsuario.setTelefoneLast4(UsuarioUtils.gerarLastN(telefone, 4));
+        novoUsuario.setCpfLast5(UsuarioUtils.gerarLastN(cpfString, 5));
+
+        String telefoneString = request.getTelefone().trim();
+        String telefoneHash = hashService.hash(telefoneString);
+        String telefoneCripto = criptoService.encrypt(telefoneString);
+        novoUsuario.setTelefoneHash(telefoneHash);
+        novoUsuario.setTelefoneCripto(telefoneCripto);
+        novoUsuario.setTelefoneLast4(UsuarioUtils.gerarLastN(telefoneString, 4));
         Usuario saved = usuarioRepository.save(novoUsuario);
 
-        // Envia código de ativação via email (assíncrono)
-        // O EmailSender é @Async, exceções são tratadas pelo AsyncUncaughtExceptionHandler
-        eventPublisher.publish(new UsuarioCriadoEvent(emailString, saved.getVerificationCode(), password));
+        eventPublisher.publish(new UsuarioCriadoEvent(emailString, saved.getVerificationCode(), firstPassword));
 
         return saved;
     }
@@ -265,11 +281,17 @@ public class UsuarioService {
             String emailCripto = criptoService.encrypt(emailString);
             usuarioExistente.setEmailHash(emailHash);
             usuarioExistente.setEmailCripto(emailCripto);
+            usuarioExistente.setPersonalDataKeyVersion(activeKeyVersion);
         }
         if (patchRequestDTO.getCpf() != null) {
-            Optional<Usuario> usuarioByCpf = usuarioRepository.findByCpfHash(hashService.hash(patchRequestDTO.getCpf()));
-            if (usuarioByCpf.isPresent() && !usuarioByCpf.get().getId().equals(id)) throw new IllegalArgumentException("CPF já cadastrado");
-            usuarioExistente.setCpfHash(hashService.hash(patchRequestDTO.getCpf()));
+            String cpfHash = hashService.hash(patchRequestDTO.getCpf());
+            Optional<Usuario> usuarioByCpf = usuarioRepository.findByCpfHashAndIdNot(cpfHash, id);
+            if (usuarioByCpf.isPresent()) throw new IllegalArgumentException("CPF já cadastrado");
+            String cpfCripto = criptoService.encrypt(patchRequestDTO.getCpf());
+            usuarioExistente.setCpfHash(cpfHash);
+            usuarioExistente.setCpfCripto(cpfCripto);
+            usuarioExistente.setCpfLast5(UsuarioUtils.gerarLastN(patchRequestDTO.getCpf(), 5));
+            usuarioExistente.setPersonalDataKeyVersion(activeKeyVersion);
         }
         if (patchRequestDTO.getSenha() != null) {
             usuarioExistente.setSenha(passwordEncoder.encode(patchRequestDTO.getSenha()));

@@ -9,6 +9,7 @@ import com.cptrans.petrocarga.modules.usuario.entity.Usuario;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 public class AgenteRequestDTO {
@@ -29,6 +30,7 @@ public class AgenteRequestDTO {
     @Email(message="Email inválido.")
     private String email;
 
+    @NotNull(message="Matrícula obrigatória.")
     @Size(min = 4, max = 4, message = "Matrícula deve conter 4 dígitos.")
     private String matricula;
 

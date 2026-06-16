@@ -12,13 +12,13 @@ import com.cptrans.petrocarga.modules.empresa.entity.Empresa;
 import com.cptrans.petrocarga.modules.empresa.exceptions.EmpresaExceptions;
 import com.cptrans.petrocarga.modules.empresa.repository.EmpresaRepository;
 import com.cptrans.petrocarga.modules.empresa.specification.EmpresaSpecification;
+import com.cptrans.petrocarga.modules.usuario.dto.request.UsuarioPATCHRequestDTO;
 import com.cptrans.petrocarga.modules.usuario.entity.Usuario;
 import com.cptrans.petrocarga.modules.usuario.service.UsuarioService;
 import com.cptrans.petrocarga.shared.dto.response.PageResponseDTO;
 import com.cptrans.petrocarga.shared.exceptions.GlobalHandlerException;
 import com.cptrans.petrocarga.shared.utils.DateUtils;
 
-import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
@@ -51,16 +51,18 @@ public class EmpresaService {
     }
 
     public Empresa findById(UUID id) {
-        return empresaRepository.findById(id).orElseThrow(() ->new EntityNotFoundException("Empresa não encontrada."));
+        return empresaRepository.findById(id).orElseThrow(() -> new EmpresaExceptions.EmpresaNotFoundException());
     }
 
     public Empresa findByUsuarioId(UUID usuarioId) {
-        return empresaRepository.findByUsuarioId(usuarioId).orElseThrow(() -> new EntityNotFoundException("Empresa nao encontrada."));
+        return empresaRepository.findByUsuarioIdAndUsuarioAtivoTrue(usuarioId).orElseThrow(() -> new EmpresaExceptions.EmpresaNotFoundException());
     }
 
-    public void deleteById(UUID id) {
-        Empresa empresa = empresaRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Empresa nao encontrada."));
-        empresaRepository.deleteById(empresa.getId());
+    public void desativarEmpresa(UUID usuarioId) {
+        Empresa empresa = findByUsuarioId(usuarioId);
+        empresa.getUsuario().setAtivo(false);
+        empresa.getUsuario().setDesativadoEm(DateUtils.agora());
+        empresaRepository.save(empresa);
     }
 
     @Transactional
@@ -69,15 +71,7 @@ public class EmpresaService {
 
         if (empresaRepository.existsByCnpj(request.getCnpj())) throw new EmpresaExceptions.CnpjAlreadyExistsException();
 
-        Usuario novoUsuario = new Usuario();
-        novoUsuario.setNome(request.getNome());
-        novoUsuario.setEmailHash(request.getEmail());
-        novoUsuario.setAceitarTermos(request.getAceitouTermos());
-        novoUsuario.setAceitouTermosEm(DateUtils.agora());
-        novoUsuario.setTelefoneHash(request.getTelefone());
-        novoUsuario.setSenha(request.getSenha());
-
-        Usuario usuarioSalvo = usuarioService.createUsuario(novoUsuario, PermissaoEnum.EMPRESA, request.getCpf()); 
+        Usuario usuarioSalvo = usuarioService.createUsuario(request.getUsuario(), PermissaoEnum.EMPRESA); 
         
         Empresa novaEmpresa = new Empresa();
 
@@ -86,6 +80,27 @@ public class EmpresaService {
         novaEmpresa.setRazaoSocial(request.getRazaoSocial());
 
         Empresa empresaSalva = empresaRepository.save(novaEmpresa);
+        return EmpresaMapper.toResponse(empresaSalva);
+    }
+
+    @Transactional
+    public EmpresaResponseDTO update(UUID usuarioId, UsuarioPATCHRequestDTO request) {
+        Empresa empresa = findByUsuarioId(usuarioId);
+        Usuario usuarioAtualizado = usuarioService.patchUpdate(usuarioId, PermissaoEnum.EMPRESA, request);
+        empresa.setUsuario(usuarioAtualizado);
+
+        if (request.getCnpj() != null && !request.getCnpj().equals(empresa.getCnpj())) {
+            if (empresaRepository.existsByCnpjAndIdNot(request.getCnpj(), empresa.getId())){
+                throw new EmpresaExceptions.CnpjAlreadyExistsException();
+            }
+            empresa.setCnpj(request.getCnpj());
+        }
+
+        if (request.getRazaoSocial() != null && !request.getRazaoSocial().equals(empresa.getRazaoSocial())) {
+            empresa.setRazaoSocial(request.getRazaoSocial());
+        }
+
+        Empresa empresaSalva = empresaRepository.save(empresa);
         return EmpresaMapper.toResponse(empresaSalva);
     }
 }
