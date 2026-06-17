@@ -2,7 +2,6 @@ package com.cptrans.petrocarga.modules.auth.controller;
 
 import java.util.UUID;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
@@ -26,32 +25,28 @@ import com.cptrans.petrocarga.modules.auth.dto.request.ResendCodeRequest;
 import com.cptrans.petrocarga.modules.auth.dto.request.ResetPasswordRequest;
 import com.cptrans.petrocarga.modules.auth.dto.response.AuthResponseDTO;
 import com.cptrans.petrocarga.modules.auth.service.AuthService;
+import com.cptrans.petrocarga.modules.usuario.dto.mapper.UsuarioMapper;
 import com.cptrans.petrocarga.modules.usuario.dto.request.UsuarioRequestDTO;
 import com.cptrans.petrocarga.modules.usuario.dto.response.UsuarioResponseDTO;
 import com.cptrans.petrocarga.modules.usuario.entity.Usuario;
 import com.cptrans.petrocarga.modules.usuario.service.UsuarioService;
-import com.cptrans.petrocarga.modules.veiculo.repository.VeiculoRepository;
 import com.cptrans.petrocarga.security.UserAuthenticated;
 import com.cptrans.petrocarga.shared.dto.response.SystemResponse;
-import com.cptrans.petrocarga.shared.utils.CriptoUtils;
 
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
 
 @RestController
 @RequestMapping("/auth")
+@RequiredArgsConstructor
 public class AuthController {
 
-    @Autowired
-    private AuthService authService;
+    private final AuthService authService;
 
     // TODO: Remover instância depois de cadastrar o primeiro admin em deploy
-    @Autowired
-    private UsuarioService usuarioService;
-
-    @Autowired
-    private VeiculoRepository veiculoRepository;
+    private final UsuarioService usuarioService;
     
     @Value("${app.cookie-settings.secure:true}")
     private boolean secure;
@@ -121,7 +116,7 @@ public class AuthController {
     @PostMapping("/completarCadastro")
     public ResponseEntity<UsuarioResponseDTO> completarCadastro(@AuthenticationPrincipal UserAuthenticated userAuthenticated, @RequestBody @Valid CompletarCadastroDTO request) {
         Usuario usuarioCompleto = authService.completarCadastro(request, userAuthenticated.id());
-        return ResponseEntity.ok(usuarioCompleto.toResponseDTO());
+        return ResponseEntity.ok(UsuarioMapper.toResponse(usuarioCompleto));
     }
     
 
@@ -129,7 +124,7 @@ public class AuthController {
     @PostMapping("/admin")
     public ResponseEntity<UsuarioResponseDTO> createAdmin(@RequestBody @Valid UsuarioRequestDTO request) {
         Usuario novoUsuario = usuarioService.createUsuario(request, PermissaoEnum.ADMIN);
-        return ResponseEntity.ok(novoUsuario.toResponseDTO());
+        return ResponseEntity.ok(UsuarioMapper.toResponse(novoUsuario));
     }
 
     /**
@@ -144,12 +139,7 @@ public class AuthController {
         }
         UUID usuarioIdFromToken = userAuthenticated.id();
         Usuario usuarioLogado = usuarioService.findByIdAndAtivo(usuarioIdFromToken, true);
-        UsuarioResponseDTO response = usuarioLogado.toResponseDTO();
-        if(usuarioLogado.getPermissao().equals(PermissaoEnum.MOTORISTA)){
-            Boolean possuiVeiculo = veiculoRepository.existsByUsuarioIdAndAtivo(usuarioIdFromToken, true);
-            response.setVeiculoCadastrado(possuiVeiculo);
-        }
-        return ResponseEntity.ok(CriptoUtils.decrypt(response, usuarioLogado.getPersonalDataKeyVersion()));
+        return ResponseEntity.ok(UsuarioMapper.toResponse(usuarioLogado));
     }
 
     /**

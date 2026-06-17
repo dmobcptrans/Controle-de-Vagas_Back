@@ -8,6 +8,7 @@ import com.cptrans.petrocarga.modules.enderecoVaga.dto.response.EnderecoVagaResp
 import com.cptrans.petrocarga.modules.motorista.entity.Motorista;
 import com.cptrans.petrocarga.modules.reserva.entity.Reserva;
 import com.cptrans.petrocarga.modules.reservaRapida.entity.ReservaRapida;
+import com.cptrans.petrocarga.modules.usuario.dto.mapper.UsuarioMapper;
 import com.cptrans.petrocarga.modules.usuario.dto.response.UsuarioResponseDTO;
 import com.cptrans.petrocarga.modules.usuario.entity.Usuario;
 import com.cptrans.petrocarga.modules.vaga.entity.Vaga;
@@ -58,7 +59,7 @@ public class ReservaDTO {
         this.tamanhoVeiculo = tamanhoVeiculo;
         this.placaVeiculo = placaVeiculo;
         this.status = status;
-        this.criadoPor = criadoPor.toResponseDTO();
+        this.criadoPor = UsuarioMapper.toResponse(criadoPor);
         this.criadoEm = criadoEm;
         this.posicaoPerpendicular = posicaoPerpendicular;
         this.cidadeOrigem = cidadeOrigem;
@@ -88,7 +89,7 @@ public class ReservaDTO {
         this.checkedIn = checkedIn;
         this.checkInEm = checkInEm;
         this.checkOutEm = checkOutEm;
-        this.criadoPor = criadoPor.toResponseDTO();
+        this.criadoPor = UsuarioMapper.toResponse(criadoPor);
         this.criadoEm = criadoEm;
         this.posicaoPerpendicular = posicaoPerpendicular;
     }
@@ -116,7 +117,7 @@ public class ReservaDTO {
         this.checkedIn = reserva.isCheckedIn();
         this.checkInEm = reserva.getCheckInEm();
         this.checkOutEm = reserva.getCheckOutEm();
-        this.criadoPor = reserva.getCriadoPor().toResponseDTO();
+        this.criadoPor = UsuarioMapper.toResponse(reserva.getCriadoPor());
         this.criadoEm = reserva.getCriadoEm();
         this.posicaoPerpendicular = reserva.getPosicaoPerpendicular();
     }
@@ -132,7 +133,7 @@ public class ReservaDTO {
         this.tamanhoVeiculo = reservaRapida.getTipoVeiculo().getComprimento();
         this.placaVeiculo = reservaRapida.getPlaca();
         this.status = reservaRapida.getStatus();
-        this.criadoPor = reservaRapida.getAgente().getUsuario().toResponseDTO();
+        this.criadoPor = UsuarioMapper.toResponse(reservaRapida.getAgente().getUsuario());
         this.criadoEm = reservaRapida.getCriadoEm();
         this.posicaoPerpendicular = reservaRapida.getPosicaoPerpendicular();
         this.cidadeOrigem = reservaRapida.getCidadeOrigem();

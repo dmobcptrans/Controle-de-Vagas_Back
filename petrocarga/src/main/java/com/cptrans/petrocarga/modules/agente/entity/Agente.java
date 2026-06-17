@@ -2,7 +2,6 @@ package com.cptrans.petrocarga.modules.agente.entity;
 
 import java.util.UUID;
 
-import com.cptrans.petrocarga.modules.agente.dto.response.AgenteResponseDTO;
 import com.cptrans.petrocarga.modules.usuario.entity.Usuario;
 
 import jakarta.persistence.CascadeType;
@@ -58,9 +57,5 @@ public class Agente {
 
     public void setMatricula(String matricula) {
         this.matricula = matricula;
-    }
-
-    public AgenteResponseDTO toResponseDTO() {
-        return new AgenteResponseDTO(this);
     }
 }

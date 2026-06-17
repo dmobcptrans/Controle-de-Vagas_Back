@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.cptrans.petrocarga.modules.usuario.dto.mapper.UsuarioMapper;
 import com.cptrans.petrocarga.modules.usuario.dto.response.UsuarioResponseDTO;
 import com.cptrans.petrocarga.modules.usuario.entity.Usuario;
 import com.cptrans.petrocarga.modules.usuario.service.UsuarioService;
@@ -38,7 +39,7 @@ public class UsuarioController {
     @GetMapping
     public ResponseEntity<List<UsuarioResponseDTO>> getAllUsuarios() {
         List<UsuarioResponseDTO> usuarios = usuarioService.findAll().stream()
-                .map(UsuarioResponseDTO::new)
+                .map(u -> UsuarioMapper.toResponse(u))
                 .collect(Collectors.toList());
         return ResponseEntity.ok(usuarios);
     }
@@ -53,7 +54,7 @@ public class UsuarioController {
     @GetMapping("/{id}")
     public ResponseEntity<UsuarioResponseDTO> getUsuarioById(@PathVariable UUID id) {
         Usuario usuario = usuarioService.findById(id);
-        return ResponseEntity.ok(usuario.toResponseDTO());
+        return ResponseEntity.ok(UsuarioMapper.toResponse(usuario));
     }
 
     /**

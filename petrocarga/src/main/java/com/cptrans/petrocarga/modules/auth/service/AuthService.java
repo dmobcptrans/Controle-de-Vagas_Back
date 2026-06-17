@@ -15,6 +15,7 @@ import com.cptrans.petrocarga.modules.auth.dto.response.AuthResponseDTO;
 import com.cptrans.petrocarga.modules.cripto.HashService;
 import com.cptrans.petrocarga.modules.googleAuth.GoogleAuthService;
 import com.cptrans.petrocarga.modules.motorista.service.MotoristaService;
+import com.cptrans.petrocarga.modules.usuario.dto.mapper.UsuarioMapper;
 import com.cptrans.petrocarga.modules.usuario.entity.Usuario;
 import com.cptrans.petrocarga.modules.usuario.repository.UsuarioRepository;
 import com.cptrans.petrocarga.modules.usuario.service.UsuarioService;
@@ -69,7 +70,7 @@ public class AuthService {
         }
         String token = jwtService.gerarToken(usuario);
 
-       return new AuthResponseDTO(usuario.toResponseDTO(), token);
+       return new AuthResponseDTO(UsuarioMapper.toResponse(usuario), token);
     }
 
     /**
@@ -97,7 +98,7 @@ public class AuthService {
             Usuario novoUsuario = usuarioService.createMotoristaByGoogleAccount(name, email, googleId);
             String jwt = jwtService.gerarToken(novoUsuario);
 
-            return new AuthResponseDTO(novoUsuario.toResponseDTO(), jwt);
+            return new AuthResponseDTO(UsuarioMapper.toResponse(novoUsuario), jwt);
         }
 
         if (usuario.get().isAtivo().equals(false)) {
@@ -116,7 +117,7 @@ public class AuthService {
         }
         String jwt = jwtService.gerarToken(usuario.get());
 
-        return new AuthResponseDTO(usuario.get().toResponseDTO(), jwt);
+        return new AuthResponseDTO(UsuarioMapper.toResponse(usuario.get()), jwt);
     }
 
     /**

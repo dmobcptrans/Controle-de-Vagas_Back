@@ -17,11 +17,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.cptrans.petrocarga.modules.veiculo.dto.mapper.VeiculoMapper;
 import com.cptrans.petrocarga.modules.veiculo.dto.request.VeiculoRequestDTO;
 import com.cptrans.petrocarga.modules.veiculo.dto.response.VeiculoResponseDTO;
 import com.cptrans.petrocarga.modules.veiculo.entity.Veiculo;
 import com.cptrans.petrocarga.modules.veiculo.service.VeiculoService;
-import com.cptrans.petrocarga.shared.utils.CriptoUtils;
 
 import jakarta.validation.Valid;
 
@@ -44,7 +44,7 @@ public class VeiculoController {
     @GetMapping
     public ResponseEntity<List<VeiculoResponseDTO>> getAllVeiculos() {
         List<VeiculoResponseDTO> veiculos = veiculoService.findAll().stream()
-                .map(veiculo -> CriptoUtils.decrypt(veiculo.toResponseDTO(), veiculo.getUsuario().getPersonalDataKeyVersion()))
+                .map(veiculo -> VeiculoMapper.toResponse(veiculo))
                 .collect(Collectors.toList());
         return ResponseEntity.ok(veiculos);
     }
@@ -60,7 +60,7 @@ public class VeiculoController {
     @GetMapping("/usuario/{usuarioId}")
     public ResponseEntity<List<VeiculoResponseDTO>> getVeiculoByUsuarioId(@PathVariable UUID usuarioId) {
         List<VeiculoResponseDTO> veiculos = veiculoService.findByUsuarioId(usuarioId).stream()
-                .map(veiculo -> CriptoUtils.decrypt(veiculo.toResponseDTO(), veiculo.getUsuario().getPersonalDataKeyVersion()))
+                .map(veiculo -> VeiculoMapper.toResponse(veiculo))
                 .collect(Collectors.toList());
         return ResponseEntity.ok(veiculos);
     }
@@ -77,7 +77,7 @@ public class VeiculoController {
     @PostMapping({"/{usuarioId}"})
     public ResponseEntity<VeiculoResponseDTO> createVeiculo(@PathVariable UUID usuarioId, @RequestBody @Valid VeiculoRequestDTO veiculoRequestDTO) {
         Veiculo novoVeiculo = veiculoService.createVeiculo(veiculoRequestDTO.toEntity(), usuarioId);
-        return ResponseEntity.status(HttpStatus.CREATED).body(novoVeiculo.toResponseDTO());
+        return ResponseEntity.status(HttpStatus.CREATED).body(VeiculoMapper.toResponse(novoVeiculo));
     }
 
     /**
@@ -91,7 +91,7 @@ public class VeiculoController {
     @GetMapping("/{id}")
     public ResponseEntity<VeiculoResponseDTO> getVeiculoById(@PathVariable UUID id) {
         Veiculo veiculo = veiculoService.findById(id);
-        return ResponseEntity.ok(CriptoUtils.decrypt(veiculo.toResponseDTO(), veiculo.getUsuario().getPersonalDataKeyVersion()));
+        return ResponseEntity.ok(VeiculoMapper.toResponse(veiculo));
     }
 
     /**
@@ -106,10 +106,7 @@ public class VeiculoController {
     @PatchMapping("/{id}/{usuarioId}")
     public ResponseEntity<VeiculoResponseDTO> updateVeiculo(@PathVariable UUID id, @PathVariable UUID usuarioId, @RequestBody @Valid VeiculoRequestDTO veiculoRequestDTO) {
         Veiculo veiculo = veiculoService.updateVeiculo(id, usuarioId, veiculoRequestDTO);
-        VeiculoResponseDTO response = CriptoUtils.decrypt(veiculo.toResponseDTO(), veiculo.getUsuario().getPersonalDataKeyVersion());
-    
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(VeiculoMapper.toResponse(veiculo));
     }
 
     /**

@@ -12,7 +12,13 @@ import com.cptrans.petrocarga.shared.utils.CriptoUtils;
 public class EmpresaMapper {
     
     public static EmpresaResponseDTO toResponse(Empresa empresa) {
-        return new EmpresaResponseDTO(empresa.getId(), CriptoUtils.decrypt(UsuarioMapper.toResponse(empresa.getUsuario()), empresa.getUsuario().getPersonalDataKeyVersion()), empresa.getCnpj(), empresa.getRazaoSocial());
+        return new EmpresaResponseDTO(
+            empresa.getId(),
+            CriptoUtils.decrypt(UsuarioMapper.toResponse(empresa.getUsuario()),
+            empresa.getUsuario().getPersonalDataKeyVersion()),
+            empresa.getCnpj(),
+            empresa.getRazaoSocial()
+        );
     }
     
 }

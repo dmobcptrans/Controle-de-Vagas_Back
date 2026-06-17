@@ -17,13 +17,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.cptrans.petrocarga.modules.agente.dto.mapper.AgenteMapper;
 import com.cptrans.petrocarga.modules.agente.dto.request.AgenteFiltrosDTO;
 import com.cptrans.petrocarga.modules.agente.dto.request.AgenteRequestDTO;
 import com.cptrans.petrocarga.modules.agente.dto.response.AgenteResponseDTO;
 import com.cptrans.petrocarga.modules.agente.entity.Agente;
 import com.cptrans.petrocarga.modules.agente.service.AgenteService;
 import com.cptrans.petrocarga.modules.usuario.dto.request.UsuarioPATCHRequestDTO;
-import com.cptrans.petrocarga.shared.utils.CriptoUtils;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
@@ -55,19 +55,11 @@ public class AgenteController {
         if(nome != null || telefone != null || matricula != null || ativo != null || email != null) {
             AgenteFiltrosDTO filtros = new AgenteFiltrosDTO(nome, telefone, matricula, ativo, email);
             List<Agente> agentesFiltrados = agenteService.findByFiltros(filtros);
-            List<AgenteResponseDTO> responseFiltrado = agentesFiltrados.stream().map((agente) -> {
-                AgenteResponseDTO response = agente.toResponseDTO();
-                response.setUsuario(response.getUsuario() == null ? null : CriptoUtils.decrypt(response.getUsuario(), agente.getUsuario().getPersonalDataKeyVersion()));
-                return response;
-            }).toList();
+            List<AgenteResponseDTO> responseFiltrado = agentesFiltrados.stream().map((agente) -> AgenteMapper.toResponse(agente)).toList();
             return ResponseEntity.ok(responseFiltrado);
         }
         List<Agente> agentes = agenteService.findAll();
-        List<AgenteResponseDTO> response = agentes.stream().map(agente -> {
-            AgenteResponseDTO responseDTO = agente.toResponseDTO();
-            responseDTO.setUsuario(responseDTO.getUsuario() == null ? null : CriptoUtils.decrypt(responseDTO.getUsuario(), agente.getUsuario().getPersonalDataKeyVersion()));
-            return responseDTO;
-        }).toList();
+        List<AgenteResponseDTO> response = agentes.stream().map(agente -> AgenteMapper.toResponse(agente)).toList();
         return ResponseEntity.ok(response);
     }
 
@@ -82,9 +74,7 @@ public class AgenteController {
     @GetMapping("/{usuarioId}")
     public ResponseEntity<AgenteResponseDTO> getAgenteById(@PathVariable UUID usuarioId) {
         Agente agente = agenteService.findByUsuarioId(usuarioId);
-        AgenteResponseDTO response = agente.toResponseDTO();
-        response.setUsuario(response.getUsuario() == null ? null : CriptoUtils.decrypt(response.getUsuario(), agente.getUsuario().getPersonalDataKeyVersion()));
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(AgenteMapper.toResponse(agente));
     }
 
     /**
@@ -97,7 +87,7 @@ public class AgenteController {
     @PostMapping
     public ResponseEntity<AgenteResponseDTO> createAgente(@RequestBody @Valid AgenteRequestDTO agenteRequestDTO) {
         Agente savedAgente = agenteService.createAgente(agenteRequestDTO);
-        return ResponseEntity.status(HttpStatus.CREATED).body(savedAgente.toResponseDTO());
+        return ResponseEntity.status(HttpStatus.CREATED).body(AgenteMapper.toResponse(savedAgente));
     }
 
     /**
@@ -111,7 +101,7 @@ public class AgenteController {
     @PatchMapping("/{usuarioId}")
     public ResponseEntity<AgenteResponseDTO> updateAgente(@PathVariable UUID usuarioId, @RequestBody @Valid UsuarioPATCHRequestDTO agenteRequestDTO) {
         Agente updatedAgente = agenteService.updateAgente(usuarioId, agenteRequestDTO);
-        return ResponseEntity.ok(updatedAgente.toResponseDTO());
+        return ResponseEntity.ok(AgenteMapper.toResponse(updatedAgente));
     }
 
     /**
