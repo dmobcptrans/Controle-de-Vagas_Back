@@ -25,22 +25,19 @@ public class PushTokenService {
             return pushTokenRepository.save(novoPushToken);
         }
 
-        for (PushToken existente : existentes) {
-            existente.setAtivo(false);
-        }
+        PushToken response = null;
 
         for (PushToken existente : existentes) {
             if (existente.getUsuarioId().equals(novoPushToken.getUsuarioId())) {
                 existente.setAtivo(true);
-                return pushTokenRepository.save(existente);
+                response = existente;
+            } else{
+                existente.setAtivo(false);
             }
         }
 
-        novoPushToken.setAtivo(true);
-        existentes.add(novoPushToken);
-
         pushTokenRepository.saveAll(existentes);
-        return novoPushToken;
+        return response;
     }
 
     public PushToken atualizarStatus(UUID usuarioId, String token, Boolean ativo) {
