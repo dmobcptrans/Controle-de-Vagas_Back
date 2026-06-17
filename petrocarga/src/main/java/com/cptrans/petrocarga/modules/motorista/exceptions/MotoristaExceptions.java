@@ -30,6 +30,12 @@ public class MotoristaExceptions {
         }
     }
 
+    public static class MotoristaNaoPossuiEmpresaException extends DataIntegrityViolationException{
+        public MotoristaNaoPossuiEmpresaException() {
+            super("Motorista não possui empresa vinculada.");
+        }
+    }
+
     @ExceptionHandler(CnhAlreadyExistsException.class)
     public ResponseEntity<SystemResponse> handleCnhVencidaException(CnhAlreadyExistsException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(new SystemResponse(ex.getMessage(), 409));

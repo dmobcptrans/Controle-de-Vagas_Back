@@ -5,7 +5,6 @@ import java.util.UUID;
 
 import com.cptrans.petrocarga.enums.TipoCnhEnum;
 import com.cptrans.petrocarga.modules.empresa.entity.Empresa;
-import com.cptrans.petrocarga.modules.motorista.dto.response.MotoristaResponseDTO;
 import com.cptrans.petrocarga.modules.usuario.entity.Usuario;
 
 import jakarta.persistence.CascadeType;
@@ -121,9 +120,5 @@ public class Motorista {
 
     public void setEmpresa(Empresa empresa) {
         this.empresa = empresa;
-    }
-
-    public MotoristaResponseDTO toResponseDTO() {
-        return new MotoristaResponseDTO(this);
     }
 }

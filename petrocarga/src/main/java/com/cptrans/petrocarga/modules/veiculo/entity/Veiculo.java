@@ -5,7 +5,6 @@ import java.util.UUID;
 
 import com.cptrans.petrocarga.enums.TipoVeiculoEnum;
 import com.cptrans.petrocarga.modules.usuario.entity.Usuario;
-import com.cptrans.petrocarga.modules.veiculo.dto.response.VeiculoResponseDTO;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -167,7 +166,4 @@ public class Veiculo {
         this.deletadoEm = deletadoEm;
     }
 
-    public VeiculoResponseDTO toResponseDTO() {
-        return new VeiculoResponseDTO(this);
-    }
 }

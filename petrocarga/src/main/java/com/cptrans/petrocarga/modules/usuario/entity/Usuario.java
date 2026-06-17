@@ -12,7 +12,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import com.cptrans.petrocarga.enums.PermissaoEnum;
 import com.cptrans.petrocarga.enums.UsuarioProviderEnum;
-import com.cptrans.petrocarga.modules.usuario.dto.response.UsuarioResponseDTO;
 import com.cptrans.petrocarga.modules.usuario.utils.UsuarioUtils;
 
 import jakarta.persistence.Column;
@@ -311,10 +310,6 @@ public class Usuario implements UserDetails{
 
     public void setPersonalDataKeyVersion(Integer personalDataKeyVersion) {
         this.personalDataKeyVersion = personalDataKeyVersion;
-    }
-
-    public UsuarioResponseDTO toResponseDTO() {
-        return new UsuarioResponseDTO(id, nome, cpfCripto, telefoneCripto, emailCripto, permissao, criadoEm, ativo, desativadoEm);
     }
 
     @Override

@@ -19,11 +19,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.cptrans.petrocarga.modules.gestor.dto.request.GestorFiltrosDTO;
 import com.cptrans.petrocarga.modules.gestor.service.GestorService;
+import com.cptrans.petrocarga.modules.usuario.dto.mapper.UsuarioMapper;
 import com.cptrans.petrocarga.modules.usuario.dto.request.UsuarioPATCHRequestDTO;
 import com.cptrans.petrocarga.modules.usuario.dto.request.UsuarioRequestDTO;
 import com.cptrans.petrocarga.modules.usuario.dto.response.UsuarioResponseDTO;
 import com.cptrans.petrocarga.modules.usuario.entity.Usuario;
-import com.cptrans.petrocarga.shared.utils.CriptoUtils;
 
 import jakarta.validation.Valid;
 
@@ -51,12 +51,12 @@ public class GestorController {
         if(nome != null || telefone != null || email != null || ativo != null) {
             GestorFiltrosDTO filtros = new GestorFiltrosDTO(nome, telefone, email, ativo);
             return ResponseEntity.ok(gestorService.findAllWithFiltros(filtros).stream()
-                    .map(gestor -> CriptoUtils.decrypt(gestor.toResponseDTO(), gestor.getPersonalDataKeyVersion()))
+                    .map(gestor -> UsuarioMapper.toResponse(gestor))
                     .toList());
         }
 
         List<UsuarioResponseDTO> gestores = gestorService.findAll().stream()
-                .map(gestor -> CriptoUtils.decrypt(gestor.toResponseDTO(), gestor.getPersonalDataKeyVersion()))
+                .map(gestor -> UsuarioMapper.toResponse(gestor))
                 .toList();
         return ResponseEntity.ok(gestores);
     }
@@ -71,8 +71,7 @@ public class GestorController {
     @GetMapping("/{usuarioId}")
     public ResponseEntity<UsuarioResponseDTO> getGestorById(@PathVariable UUID usuarioId) {
         Usuario gestor = gestorService.findByUsuarioId(usuarioId);
-        UsuarioResponseDTO response = gestor.toResponseDTO();
-        return ResponseEntity.ok(CriptoUtils.decrypt(response, gestor.getPersonalDataKeyVersion()));
+        return ResponseEntity.ok(UsuarioMapper.toResponse(gestor));
     }
 
     /**
@@ -84,7 +83,8 @@ public class GestorController {
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping()
     public ResponseEntity<UsuarioResponseDTO> createGestor(@RequestBody @Valid UsuarioRequestDTO request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(gestorService.createGestor(request).toResponseDTO());
+        Usuario gestor = gestorService.createGestor(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(UsuarioMapper.toResponse(gestor));
     }
 
     /**
@@ -97,7 +97,8 @@ public class GestorController {
     @PreAuthorize("#usuarioId == authentication.principal.id or hasRole('ADMIN')")
     @PatchMapping("/{usuarioId}")
     public ResponseEntity<UsuarioResponseDTO> updateGestor(@PathVariable UUID usuarioId, @RequestBody @Valid UsuarioPATCHRequestDTO gestorRequestDTO) {
-        return ResponseEntity.ok(gestorService.updateGestor(usuarioId, gestorRequestDTO).toResponseDTO());
+        Usuario gestor = gestorService.updateGestor(usuarioId, gestorRequestDTO);
+        return ResponseEntity.ok(UsuarioMapper.toResponse(gestor));
     }
 
     /**

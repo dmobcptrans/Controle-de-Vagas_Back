@@ -8,6 +8,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Component;
 
+import com.cptrans.petrocarga.modules.auth.exceptions.AuthExceptions;
 import com.cptrans.petrocarga.security.UserAuthenticated;
 
 
@@ -30,5 +31,10 @@ public class AuthUtils {
             if(authorities.contains(permissao)) return;
         }
         throw new AuthorizationDeniedException("Acesso negado.");
+    }
+
+    public static List<String> getRoles(UserAuthenticated userAuthenticated) {
+        if (userAuthenticated == null) throw new AuthExceptions.UsuarioNaoAutenticadoException();
+        return userAuthenticated.userDetails().getAuthorities().stream().map(GrantedAuthority::getAuthority).toList();
     }
 }

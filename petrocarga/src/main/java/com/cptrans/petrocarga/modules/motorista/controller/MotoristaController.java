@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.cptrans.petrocarga.modules.motorista.dto.mapper.MotoristaMapper;
 import com.cptrans.petrocarga.modules.motorista.dto.request.MotoristaFiltrosDTO;
 import com.cptrans.petrocarga.modules.motorista.dto.request.MotoristaRequestDTO;
 import com.cptrans.petrocarga.modules.motorista.dto.response.MotoristaResponseDTO;
@@ -26,7 +27,6 @@ import com.cptrans.petrocarga.modules.motorista.entity.Motorista;
 import com.cptrans.petrocarga.modules.motorista.service.MotoristaService;
 import com.cptrans.petrocarga.modules.usuario.dto.request.UsuarioPATCHRequestDTO;
 import com.cptrans.petrocarga.security.UserAuthenticated;
-import com.cptrans.petrocarga.shared.utils.CriptoUtils;
 
 import jakarta.validation.Valid;
 
@@ -61,18 +61,12 @@ public class MotoristaController {
         MotoristaFiltrosDTO filtros = new MotoristaFiltrosDTO(nome, telefone, cnh, ativo);
         if(filtros.nome() != null || filtros.telefone() != null || filtros.cnh() != null || filtros.ativo() != null) {
             List<MotoristaResponseDTO> motoristasFiltrados = motoristaService.findAllWithFiltros(filtros).stream()
-                    .map(motorista -> {
-                        MotoristaResponseDTO response = CriptoUtils.decrypt(motorista.toResponseDTO(), motorista.getUsuario().getPersonalDataKeyVersion());
-                        return response;
-                    })
+                    .map(motorista -> MotoristaMapper.toResponse(motorista))
                     .collect(Collectors.toList());
             return ResponseEntity.ok(motoristasFiltrados);
         }
         List<MotoristaResponseDTO> motoristas = motoristaService.findAll().stream()
-                .map(motorista -> {
-                    MotoristaResponseDTO response = CriptoUtils.decrypt(motorista.toResponseDTO(), motorista.getUsuario().getPersonalDataKeyVersion());
-                    return response;
-                })
+                .map(motorista -> MotoristaMapper.toResponse(motorista))
                 .collect(Collectors.toList());
         return ResponseEntity.ok(motoristas);
     }
@@ -89,8 +83,7 @@ public class MotoristaController {
     @GetMapping("/{usuarioId}")
     public ResponseEntity<MotoristaResponseDTO> getMotoristaById(@PathVariable UUID usuarioId, @RequestParam(required = false) Boolean ativo) {
         Motorista motorista = motoristaService.findByUsuarioIdAndAtivo(usuarioId, ativo);
-        MotoristaResponseDTO response = CriptoUtils.decrypt(motorista.toResponseDTO(), motorista.getUsuario().getPersonalDataKeyVersion());
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(MotoristaMapper.toResponse(motorista));
     }
 
 
@@ -105,7 +98,7 @@ public class MotoristaController {
     @PostMapping("/cadastro")
     public ResponseEntity<MotoristaResponseDTO> createMotorista(@RequestBody @Valid MotoristaRequestDTO request) {
         Motorista motorista = motoristaService.createMotorista(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(CriptoUtils.decrypt(motorista.toResponseDTO(), motorista.getUsuario().getPersonalDataKeyVersion()));
+        return ResponseEntity.status(HttpStatus.CREATED).body(MotoristaMapper.toResponse(motorista));
     }
 
     /**
@@ -123,7 +116,7 @@ public class MotoristaController {
     @PatchMapping("/{usuarioId}")
     public ResponseEntity<MotoristaResponseDTO> updateMotorista(@AuthenticationPrincipal UserAuthenticated usuarioAutenticado, @PathVariable UUID usuarioId,  @RequestBody @Valid UsuarioPATCHRequestDTO motoristaRequestDTO) {
         Motorista updatedMotorista = motoristaService.updateMotorista(usuarioAutenticado, usuarioId, motoristaRequestDTO);
-        return ResponseEntity.ok(new MotoristaResponseDTO(updatedMotorista));
+        return ResponseEntity.ok(MotoristaMapper.toResponse(updatedMotorista));
     }
 
     /**
