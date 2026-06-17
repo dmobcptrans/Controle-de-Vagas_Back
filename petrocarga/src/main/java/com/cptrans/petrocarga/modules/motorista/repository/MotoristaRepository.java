@@ -14,5 +14,7 @@ public interface MotoristaRepository extends JpaRepository<Motorista, UUID>, Jpa
     public Optional<Motorista> findByUsuarioIdAndUsuarioAtivo(UUID usuarioId, Boolean ativo);
     public Optional<Motorista> findByUsuarioId(UUID usuarioId);
     public Optional<Motorista> findByCnhHash(String cnhHash);
+    public Optional<Motorista> findByUsuarioCpfHashAndUsuarioAtivoTrue(String cpfHash);
+    public Boolean existsByUsuarioCpfHash(String cpfHash);
     public Boolean existsByCnhHash(String cnhHash);
 }

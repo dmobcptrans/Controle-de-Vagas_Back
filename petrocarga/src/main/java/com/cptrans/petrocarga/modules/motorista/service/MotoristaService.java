@@ -66,17 +66,23 @@ public class MotoristaService {
     @Transactional
     public Motorista createMotorista(MotoristaRequestDTO request) {
         Motorista novoMotorista = new Motorista();
-
+        
         if (request.getEmpresaId() != null) {
             UserAuthenticated userAuthenticated =  !SecurityContextHolder.getContext().getAuthentication().getPrincipal().equals("anonymousUser") ? (UserAuthenticated) SecurityContextHolder.getContext().getAuthentication().getPrincipal() : null;
             if (userAuthenticated == null) throw new AuthExceptions.UsuarioNaoAutenticadoException();
+            
             List<String> authorities = userAuthenticated.userDetails().getAuthorities().stream().map(GrantedAuthority::getAuthority).toList();
             if (!authorities.contains(PermissaoEnum.EMPRESA.getRole()) && !authorities.contains(PermissaoEnum.ADMIN.getRole())) throw new AuthExceptions.UsuarioNaoAutorizadoException();
+            
             Empresa empresa = empresaService.findById(request.getEmpresaId());
             if (authorities.contains(PermissaoEnum.EMPRESA.getRole()) && !userAuthenticated.id().equals(empresa.getUsuario().getId())) throw new AuthExceptions.UsuarioNaoAutorizadoException();
+            
+            String cpfHash = hashService.hash(request.getUsuario().getCpf());
+            if (motoristaRepository.existsByUsuarioCpfHash(hashService.hash(cpfHash))) return associarMotoristaEmpresa(cpfHash, empresa);
+            
             novoMotorista.setEmpresa(empresa);
         }
-
+    
         Usuario usuario = usuarioService.createUsuario(request.getUsuario(), PermissaoEnum.MOTORISTA);
         novoMotorista.setUsuario(usuario);
 
@@ -135,6 +141,18 @@ public class MotoristaService {
         Motorista motorista = findByUsuarioIdAndAtivo(usuarioId, true);
         usuarioService.deleteById(motorista.getUsuario().getId());
     }
+
+    private Motorista associarMotoristaEmpresa (String motoristaCpfHash, Empresa empresa) {
+        if (motoristaCpfHash == null || motoristaCpfHash.trim().isEmpty()) return null;
+        Motorista motorista = motoristaRepository.findByUsuarioCpfHashAndUsuarioAtivoTrue(motoristaCpfHash).orElseThrow(() -> new MotoristaExceptions.MotoristaNotFoundException());
+        if (motorista.getEmpresa() != null){
+            if (!motorista.getEmpresa().getId().equals(empresa.getId())) throw new MotoristaExceptions.MotoristaJaPossuiEmpresaException();
+            return motorista;
+        }
+        motorista.setEmpresa(empresa);
+        return motoristaRepository.save(motorista);
+    }
+
 
     public Motorista completarCadastro(Usuario usuario, String numeroCnh, LocalDate dataValidadeCnh, TipoCnhEnum tipoCnh){
         Optional<Motorista> motorista = motoristaRepository.findByUsuarioId(usuario.getId());
