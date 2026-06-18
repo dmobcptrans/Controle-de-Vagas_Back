@@ -12,6 +12,7 @@ import com.cptrans.petrocarga.enums.UsuarioProviderEnum;
 import com.cptrans.petrocarga.modules.auth.dto.request.AuthRequestDTO;
 import com.cptrans.petrocarga.modules.auth.dto.request.CompletarCadastroDTO;
 import com.cptrans.petrocarga.modules.auth.dto.response.AuthResponseDTO;
+import com.cptrans.petrocarga.modules.auth.exceptions.AuthExceptions;
 import com.cptrans.petrocarga.modules.cripto.HashService;
 import com.cptrans.petrocarga.modules.googleAuth.GoogleAuthService;
 import com.cptrans.petrocarga.modules.motorista.service.MotoristaService;
@@ -60,14 +61,10 @@ public class AuthService {
      */
     public AuthResponseDTO login(AuthRequestDTO request) {
 
-        Usuario usuario = usuarioService.findByEmailOrCpf(request.getEmail(), request.getCpf()).orElseThrow(() -> new IllegalArgumentException("Credenciais inválidas."));
+        Usuario usuario = usuarioService.findByEmailOrCpfAndAtivoTrue(request.getEmail(), request.getCpf()).orElseThrow(() -> new IllegalArgumentException("Credenciais inválidas."));
 
-        if(usuario.isAtivo().equals(false)) {
-            throw new IllegalArgumentException("Usuário desativado.");
-        }
-        if(!passwordEncoder.matches(request.getSenha(), usuario.getSenha())) {
-            throw new IllegalArgumentException("Credenciais inválidas.");
-        }
+        if (!passwordEncoder.matches(request.getSenha(), usuario.getSenha())) throw new AuthExceptions.CredenciaisInvalidasException();
+        
         String token = jwtService.gerarToken(usuario);
 
        return new AuthResponseDTO(UsuarioMapper.toResponse(usuario), token);

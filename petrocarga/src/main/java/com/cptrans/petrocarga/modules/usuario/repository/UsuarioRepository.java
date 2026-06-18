@@ -19,6 +19,7 @@ public interface UsuarioRepository extends JpaRepository<Usuario, UUID>, JpaSpec
     public Optional<Usuario> findByEmailHashAndAtivoTrue(String emailHash);
     public Optional<Usuario> findByEmailHashOrGoogleId(String emailHash, String google_id);
     public Optional<Usuario> findByCpfHash(String cpfHash);
+    public Optional<Usuario> findByCpfHashAndAtivoTrue(String cpfHash);
     public Optional<Usuario> findByCpfHashAndIdNot(String cpfHash, UUID id);
     public Boolean existsByEmailHash(String emailHash);
     public Boolean existsByCpfHash(String cpfHash);
