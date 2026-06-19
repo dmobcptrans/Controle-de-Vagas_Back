@@ -3,7 +3,6 @@ package com.cptrans.petrocarga.modules.auth.service;
 import java.util.Optional;
 import java.util.UUID;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -25,30 +24,18 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken.Payload;
 
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 
 @Service
+@RequiredArgsConstructor
 public class AuthService {
-    
-    @Autowired
-    private UsuarioRepository usuarioRepository;
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-
-    @Autowired
-    private JwtService jwtService;
-
-    @Autowired
-    private HashService hashService;
-
-    @Autowired
-    private GoogleAuthService googleAuthService;
-
-    @Autowired
-    private UsuarioService usuarioService;
-
-    @Autowired
-    private MotoristaService motoristaService;
+    private final UsuarioRepository usuarioRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
+    private final HashService hashService;
+    private final GoogleAuthService googleAuthService;
+    private final UsuarioService usuarioService;
+    private final MotoristaService motoristaService;
 
  
 

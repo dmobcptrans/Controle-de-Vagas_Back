@@ -1,5 +1,7 @@
 package com.cptrans.petrocarga.modules.veiculo.dto.mapper;
 
+import java.util.List;
+
 import org.springframework.stereotype.Component;
 
 import com.cptrans.petrocarga.modules.veiculo.dto.response.VeiculoResponseDTO;
@@ -27,5 +29,10 @@ public class VeiculoMapper {
             ), 
             veiculo.getUsuario().getPersonalDataKeyVersion()
         );
+    }
+
+    public static List<VeiculoResponseDTO> toResponseList(List<Veiculo> veiculos) {
+        if (veiculos == null || veiculos.isEmpty()) return List.of();
+        return veiculos.stream().map(VeiculoMapper::toResponse).toList(); 
     }
 }

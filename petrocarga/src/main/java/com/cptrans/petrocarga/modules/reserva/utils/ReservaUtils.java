@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.cptrans.petrocarga.enums.PermissaoEnum;
@@ -26,14 +25,14 @@ import com.cptrans.petrocarga.modules.vaga.entity.Vaga;
 import com.cptrans.petrocarga.modules.veiculo.entity.Veiculo;
 import com.cptrans.petrocarga.shared.utils.DateUtils;
 
+import lombok.RequiredArgsConstructor;
+
 @Component
+@RequiredArgsConstructor
 public class ReservaUtils {
-    @Autowired
-    private EmpresaRepository empresaRepository;
-    @Autowired
-    private ReservaRepository reservaRepository;
-    @Autowired
-    private ReservaRapidaRepository reservaRapidaRepository;
+    private final EmpresaRepository empresaRepository;
+    private final ReservaRepository reservaRepository;
+    private final ReservaRapidaRepository reservaRapidaRepository;
 
     public static final String METODO_POST = "POST";
     public static final String METODO_PATCH = "PATCH";

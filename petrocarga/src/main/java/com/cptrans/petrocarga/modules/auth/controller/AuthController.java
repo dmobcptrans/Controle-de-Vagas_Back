@@ -116,7 +116,8 @@ public class AuthController {
     @PostMapping("/completarCadastro")
     public ResponseEntity<UsuarioResponseDTO> completarCadastro(@AuthenticationPrincipal UserAuthenticated userAuthenticated, @RequestBody @Valid CompletarCadastroDTO request) {
         Usuario usuarioCompleto = authService.completarCadastro(request, userAuthenticated.id());
-        return ResponseEntity.ok(UsuarioMapper.toResponse(usuarioCompleto));
+        UsuarioResponseDTO response = UsuarioMapper.toResponse(usuarioCompleto);
+        return ResponseEntity.ok(response);
     }
     
 
@@ -139,7 +140,8 @@ public class AuthController {
         }
         UUID usuarioIdFromToken = userAuthenticated.id();
         Usuario usuarioLogado = usuarioService.findByIdAndAtivo(usuarioIdFromToken, true);
-        return ResponseEntity.ok(UsuarioMapper.toResponse(usuarioLogado));
+        UsuarioResponseDTO response = UsuarioMapper.toResponse(usuarioLogado);
+        return ResponseEntity.ok(response);
     }
 
     /**

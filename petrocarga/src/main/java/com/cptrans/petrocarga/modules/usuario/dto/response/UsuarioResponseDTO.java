@@ -1,9 +1,11 @@
 package com.cptrans.petrocarga.modules.usuario.dto.response;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.UUID;
 
 import com.cptrans.petrocarga.enums.PermissaoEnum;
+import com.cptrans.petrocarga.modules.veiculo.dto.response.VeiculoResponseDTO;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -23,7 +25,7 @@ public class UsuarioResponseDTO {
     private OffsetDateTime criadoEm;
     private Boolean ativo;
     private OffsetDateTime desativadoEm;
-    private boolean veiculoCadastrado;
+    private List<VeiculoResponseDTO> veiculos;
 
     public void setCpf(String cpf) {
         this.cpf = cpf;
@@ -36,4 +38,5 @@ public class UsuarioResponseDTO {
     public void setTelefone(String telefone) {
         this.telefone = telefone;
     }
+    
 }

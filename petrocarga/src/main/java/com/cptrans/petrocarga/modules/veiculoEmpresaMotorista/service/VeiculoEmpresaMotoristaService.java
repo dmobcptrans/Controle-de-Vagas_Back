@@ -44,7 +44,7 @@ public class VeiculoEmpresaMotoristaService {
             Veiculo veiculo = veiculoRepository.findByIdAndAtivoTrueAndUsuarioIdAndUsuarioAtivoTrueAndUsuarioPermissao(veiculoId, usuarioAutenticado.id(), PermissaoEnum.EMPRESA).orElseThrow(() -> new VeiculoExceptions.VeiculoNotFoundException());
             Empresa empresa = empresaRepository.findByUsuarioIdAndUsuarioAtivoTrue(usuarioAutenticado.id()).orElseThrow(() -> new EmpresaExceptions.EmpresaNotFoundException());
             Motorista motorista = motoristaRepository.findByIdAndUsuarioAtivoTrueAndEmpresaId(motoristaId, empresa.getId()).orElseThrow(() -> new MotoristaExceptions.MotoristaNotFoundException());
-            VeiculoEmpresaMotorista veiculoEmpresaMotorista = new VeiculoEmpresaMotorista(veiculo, motorista);
+            VeiculoEmpresaMotorista veiculoEmpresaMotorista = repository.save(new VeiculoEmpresaMotorista(veiculo, motorista));
             return VeiculoEmpresaMotoristaMapper.toResponseDTO(veiculoEmpresaMotorista); 
         }
 
@@ -55,7 +55,7 @@ public class VeiculoEmpresaMotoristaService {
         if (motorista.getEmpresa() == null) throw new MotoristaExceptions.MotoristaNaoPossuiEmpresaException();
         if (!motorista.getEmpresa().getUsuario().getId().equals(veiculo.getUsuario().getId())) throw new MotoristaExceptions.MotoristaJaPossuiEmpresaException();
         
-        VeiculoEmpresaMotorista veiculoEmpresaMotorista = new VeiculoEmpresaMotorista(veiculo, motorista);
+        VeiculoEmpresaMotorista veiculoEmpresaMotorista = repository.save(new VeiculoEmpresaMotorista(veiculo, motorista));
         return VeiculoEmpresaMotoristaMapper.toResponseDTO(veiculoEmpresaMotorista);
     }
 

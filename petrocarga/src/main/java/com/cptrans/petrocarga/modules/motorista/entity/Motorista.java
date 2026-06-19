@@ -1,11 +1,14 @@
 package com.cptrans.petrocarga.modules.motorista.entity;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 import com.cptrans.petrocarga.enums.TipoCnhEnum;
 import com.cptrans.petrocarga.modules.empresa.entity.Empresa;
 import com.cptrans.petrocarga.modules.usuario.entity.Usuario;
+import com.cptrans.petrocarga.modules.veiculo.entity.Veiculo;
+import com.cptrans.petrocarga.modules.veiculoEmpresaMotorista.entity.VeiculoEmpresaMotorista;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -18,6 +21,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 
@@ -53,6 +57,9 @@ public class Motorista {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "empresa_id")
     private Empresa empresa;
+
+    @OneToMany(mappedBy = "motorista", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<VeiculoEmpresaMotorista> veiculosEmpresa;
 
     // Constructors
     public Motorista() {}
@@ -120,5 +127,9 @@ public class Motorista {
 
     public void setEmpresa(Empresa empresa) {
         this.empresa = empresa;
+    }
+
+    public List<VeiculoEmpresaMotorista> getVeiculosEmpresa() {
+        return veiculosEmpresa;
     }
 }

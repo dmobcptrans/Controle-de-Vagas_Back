@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -34,31 +33,19 @@ import com.cptrans.petrocarga.modules.usuario.utils.UsuarioUtils;
 import com.cptrans.petrocarga.shared.utils.DateUtils;
 
 import jakarta.persistence.EntityNotFoundException;
+import lombok.RequiredArgsConstructor;
 
 
 @Service
+@RequiredArgsConstructor
 public class UsuarioService {
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-
-    @Autowired
-    private UsuarioRepository usuarioRepository;
-
-    @Autowired
-    private EmailSender emailSender;
-
-    @Autowired
-    private SpringDomainEventPublisher eventPublisher;
-
-    @Autowired
-    private ReservaUtils reservaUtils;
-
-    @Autowired
-    private HashService hashService;
-
-    @Autowired
-    private CriptoService criptoService;
+    private final PasswordEncoder passwordEncoder;
+    private final UsuarioRepository usuarioRepository;
+    private final EmailSender emailSender;
+    private final SpringDomainEventPublisher eventPublisher;
+    private final ReservaUtils reservaUtils;
+    private final HashService hashService;
+    private final CriptoService criptoService;
 
     @Value("${app.security.aes-criptography.active-key-version}")
     private Integer activeKeyVersion;

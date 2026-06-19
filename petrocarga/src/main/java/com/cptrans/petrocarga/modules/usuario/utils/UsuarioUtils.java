@@ -6,6 +6,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Component;
 
 import com.cptrans.petrocarga.enums.PermissaoEnum;
+import com.cptrans.petrocarga.modules.usuario.dto.response.UsuarioResponseDTO;
 import com.cptrans.petrocarga.modules.veiculo.repository.VeiculoRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -24,4 +25,5 @@ public class UsuarioUtils {
         if (permissoes.contains(permissao)) return veiculoRepository.existsByUsuarioIdAndAtivo(usuarioId, true);
         return false;
     }
+
 }

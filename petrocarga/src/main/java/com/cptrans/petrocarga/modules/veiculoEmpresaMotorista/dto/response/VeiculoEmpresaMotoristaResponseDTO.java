@@ -1,8 +1,8 @@
 package com.cptrans.petrocarga.modules.veiculoEmpresaMotorista.dto.response;
 
 
-import com.cptrans.petrocarga.modules.empresa.dto.response.EmpresaResponseDTO;
-import com.cptrans.petrocarga.modules.motorista.dto.response.MotoristaResponseDTO;
+import com.cptrans.petrocarga.modules.empresa.dto.response.EmpresaSimplificadoResponseDTO;
+import com.cptrans.petrocarga.modules.motorista.dto.response.MotoristaSimplificadoResponseDTO;
 import com.cptrans.petrocarga.modules.veiculo.dto.response.VeiculoResponseDTO;
 
 import lombok.AccessLevel;
@@ -15,6 +15,6 @@ import lombok.NoArgsConstructor;
 @Getter
 public class VeiculoEmpresaMotoristaResponseDTO {
     private VeiculoResponseDTO veiculo;
-    private MotoristaResponseDTO motorista;
-    private EmpresaResponseDTO empresa;
+    private MotoristaSimplificadoResponseDTO motorista;
+    private EmpresaSimplificadoResponseDTO empresa;
 }

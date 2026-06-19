@@ -13,6 +13,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import com.cptrans.petrocarga.enums.PermissaoEnum;
 import com.cptrans.petrocarga.enums.UsuarioProviderEnum;
 import com.cptrans.petrocarga.modules.usuario.utils.UsuarioUtils;
+import com.cptrans.petrocarga.modules.veiculo.entity.Veiculo;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -21,6 +22,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
 @Entity
@@ -99,6 +101,9 @@ public class Usuario implements UserDetails{
 
     @Column(name = "personal_data_key_version", nullable = false)
     private Integer personalDataKeyVersion;
+
+    @OneToMany(mappedBy = "usuario")
+    private List<Veiculo> veiculos;
 
     // Constructors
     public Usuario() {
@@ -310,6 +315,10 @@ public class Usuario implements UserDetails{
 
     public void setPersonalDataKeyVersion(Integer personalDataKeyVersion) {
         this.personalDataKeyVersion = personalDataKeyVersion;
+    }
+
+    public List<Veiculo> getVeiculos() {
+        return veiculos;
     }
 
     @Override

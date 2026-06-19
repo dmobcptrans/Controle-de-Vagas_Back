@@ -12,6 +12,6 @@ import com.cptrans.petrocarga.modules.veiculoEmpresaMotorista.entity.VeiculoEmpr
 public class VeiculoEmpresaMotoristaMapper {
     
     public static VeiculoEmpresaMotoristaResponseDTO toResponseDTO(VeiculoEmpresaMotorista veiEmpMotorista) {
-        return new VeiculoEmpresaMotoristaResponseDTO(VeiculoMapper.toResponse(veiEmpMotorista.getVeiculo()), MotoristaMapper.toResponse(veiEmpMotorista.getMotorista()), EmpresaMapper.toResponse(veiEmpMotorista.getMotorista().getEmpresa()));
+        return new VeiculoEmpresaMotoristaResponseDTO(VeiculoMapper.toResponse(veiEmpMotorista.getVeiculo()), MotoristaMapper.toResponseSimplificado(veiEmpMotorista.getMotorista()), EmpresaMapper.toResponseSimplificado(veiEmpMotorista.getMotorista().getEmpresa()));
     }
 }

@@ -23,13 +23,13 @@ import lombok.RequiredArgsConstructor;
 public class VeiculoEmpresaMotoristaController {
     private final VeiculoEmpresaMotoristaService service;
 
-    @PreAuthorize("hasRole('ADMIN', 'EMPRESA')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPRESA')")
     @PostMapping
     public ResponseEntity<VeiculoEmpresaMotoristaResponseDTO> vincularMotoristaAoVeiculo(@AuthenticationPrincipal UserAuthenticated usuarioAutenticado, @RequestParam UUID veiculoId, @RequestParam UUID motoristaId) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.vincularMotoristaAoVeiculo(usuarioAutenticado, veiculoId, motoristaId));
     }
 
-    @PreAuthorize("hasRole('ADMIN', 'EMPRESA')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPRESA')")
     @PostMapping("/desvincular")
     public ResponseEntity<Void> desvincularMotoristaDoVeiculo(@AuthenticationPrincipal UserAuthenticated usuarioAutenticado, @RequestParam UUID veiculoId, @RequestParam UUID motoristaId) {
         service.desvincularMotoristaDoVeiculo(usuarioAutenticado, veiculoId, motoristaId);
