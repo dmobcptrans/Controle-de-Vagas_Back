@@ -4,7 +4,6 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 import com.cptrans.petrocarga.enums.PlataformaEnum;
-import com.cptrans.petrocarga.modules.pushToken.dto.response.PushTokenResponseDTO;
 import com.cptrans.petrocarga.shared.utils.DateUtils;
 
 import jakarta.persistence.Column;
@@ -38,7 +37,7 @@ public class PushToken {
     private boolean ativo = true;
 
     @Column(name = "criado_em", nullable = false)
-    private final OffsetDateTime CRIADO_EM = OffsetDateTime.now(DateUtils.FUSO_BRASIL);
+    private final OffsetDateTime CRIADO_EM = DateUtils.agora();
 
     public PushToken() {
     }
@@ -90,12 +89,8 @@ public class PushToken {
         this.ativo = ativo;
     }
 
-    public OffsetDateTime getCRIADO_EM() {
+    public OffsetDateTime getCriadoEm() {
         return CRIADO_EM;
     }
 
-    public PushTokenResponseDTO toResponseDTO(){
-        return new PushTokenResponseDTO(this.usuarioId, this.token, this.plataforma, this.ativo);
-    }
-    
 }

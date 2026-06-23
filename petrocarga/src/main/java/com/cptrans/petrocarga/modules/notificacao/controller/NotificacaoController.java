@@ -29,6 +29,7 @@ import com.cptrans.petrocarga.modules.auth.utils.AuthUtils;
 import com.cptrans.petrocarga.modules.notificacao.dto.request.NotificacaoRequestDTO;
 import com.cptrans.petrocarga.modules.notificacao.entity.Notificacao;
 import com.cptrans.petrocarga.modules.notificacao.service.NotificacaoService;
+import com.cptrans.petrocarga.modules.pushToken.dto.mapper.PushTokenMapper;
 import com.cptrans.petrocarga.modules.pushToken.dto.request.PushTokenPatchDTO;
 import com.cptrans.petrocarga.modules.pushToken.dto.request.PushTokenRequestDTO;
 import com.cptrans.petrocarga.modules.pushToken.dto.response.PushTokenResponseDTO;
@@ -235,7 +236,7 @@ public class NotificacaoController {
     @GetMapping("/pushToken/byToken")
     public ResponseEntity<PushTokenResponseDTO> visualizarStatusByTokenAndUsuario(@AuthenticationPrincipal UserAuthenticated userAuthenticated, @RequestParam(required = true) String token) {
         PushToken pushToken = pushTokenService.visualizarStatusByTokenAndUsuario(token, userAuthenticated.id());
-        return ResponseEntity.ok(pushToken.toResponseDTO());
+        return ResponseEntity.ok(PushTokenMapper.toResponse(pushToken));
     }
 
 /**
@@ -248,7 +249,7 @@ public class NotificacaoController {
     @GetMapping("/pushToken/byUsuarioId")
     public ResponseEntity<List<PushTokenResponseDTO>> visualizarStatusByUsuario(@AuthenticationPrincipal UserAuthenticated userAuthenticated) {
         List<PushToken> pushTokenList = pushTokenService.visualizarStatusByUsuario(userAuthenticated.id());
-        return ResponseEntity.ok(pushTokenList.stream().map(pushToken -> pushToken.toResponseDTO()).toList());
+        return ResponseEntity.ok(pushTokenList.stream().map(PushTokenMapper::toResponse).toList());
     }
 
     /**
@@ -262,6 +263,6 @@ public class NotificacaoController {
     @PatchMapping("/pushToken/{usuarioId}")
     public ResponseEntity<PushTokenResponseDTO> atualizarStatus(@PathVariable UUID usuarioId, @AuthenticationPrincipal UserAuthenticated userAuthenticated, @RequestBody PushTokenPatchDTO request) {
         PushToken tokenAtualizado = pushTokenService.atualizarStatus(usuarioId,request.token(), request.ativo());
-        return ResponseEntity.ok().body(tokenAtualizado.toResponseDTO());
+        return ResponseEntity.ok().body(PushTokenMapper.toResponse(tokenAtualizado));
     }
 }
