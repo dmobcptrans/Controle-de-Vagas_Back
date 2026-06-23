@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.cptrans.petrocarga.enums.PermissaoEnum;
+import com.cptrans.petrocarga.modules.reserva.dto.mapper.ReservaMapper;
 import com.cptrans.petrocarga.modules.reserva.dto.response.ReservaDetailedResponseDTO;
 import com.cptrans.petrocarga.modules.reserva.entity.Reserva;
 import com.cptrans.petrocarga.modules.reserva.service.DocumentoReservaService;
@@ -39,7 +40,7 @@ public class DocumentoReservaController {
     @GetMapping("/{id}")
     public ResponseEntity<ReservaDetailedResponseDTO> getDocumentoReservaById(@PathVariable UUID id) {
         Reserva reserva = documentoReservaService.findReservaWithDetails(id);
-        ReservaDetailedResponseDTO dto = new ReservaDetailedResponseDTO(reserva);
+        ReservaDetailedResponseDTO dto = ReservaMapper.toDetailedResponse(reserva);
         return ResponseEntity.ok(dto);
     }
 

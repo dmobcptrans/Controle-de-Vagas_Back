@@ -9,9 +9,9 @@ public enum DiaSemanaEnum {
     SEXTA (6, "Sexta-feira","FRIDAY"),
     SABADO (7, "Sábado","SATURDAY");
 
-    public Integer codigo;
-    public String descricao;
-    public String descricaoIngles;
+    private Integer codigo;
+    private String descricao;
+    private String descricaoIngles;
 
     private DiaSemanaEnum(Integer codigo, String descricao, String descricaoIngles){
         this.codigo = codigo;

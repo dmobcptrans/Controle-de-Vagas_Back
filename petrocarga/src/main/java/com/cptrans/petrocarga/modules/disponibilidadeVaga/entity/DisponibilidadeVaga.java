@@ -3,7 +3,6 @@ package com.cptrans.petrocarga.modules.disponibilidadeVaga.entity;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
-import com.cptrans.petrocarga.modules.disponibilidadeVaga.dto.response.DisponibilidadeVagaResponseDTO;
 import com.cptrans.petrocarga.modules.usuario.entity.Usuario;
 import com.cptrans.petrocarga.modules.vaga.entity.Vaga;
 
@@ -95,9 +94,5 @@ public class DisponibilidadeVaga {
 
     public void setCriadoPor(Usuario criadoPor) {
         this.criadoPor = criadoPor;
-    }
-
-    public DisponibilidadeVagaResponseDTO toResponseDTO() {
-        return new DisponibilidadeVagaResponseDTO(this);
     }
 }

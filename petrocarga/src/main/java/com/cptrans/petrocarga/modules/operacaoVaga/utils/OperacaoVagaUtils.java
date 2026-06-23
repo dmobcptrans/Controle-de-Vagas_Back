@@ -1,29 +1,31 @@
 package com.cptrans.petrocarga.modules.operacaoVaga.utils;
 
 import java.time.OffsetDateTime;
+import java.util.Set;
 
 import org.springframework.stereotype.Component;
 
-import com.cptrans.petrocarga.modules.vaga.entity.Vaga;
+import com.cptrans.petrocarga.modules.operacaoVaga.entity.OperacaoVaga;
+import com.cptrans.petrocarga.modules.operacaoVaga.exceptions.OperacaoVagaExceptions;
 import com.cptrans.petrocarga.shared.utils.DateUtils;
 
 @Component
 public class OperacaoVagaUtils {
     
-    public static final void verificarLimiteHorarioOperacaoVaga(Vaga vaga, OffsetDateTime inicioReserva, OffsetDateTime fimReserva) {
-        if (vaga.getOperacoesVaga() == null || vaga.getOperacoesVaga().isEmpty()) throw new IllegalArgumentException("A vaga não está em operação no momento. Verifique os horários de operação da vaga para mais detalhes.");
-        if (inicioReserva == null || fimReserva == null) throw new IllegalArgumentException("As datas de início e fim da reserva são obrigatórias.");
+    public static final void verificarLimiteHorarioOperacaoVaga(Set<OperacaoVaga> listaOperacaoVaga, OffsetDateTime inicioReserva, OffsetDateTime fimReserva) {
+        if (listaOperacaoVaga == null || listaOperacaoVaga.isEmpty()) throw new OperacaoVagaExceptions.VagaSemOperacaoNoPeriodoException();
+        if (inicioReserva == null || fimReserva == null) throw new OperacaoVagaExceptions.InicioEFimObrigatoriosException();
         String diaInicio = inicioReserva.getDayOfWeek().toString();
         String diaFim = fimReserva.getDayOfWeek().toString();
-        if (vaga.getOperacoesVaga().stream().noneMatch(operacao -> operacao.getDiaSemana().getDescricaoIngles().equals(diaInicio) && operacao.getDiaSemana().getDescricaoIngles().equals(diaFim))) {
-            throw new IllegalArgumentException("A vaga não está em operação no momento. Verifique os horários de operação da vaga para mais detalhes.");
+        if (listaOperacaoVaga.stream().noneMatch(operacao -> operacao.getDiaSemana().getDescricaoIngles().equals(diaInicio) && operacao.getDiaSemana().getDescricaoIngles().equals(diaFim))) {
+            throw new OperacaoVagaExceptions.VagaSemOperacaoNoPeriodoException();
         }
-        vaga.getOperacoesVaga().forEach(operacao -> {
+        listaOperacaoVaga.forEach(operacao -> {
             if (operacao.getDiaSemana().getDescricaoIngles().equals(DateUtils.toLocalDateInBrazil(inicioReserva).getDayOfWeek().toString()) ){
                 if (operacao.getHoraFim().isAfter(inicioReserva.toLocalTime()) && operacao.getHoraInicio().isBefore(fimReserva.toLocalTime())) {
                     return;
                 } else {
-                    throw new IllegalArgumentException("A vaga não está no horário de operação no momento. Horário de operação hoje: " + operacao.getHoraInicio() + " às " + operacao.getHoraFim() + ".");
+                    throw new OperacaoVagaExceptions.VagaSemOperacaoNoPeriodoException();
                 }
             }
         });

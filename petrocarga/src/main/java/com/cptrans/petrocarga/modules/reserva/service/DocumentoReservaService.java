@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
-import com.cptrans.petrocarga.modules.reserva.dto.response.ReservaDetailedResponseDTO;
+import com.cptrans.petrocarga.modules.reserva.dto.mapper.ReservaMapper;
 import com.cptrans.petrocarga.modules.reserva.entity.Reserva;
 import com.cptrans.petrocarga.modules.reserva.repository.ReservaRepository;
 import com.cptrans.petrocarga.shared.utils.DateUtils;
@@ -34,7 +34,7 @@ public class DocumentoReservaService {
 
     public String gerarHtmlReserva(Reserva reserva) {
         Context context = new Context();
-        context.setVariable("reserva", new ReservaDetailedResponseDTO(reserva));
+        context.setVariable("reserva", ReservaMapper.toDetailedResponse(reserva));
         context.setVariable("agora", DateUtils.agora());
 
         return templateEngine.process(

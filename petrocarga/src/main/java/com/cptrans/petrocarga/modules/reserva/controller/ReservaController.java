@@ -4,7 +4,6 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,8 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.cptrans.petrocarga.enums.StatusReservaEnum;
 import com.cptrans.petrocarga.enums.TipoVeiculoEnum;
-import com.cptrans.petrocarga.modules.motorista.entity.Motorista;
-import com.cptrans.petrocarga.modules.motorista.service.MotoristaService;
+import com.cptrans.petrocarga.modules.reserva.dto.mapper.ReservaMapper;
 import com.cptrans.petrocarga.modules.reserva.dto.request.ReservaPATCHRequestDTO;
 import com.cptrans.petrocarga.modules.reserva.dto.request.ReservaRequestDTO;
 import com.cptrans.petrocarga.modules.reserva.dto.response.ReservaDTO;
@@ -34,25 +32,19 @@ import com.cptrans.petrocarga.modules.reserva.service.ReservaService;
 import com.cptrans.petrocarga.modules.reserva.utils.ReservaUtils;
 import com.cptrans.petrocarga.modules.vaga.entity.Vaga;
 import com.cptrans.petrocarga.modules.vaga.service.VagaService;
-import com.cptrans.petrocarga.modules.veiculo.entity.Veiculo;
-import com.cptrans.petrocarga.modules.veiculo.service.VeiculoService;
 import com.cptrans.petrocarga.security.UserAuthenticated;
 import com.cptrans.petrocarga.shared.dto.response.PageResponseDTO;
 
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/reservas")
+@RequiredArgsConstructor
 public class ReservaController {
 
-    @Autowired
-    private ReservaService reservaService;
-    @Autowired
-    private VagaService vagaService;
-    @Autowired
-    private MotoristaService motoristaService;
-    @Autowired
-    private VeiculoService veiculoService;
+    private final ReservaService reservaService;
+    private final VagaService vagaService;
 
     /**
      * Retorna uma lista de reservas com base na lista de status e vaga ID informado.
@@ -142,7 +134,7 @@ public class ReservaController {
         // Busca a reserva e mantém as verificações de permissão no service
         Reserva reserva = reservaService.findById(id);
         // Converte para DTO detalhado que expõe nomes/placa para exibição amigável
-        ReservaDetailedResponseDTO dto = new ReservaDetailedResponseDTO(reserva);
+        ReservaDetailedResponseDTO dto = ReservaMapper.toDetailedResponse(reserva);
         return ResponseEntity.ok(dto);
     }
 
@@ -158,7 +150,7 @@ public class ReservaController {
     @GetMapping("/usuario/{usuarioId}")
     public ResponseEntity<PageResponseDTO> getReservasByUsuarioId(@PathVariable UUID usuarioId, @RequestParam(required = false) List<StatusReservaEnum> status, @RequestParam(defaultValue = "0") Integer numeroPagina, @RequestParam(defaultValue = "10") Integer tamanhoPagina) {
         Page<ReservaResponseDTO> reservas = reservaService.findByUsuarioId(usuarioId, status, numeroPagina, tamanhoPagina)
-                .map(ReservaResponseDTO::new);
+                .map(ReservaMapper::toResponse);
                 
         return ResponseEntity.ok(new PageResponseDTO(reservas));
     }
@@ -172,14 +164,9 @@ public class ReservaController {
      */
     @PreAuthorize("hasAnyRole('ADMIN','MOTORISTA', 'EMPRESA')")
     @PostMapping()
-    public ResponseEntity<ReservaResponseDTO> createReserva(@RequestBody @Valid ReservaRequestDTO reservaRequestDTO) {
-        Vaga vaga = vagaService.findById(reservaRequestDTO.getVagaId());
-        Motorista motorista = motoristaService.findById(reservaRequestDTO.getMotoristaId());
-        Veiculo veiculo = veiculoService.findById(reservaRequestDTO.getVeiculoId());
-        Reserva novaReserva = reservaService.createReserva(reservaRequestDTO.toEntity(vaga, motorista, veiculo));
-                                                                
-        return ResponseEntity.status(HttpStatus.CREATED).body(novaReserva.toResponseDTO());
-
+    public ResponseEntity<ReservaResponseDTO> createReserva(@RequestBody @Valid ReservaRequestDTO request) {
+        Reserva novaReserva = reservaService.createReserva(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(ReservaMapper.toResponse(novaReserva));
     }
 
     /**
@@ -208,7 +195,7 @@ public class ReservaController {
     @PostMapping("/{id}/checkin")
     public ResponseEntity<ReservaResponseDTO> realizarCheckIn(@PathVariable UUID id) {
         Reserva reserva = reservaService.realizarCheckIn(id);
-        return ResponseEntity.ok(reserva.toResponseDTO());
+        return ResponseEntity.ok(ReservaMapper.toResponse(reserva));
     }
 
     /**
@@ -226,7 +213,7 @@ public class ReservaController {
     public ResponseEntity<ReservaResponseDTO> updateReserva(@PathVariable UUID id, @PathVariable UUID usuarioId, @RequestBody @Valid ReservaPATCHRequestDTO reservaRequestDTO) {
         Reserva reserva = reservaService.findById(id);
         Reserva reservaAtualizada = reservaService.atualizarReserva(reserva, usuarioId, reservaRequestDTO);
-        return ResponseEntity.status(HttpStatus.CREATED).body(reservaAtualizada.toResponseDTO());
+        return ResponseEntity.status(HttpStatus.CREATED).body(ReservaMapper.toResponse(reservaAtualizada));
     }
 
     /**
@@ -239,7 +226,7 @@ public class ReservaController {
     @PatchMapping("checkout/{id}")
     public ResponseEntity<ReservaResponseDTO> realizarCheckout(@AuthenticationPrincipal UserAuthenticated userAuthenticated, @PathVariable UUID id ) {
         Reserva reservaAtualizada = reservaService.realizarCheckout(id);
-        return ResponseEntity.status(HttpStatus.CREATED).body(reservaAtualizada.toResponseDTO());
+        return ResponseEntity.status(HttpStatus.CREATED).body(ReservaMapper.toResponse(reservaAtualizada));
     }
 
     /**

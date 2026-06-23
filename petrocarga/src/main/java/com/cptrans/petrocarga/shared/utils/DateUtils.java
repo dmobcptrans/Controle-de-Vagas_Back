@@ -7,6 +7,8 @@ import java.time.ZoneOffset;
 
 import org.springframework.stereotype.Component;
 
+import com.cptrans.petrocarga.shared.exceptions.DateExceptions;
+
 @Component
 public class DateUtils {
     public static final ZoneId FUSO_BRASILIA = ZoneOffset.of("-03:00");
@@ -24,11 +26,11 @@ public class DateUtils {
 
     public static void validarMesEAno(Integer mes, Integer ano) {
         if(mes != null && (mes < 1 || mes > 12)) {
-            throw new IllegalArgumentException("Mês deve ser um valor entre 1 e 12.");
+            throw new DateExceptions.MesInvalidoException();
         }
 
         if (ano != null && (ano < 2026 || ano > 2100)) {
-            throw new IllegalArgumentException("Ano deve ser um valor entre 2026 e 2100.");
+            throw new DateExceptions.AnoInvalidoException();
         }
     }
 

@@ -2,7 +2,6 @@ package com.cptrans.petrocarga.modules.enderecoVaga.entity;
 
 import java.util.UUID;
 
-import com.cptrans.petrocarga.modules.enderecoVaga.dto.response.EnderecoVagaResponseDTO;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -80,14 +79,5 @@ public class EnderecoVaga {
                 ", bairro='" + bairro + '\'' +
                 ", codigoPmp='" + codigoPmp + '\'' +
                 '}';
-    }
-
-    public EnderecoVagaResponseDTO toResponseDTO() {
-        EnderecoVagaResponseDTO dto = new EnderecoVagaResponseDTO();
-        dto.setId(this.id);
-        dto.setCodigoPmp(this.codigoPmp);
-        dto.setLogradouro(this.logradouro);
-        dto.setBairro(this.bairro);
-        return dto;
     }
 }

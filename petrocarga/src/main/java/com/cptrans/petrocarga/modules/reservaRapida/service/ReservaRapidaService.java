@@ -26,6 +26,7 @@ import com.cptrans.petrocarga.modules.reserva.dto.response.ReservaDTO;
 import com.cptrans.petrocarga.modules.reserva.entity.Reserva;
 import com.cptrans.petrocarga.modules.reserva.repository.ReservaRepository;
 import com.cptrans.petrocarga.modules.reserva.utils.ReservaUtils;
+import com.cptrans.petrocarga.modules.reservaRapida.dto.mapper.ReservaRapidaMapper;
 import com.cptrans.petrocarga.modules.reservaRapida.entity.ReservaRapida;
 import com.cptrans.petrocarga.modules.reservaRapida.repository.ReservaRapidaRepository;
 import com.cptrans.petrocarga.modules.reservaRapida.specification.ReservaRapidaSpecification;
@@ -140,7 +141,7 @@ public class ReservaRapidaService {
         if(!disponibilidadeVagaService.existsByVagaIdAndInicioAndFim(novaReservaRapida.getVaga().getId(), novaReservaRapida.getInicio(), novaReservaRapida.getFim())) {
             throw new IllegalArgumentException("A vaga não está disponível para o período selecionado.");
         }
-        OperacaoVagaUtils.verificarLimiteHorarioOperacaoVaga(novaReservaRapida.getVaga(), novaReservaRapida.getInicio(), novaReservaRapida.getFim());
+        OperacaoVagaUtils.verificarLimiteHorarioOperacaoVaga(novaReservaRapida.getVaga().getOperacoesVaga(), novaReservaRapida.getInicio(), novaReservaRapida.getFim());
         Vaga vagaReserva = vagaService.findById(novaReservaRapida.getVaga().getId());
         List<StatusReservaEnum> listaStatus = new ArrayList<>(List.of(StatusReservaEnum.ATIVA, StatusReservaEnum.RESERVADA));
         List<Reserva>  reservasAtivasNaVaga = reservaRepository.findByVagaIdAndStatusIn(vagaReserva.getId(), listaStatus);
@@ -154,20 +155,20 @@ public class ReservaRapidaService {
         if (novaReservaRapida.getCidadeOrigem() == null ){
             novaReservaRapida.setCidadeOrigem("Petrópolis - RJ");
         }
-
-        reservaRapidaUtils.validarQuantidadeReservasPorPlaca(novaReservaRapida.toReservaDTO());
-        ReservaUtils.validarTempoMaximoReserva(novaReservaRapida.toReservaDTO(), novaReservaRapida.getVaga());
+        ReservaDTO novaReservaDTO = ReservaRapidaMapper.toReservaDTO(novaReservaRapida);
+        reservaRapidaUtils.validarQuantidadeReservasPorPlaca(novaReservaDTO);
+        ReservaUtils.validarTempoMaximoReserva(novaReservaRapida.getInicio(), novaReservaRapida.getFim(), novaReservaRapida.getVaga().getArea(), novaReservaRapida.getAgente().getUsuario().getPermissao());
         List<ReservaDTO> reservasTotaisAtivasNaVaga = ReservaUtils.juntarReservas(reservasAtivasNaVaga, reservasRapidasAtivasNaVaga);
         
         if (vagaReserva.getTipoVaga().equals(TipoVagaEnum.PERPENDICULAR) && novaReservaRapida.getPosicaoPerpendicular() == null) {
-            Integer novaPosicao = ReservaUtils.encontrarPosicaoDisponivel(vagaReserva.getQuantidade(), vagaReserva.getComprimento(), novaReservaRapida.toReservaDTO(), reservasTotaisAtivasNaVaga);
+            Integer novaPosicao = ReservaUtils.encontrarPosicaoDisponivel(vagaReserva.getQuantidade(), vagaReserva.getComprimento(), novaReservaDTO, reservasTotaisAtivasNaVaga);
             novaReservaRapida.setPosicaoPerpendicular(novaPosicao);
         }
         
         reservaRapidaUtils.validarEspacoDisponivelNaVaga(novaReservaRapida, vagaReserva, reservasTotaisAtivasNaVaga);
         ReservaRapida reservaRapidaCriada = reservaRapidaRepository.save(novaReservaRapida);
         try {
-            reservaSchedulerService.agendarFinalizacaoReserva(reservaRapidaCriada.toReservaDTO());
+            reservaSchedulerService.agendarFinalizacaoReserva(ReservaRapidaMapper.toReservaDTO(reservaRapidaCriada));
         } catch (SchedulerException e) {
             throw new RuntimeException("Erro ao agendar finalização da reserva: " + e.getMessage());
         }

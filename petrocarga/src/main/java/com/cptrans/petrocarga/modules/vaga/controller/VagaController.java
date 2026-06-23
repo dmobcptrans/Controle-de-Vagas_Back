@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.cptrans.petrocarga.enums.StatusVagaEnum;
+import com.cptrans.petrocarga.modules.vaga.dto.mapper.VagaMapper;
 import com.cptrans.petrocarga.modules.vaga.dto.request.VagaPatchDTO;
 import com.cptrans.petrocarga.modules.vaga.dto.request.VagaRequestDTO;
 import com.cptrans.petrocarga.modules.vaga.dto.response.VagaResponseDTO;
@@ -63,10 +64,10 @@ public class VagaController {
     )
     public ResponseEntity<List<VagaResponseDTO>> findAll(@RequestParam(required = false) StatusVagaEnum status) { 
         if(status != null) {
-            List<VagaResponseDTO> vagas = vagaService.findAllByStatus(status).stream().map(VagaResponseDTO::new).toList();
+            List<VagaResponseDTO> vagas = VagaMapper.toResponseList(vagaService.findAllByStatus(status));
             return ResponseEntity.ok(vagas);
         }
-        List<VagaResponseDTO> vagas = vagaService.findAll().stream().map(VagaResponseDTO::new).toList();
+        List<VagaResponseDTO> vagas = VagaMapper.toResponseList(vagaService.findAll());
         return ResponseEntity.ok(vagas);
     }
 
@@ -99,10 +100,7 @@ public class VagaController {
 
         StatusVagaEnum statusBusca = status != null ? status : StatusVagaEnum.DISPONIVEL;
 
-        vagas = vagaService.buscarPorMapa(north, south, east, west, statusBusca)
-                .stream()
-                .map(VagaResponseDTO::new)
-                .toList();
+        vagas = VagaMapper.toResponseList(vagaService.buscarPorMapa(north, south, east, west, statusBusca));
       
         return ResponseEntity.ok(vagas);
     }
@@ -141,7 +139,7 @@ public class VagaController {
             @Parameter(description = "Filtrar vagas pelo nome da rua (logradouro). Busca parcial e case-insensitive.", example = "Rua do Imperador")
             @RequestParam(required = false) String logradouro) {
         
-    	Page<VagaResponseDTO> vagasPaginadas = vagaService.findAllPaginadas(numeroPagina, tamanhoPagina, ordenarPor, status, logradouro).map(VagaResponseDTO::new);
+    	Page<VagaResponseDTO> vagasPaginadas = vagaService.findAllPaginadas(numeroPagina, tamanhoPagina, ordenarPor, status, logradouro).map(VagaMapper::toResponse);
         
         return ResponseEntity.ok(new PageResponseDTO(vagasPaginadas));
     }
@@ -169,7 +167,7 @@ public class VagaController {
     )
     public ResponseEntity<VagaResponseDTO> findById(@Valid @PathVariable UUID id) {
         Vaga vaga = vagaService.findById(id);
-        return ResponseEntity.ok(vaga.toResponseDTO());
+        return ResponseEntity.ok(VagaMapper.toResponse(vaga));
     }
 
     /**
@@ -200,7 +198,7 @@ public class VagaController {
     )
     public ResponseEntity<VagaResponseDTO> createVaga(@Valid @RequestBody VagaRequestDTO vagaRequest) {
         Vaga vaga = vagaService.createVaga(vagaRequest.toEntity());
-        return ResponseEntity.status(HttpStatus.CREATED).body(new VagaResponseDTO(vaga));
+        return ResponseEntity.status(HttpStatus.CREATED).body(VagaMapper.toResponse(vaga));
     }
     
 
@@ -267,7 +265,7 @@ public class VagaController {
     )
     public ResponseEntity<VagaResponseDTO> updateById(@Valid @PathVariable UUID id, @Valid @RequestBody VagaPatchDTO vagaRequest) {
         Vaga vagaAtualizada = vagaService.updateById(id, vagaRequest.toEntity());
-        return ResponseEntity.ok(new VagaResponseDTO(vagaAtualizada));
+        return ResponseEntity.ok(VagaMapper.toResponse(vagaAtualizada));
     }
 
 }

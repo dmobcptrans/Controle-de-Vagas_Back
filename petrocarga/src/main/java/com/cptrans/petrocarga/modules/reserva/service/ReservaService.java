@@ -28,18 +28,23 @@ import com.cptrans.petrocarga.enums.StatusReservaEnum;
 import com.cptrans.petrocarga.enums.TipoNotificacaoEnum;
 import com.cptrans.petrocarga.enums.TipoVagaEnum;
 import com.cptrans.petrocarga.enums.TipoVeiculoEnum;
+import com.cptrans.petrocarga.modules.auth.utils.AuthUtils;
 import com.cptrans.petrocarga.modules.disponibilidadeVaga.service.DisponibilidadeVagaService;
 import com.cptrans.petrocarga.modules.motorista.entity.Motorista;
 import com.cptrans.petrocarga.modules.motorista.service.MotoristaService;
 import com.cptrans.petrocarga.modules.notificacao.entity.Notificacao;
 import com.cptrans.petrocarga.modules.notificacao.service.NotificacaoService;
 import com.cptrans.petrocarga.modules.operacaoVaga.utils.OperacaoVagaUtils;
+import com.cptrans.petrocarga.modules.reserva.dto.mapper.ReservaMapper;
 import com.cptrans.petrocarga.modules.reserva.dto.request.ReservaPATCHRequestDTO;
+import com.cptrans.petrocarga.modules.reserva.dto.request.ReservaRequestDTO;
 import com.cptrans.petrocarga.modules.reserva.dto.response.ReservaDTO;
 import com.cptrans.petrocarga.modules.reserva.entity.Reserva;
+import com.cptrans.petrocarga.modules.reserva.exceptions.ReservaExceptions;
 import com.cptrans.petrocarga.modules.reserva.repository.ReservaRepository;
 import com.cptrans.petrocarga.modules.reserva.specification.ReservaSpecification;
 import com.cptrans.petrocarga.modules.reserva.utils.ReservaUtils;
+import com.cptrans.petrocarga.modules.reservaRapida.dto.mapper.ReservaRapidaMapper;
 import com.cptrans.petrocarga.modules.reservaRapida.entity.ReservaRapida;
 import com.cptrans.petrocarga.modules.reservaRapida.service.ReservaRapidaService;
 import com.cptrans.petrocarga.modules.scheduler.handlers.NotificacaoSchedulerService;
@@ -157,22 +162,37 @@ public class ReservaService {
         return reservasPage;
     }
 
-    public Reserva createReserva(Reserva novaReserva) {
-        if (!disponibilidadeVagaService.existsByVagaIdAndInicioAndFim(novaReserva.getVaga().getId(), novaReserva.getInicio(), novaReserva.getFim())) {
-            throw new IllegalArgumentException("A vaga não está disponível para o período selecionado.");
+    public Reserva createReserva(ReservaRequestDTO request) {
+        if (!disponibilidadeVagaService.existsByVagaIdAndInicioAndFim(request.getVagaId(), request.getInicio(), request.getFim())) {
+            throw new ReservaExceptions.VagaIndisponivelException();
         }
-        OperacaoVagaUtils.verificarLimiteHorarioOperacaoVaga(novaReserva.getVaga(), novaReserva.getInicio(), novaReserva.getFim());
-        UserAuthenticated userAuthenticated = (UserAuthenticated) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        Usuario usuarioLogado = usuarioService.findById(userAuthenticated.id());
-        novaReserva.setCriadoPor(usuarioLogado);
 
+        Vaga vaga = vagaService.findById(request.getVagaId());
+        OperacaoVagaUtils.verificarLimiteHorarioOperacaoVaga(vaga.getOperacoesVaga(), request.getInicio(), request.getFim());
         
+        UserAuthenticated userAuthenticated = AuthUtils.getUsuarioAutenticado();
+        List<String> roles = AuthUtils.getRoles(userAuthenticated);
+
+        Usuario usuarioLogado = usuarioService.findById(userAuthenticated.id());
+
+        Motorista motorista = motoristaService.findById(request.getMotoristaId());
+
+        if (roles.contains(PermissaoEnum.EMPRESA.getRole())) {
+            if (motorista.getEmpresa() == null || (motorista.getEmpresa() != null && !motorista.getEmpresa().getUsuario().getId().equals(usuarioLogado.getId()))){ 
+                throw new ReservaExceptions.MotoristaNaoPertenceEmpresaException();
+            }
+        }
+
+        Veiculo veiculo = veiculoService.findById(request.getVeiculoId());
+
+        Reserva novaReserva = ReservaMapper.toEntity(request, vaga, motorista, veiculo, usuarioLogado);
 
         checarExcecoesReserva(novaReserva, novaReserva.getCriadoPor(), novaReserva.getMotorista(), novaReserva.getVeiculo(), ReservaUtils.METODO_POST);
         Reserva reservaSalva = reservaRepository.save(novaReserva);
         try {
-            reservaSchedulerService.agendarFinalizacaoReserva(reservaSalva.toReservaDTO());
-            reservaSchedulerService.agendarFinalizacaoNoShow(reservaSalva.toReservaDTO());
+            ReservaDTO reservaDTO = ReservaMapper.toReservaDTO(reservaSalva);
+            reservaSchedulerService.agendarFinalizacaoReserva(reservaDTO);
+            reservaSchedulerService.agendarFinalizacaoNoShow(reservaDTO);
             notificacaoSchedulerService.agendarNotificacaoCheckInDisponivel(reservaSalva.getMotorista().getUsuario().getId(), reservaSalva.getId(),reservaSalva.getInicio());
             notificacaoSchedulerService.agendarNotificacaoFimProximo(reservaSalva.getMotorista().getUsuario().getId(), reservaSalva.getId(), reservaSalva.getFim());
 
@@ -188,19 +208,9 @@ public class ReservaService {
 
     public void checarExcecoesReserva(Reserva novaReserva, Usuario usuarioLogado, Motorista motoristaDaReserva, Veiculo veiculoDaReserva, String metodoChamador) {
         Vaga vagaNovaReserva = novaReserva.getVaga();
-        List<StatusReservaEnum> listaStatus = new ArrayList<>(List.of(StatusReservaEnum.ATIVA, StatusReservaEnum.RESERVADA));
-        List<Reserva> reservasAtivasNaVaga = reservaRepository.findByVagaIdAndStatusIn(vagaNovaReserva.getId(), listaStatus);
-        List<ReservaRapida> reservasRapidasAtivasNaVaga = reservaRapidaService.findByVagaIdAndStatusIn(vagaNovaReserva.getId(), listaStatus);
-        List<ReservaDTO> reservasTotaisAtivasNaVaga = ReservaUtils.juntarReservas(reservasAtivasNaVaga, reservasRapidasAtivasNaVaga);
-        if (novaReserva.getVaga() != null && novaReserva.getVaga().getTipoVaga().equals(TipoVagaEnum.PERPENDICULAR)) {
-            if (novaReserva.getPosicaoPerpendicular() == null) {
-                Integer novaPosicao = ReservaUtils.encontrarPosicaoDisponivel(novaReserva.getVaga().getQuantidade(), novaReserva.getVaga().getComprimento(), novaReserva.toReservaDTO(), reservasTotaisAtivasNaVaga);
-                novaReserva.setPosicaoPerpendicular(novaPosicao);
-            }
-        }
-        ReservaUtils.validarTempoMaximoReserva(novaReserva.toReservaDTO(), vagaNovaReserva);
-        reservaUtils.validarEspacoDisponivelNaVaga(novaReserva, usuarioLogado, reservasAtivasNaVaga, reservasRapidasAtivasNaVaga, metodoChamador);
-        reservaUtils.validarPermissoesReserva(usuarioLogado, motoristaDaReserva, veiculoDaReserva);
+        ReservaUtils.validarTempoMaximoReserva(novaReserva.getInicio(), novaReserva.getFim(), vagaNovaReserva.getArea(), novaReserva.getCriadoPor().getPermissao());
+        reservaUtils.validarEspacoDisponivelNaVaga(novaReserva, usuarioLogado, metodoChamador);
+        reservaUtils.validarPermissoesReserva(usuarioLogado.getId(), usuarioLogado.getPermissao(), motoristaDaReserva, veiculoDaReserva);
     }
 
     public List<ReservaDTO> getReservasByVagaIdAndData(UUID vagaId, LocalDate data, List<StatusReservaEnum> status) {
@@ -428,7 +438,7 @@ public class ReservaService {
         UUID usuarioIdLogado = ((UserAuthenticated) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).id();
         Optional<Reserva> reserva = reservaRepository.findById(reservaId);
         Optional<ReservaRapida> reservaRapida = reservaRapidaService.findById(reservaId);
-        ReservaDTO reservaDTO = new ReservaDTO();
+        ReservaDTO reservaDTO = null;
 
         if (!reserva.isPresent() && !reservaRapida.isPresent()) throw new EntityNotFoundException("Reserva não encontrada.");
        
@@ -438,7 +448,7 @@ public class ReservaService {
             }
             reserva.get().setStatus(StatusReservaEnum.REMOVIDA);
             reservaRepository.save(reserva.get());
-            reservaDTO = new ReservaDTO(reserva.get());
+            reservaDTO = ReservaMapper.toReservaDTO(reserva.get());
         }
         if (reservaRapida.isPresent()){
             if (!StatusReservaEnum.RESERVADA.equals(reservaRapida.get().getStatus()) && !StatusReservaEnum.ATIVA.equals(reservaRapida.get().getStatus())) {
@@ -446,10 +456,10 @@ public class ReservaService {
             }
             reservaRapida.get().setStatus(StatusReservaEnum.REMOVIDA);
             reservaRapidaService.save(reservaRapida.get());
-            reservaDTO = new ReservaDTO(reservaRapida.get());
+            reservaDTO = ReservaRapidaMapper.toReservaDTO(reservaRapida.get());
         }
         
-        if(!reservaDTO.getCriadoPor().getId().equals(usuarioIdLogado)) {
+        if (!reservaDTO.getCriadoPor().getId().equals(usuarioIdLogado)) {
             notificacaoService.sendNotificationToUsuarioBySystem(reservaDTO.getCriadoPor().getId(), new Notificacao("Checkout Forçado","Sua reserva foi removida por um agente ou gestor. Realize uma nova reserva se necessário", TipoNotificacaoEnum.RESERVA),null);
         }
 
@@ -526,7 +536,7 @@ public class ReservaService {
         UserAuthenticated userAuthenticated = (UserAuthenticated) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Usuario usuarioLogado = usuarioService.findById(userAuthenticated.id());
         Usuario usuarioReserva = usuarioService.findById(usuarioId);
-        OffsetDateTime agora = OffsetDateTime.now(DateUtils.FUSO_BRASIL);
+        OffsetDateTime agora = DateUtils.agora();
         Integer deltaTempo = (int) agora.toInstant().until(reserva.getInicio().toInstant(), ChronoUnit.MINUTES);
       
         if (!reserva.getStatus().equals(StatusReservaEnum.RESERVADA) && !reserva.getStatus().equals(StatusReservaEnum.ATIVA)) throw new IllegalArgumentException("Reserva com status '" + reserva.getStatus() + "' não pode mais ser atualizada.");
@@ -550,12 +560,13 @@ public class ReservaService {
         checarExcecoesReserva(reserva, usuarioLogado, reserva.getMotorista(), reserva.getVeiculo(), ReservaUtils.METODO_PATCH);
         Reserva reservaSalva = reservaRepository.save(reserva);
         try {
+            ReservaDTO reservaDTO = ReservaMapper.toReservaDTO(reservaSalva);
             reservaSchedulerService.cancelarSchedulerFinalizaReserva(reservaSalva.getId());
             reservaSchedulerService.cancelarSchedulerNoShowReserva(reservaSalva.getId());
             notificacaoSchedulerService.cancelarSchedulerCheckIn(usuarioId, reservaSalva.getId());
             notificacaoSchedulerService.cancelarSchedulerFimProximo(usuarioId, reservaSalva.getId());
-            reservaSchedulerService.agendarFinalizacaoReserva(reservaSalva.toReservaDTO());
-            reservaSchedulerService.agendarFinalizacaoNoShow(reservaSalva.toReservaDTO());
+            reservaSchedulerService.agendarFinalizacaoReserva(reservaDTO);
+            reservaSchedulerService.agendarFinalizacaoNoShow(reservaDTO);
             notificacaoSchedulerService.agendarNotificacaoCheckInDisponivel(reservaSalva.getMotorista().getUsuario().getId(), reservaSalva.getId(),reservaSalva.getInicio());
             notificacaoSchedulerService.agendarNotificacaoFimProximo(reservaSalva.getMotorista().getUsuario().getId(), reservaSalva.getId(), reservaSalva.getFim());
         } catch (SchedulerException e) {
@@ -568,7 +579,7 @@ public class ReservaService {
         Reserva reserva = findById(reservaId);
         if (reserva.getStatus() != StatusReservaEnum.ATIVA) throw new IllegalArgumentException("Reserva com status '" + reserva.getStatus() + "' não pode ser finalizada.");
         reserva.setStatus(StatusReservaEnum.CONCLUIDA);
-        reserva.setCheckOutEm(OffsetDateTime.now(DateUtils.FUSO_BRASIL));
+        reserva.setCheckOutEm(DateUtils.agora());
         Reserva reservaSalva = reservaRepository.save(reserva);
         try {
             reservaSchedulerService.cancelarSchedulerFinalizaReserva(reservaSalva.getId());
@@ -633,7 +644,7 @@ public class ReservaService {
         if(reserva.isPresent()) {
             if(reserva.get().getStatus() != StatusReservaEnum.CONCLUIDA) {
                 reserva.get().setStatus(StatusReservaEnum.CONCLUIDA);
-                reserva.get().setCheckOutEm(OffsetDateTime.now(DateUtils.FUSO_BRASIL));
+                reserva.get().setCheckOutEm(DateUtils.agora());
                 reservaRepository.save(reserva.get());
             }
         }

@@ -2,7 +2,6 @@ package com.cptrans.petrocarga.modules.denuncia.controller;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -20,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.cptrans.petrocarga.enums.StatusDenunciaEnum;
 import com.cptrans.petrocarga.enums.TipoDenunciaEnum;
+import com.cptrans.petrocarga.modules.denuncia.dto.mapper.DenunciaMapper;
 import com.cptrans.petrocarga.modules.denuncia.dto.request.DenunciaRequestDTO;
 import com.cptrans.petrocarga.modules.denuncia.dto.request.FinalizarDenunciaRequestDTO;
 import com.cptrans.petrocarga.modules.denuncia.dto.response.DenunciaResponseDTO;
@@ -30,7 +30,6 @@ import com.cptrans.petrocarga.modules.reserva.service.ReservaService;
 import com.cptrans.petrocarga.modules.usuario.entity.Usuario;
 import com.cptrans.petrocarga.modules.usuario.service.UsuarioService;
 import com.cptrans.petrocarga.security.UserAuthenticated;
-import com.cptrans.petrocarga.shared.utils.CriptoUtils;
 
 import jakarta.validation.Valid;
 
@@ -59,7 +58,7 @@ public class DenunciaController {
         Usuario usuarioLogado = usuarioService.findByIdAndAtivo(userAuthenticated.id(), true);
         Reserva reserva = reservaService.findById(denunciaRequest.getReservaId());
         Denuncia denunciaCriada = denunciaService.create(denunciaRequest.toEntity(usuarioLogado, reserva.getVaga(), reserva)); 
-        return ResponseEntity.status(HttpStatus.CREATED).body(denunciaCriada.toResponseDTO());
+        return ResponseEntity.status(HttpStatus.CREATED).body(DenunciaMapper.toResponse(denunciaCriada));
     }
 
     /**
@@ -78,9 +77,9 @@ public class DenunciaController {
     @GetMapping("all")
     public ResponseEntity<List<DenunciaResponseDTO>> getAll(@RequestParam(required = false) UUID vagaId, @RequestParam(required = false) List<StatusDenunciaEnum> listaStatus, @RequestParam(required = false) List<TipoDenunciaEnum> listaTipos) {
         if(vagaId != null || listaStatus != null || listaTipos != null) {
-            return ResponseEntity.ok().body(denunciaService.findAllWithFilters(vagaId, listaStatus, listaTipos).stream().map(denuncia -> CriptoUtils.decrypt(denuncia.toResponseDTO(), denuncia.getCriadoPor().getPersonalDataKeyVersion())).collect(Collectors.toList()));
+            return ResponseEntity.ok().body(DenunciaMapper.toResponseList(denunciaService.findAllWithFilters(vagaId, listaStatus, listaTipos)));
         }
-        return ResponseEntity.ok().body(denunciaService.findAll().stream().map(denuncia -> CriptoUtils.decrypt(denuncia.toResponseDTO(), denuncia.getCriadoPor().getPersonalDataKeyVersion())).collect(Collectors.toList()));
+        return ResponseEntity.ok().body(DenunciaMapper.toResponseList(denunciaService.findAll()));
     }
 
 
@@ -94,8 +93,7 @@ public class DenunciaController {
     @GetMapping("{denunciaId}")
     public ResponseEntity<DenunciaResponseDTO> getDenuncia(@AuthenticationPrincipal UserAuthenticated userAuthenticated, @PathVariable UUID denunciaId) {
         Denuncia denuncia = denunciaService.findByIdAutenticado(userAuthenticated, denunciaId);
-        DenunciaResponseDTO response = denuncia.toResponseDTO();
-        return ResponseEntity.ok().body(CriptoUtils.decrypt(response, denuncia.getCriadoPor().getPersonalDataKeyVersion()));
+        return ResponseEntity.ok().body(DenunciaMapper.toResponse(denuncia));
     }
 
     /**
@@ -112,11 +110,11 @@ public class DenunciaController {
     @PreAuthorize("#usuarioId == authentication.principal.id or hasAnyRole('ADMIN', 'GESTOR', 'AGENTE')")
     @GetMapping("byUsuario/{usuarioId}")
     public ResponseEntity<List<DenunciaResponseDTO>> getDenunciasByUsuario(@PathVariable UUID usuarioId, @RequestParam(required = false) StatusDenunciaEnum status) {
-        if(status != null) {
-            return ResponseEntity.ok().body(denunciaService.findAllByUsuarioIdAndStatus(usuarioId, status).stream()
-            .map(denuncia -> CriptoUtils.decrypt(denuncia.toResponseDTO(), denuncia.getCriadoPor().getPersonalDataKeyVersion())).collect(Collectors.toList()));
+        if (status != null) {
+            return ResponseEntity.ok().body(DenunciaMapper.toResponseList(denunciaService.findAllByUsuarioIdAndStatus(usuarioId, status)));
+           
         }
-        return ResponseEntity.ok().body(denunciaService.findAllByUsuarioId(usuarioId).stream().map(DenunciaResponseDTO::new).collect(Collectors.toList()));
+        return ResponseEntity.ok().body(DenunciaMapper.toResponseList(denunciaService.findAllByUsuarioId(usuarioId)));
     }
 
     /**
@@ -130,7 +128,7 @@ public class DenunciaController {
     @PatchMapping("iniciarAnalise/{denunciaId}")
     public ResponseEntity<DenunciaResponseDTO> iniciarAnalise(@AuthenticationPrincipal UserAuthenticated userAuthenticated, @PathVariable UUID denunciaId) {
         Usuario usuarioLogado = usuarioService.findByIdAndAtivo(userAuthenticated.id(), true);
-        return ResponseEntity.ok().body(denunciaService.iniciarAnalise(usuarioLogado, denunciaId).toResponseDTO());
+        return ResponseEntity.ok().body(DenunciaMapper.toResponse(denunciaService.iniciarAnalise(usuarioLogado, denunciaId)));
     }
 
     /**
@@ -145,7 +143,7 @@ public class DenunciaController {
     @PatchMapping("finalizarAnalise/{denunciaId}")
     public ResponseEntity<DenunciaResponseDTO> finalizarAnalise(@AuthenticationPrincipal UserAuthenticated userAuthenticated, @PathVariable UUID denunciaId, @RequestBody @Valid FinalizarDenunciaRequestDTO respostaRequest) {
         Usuario usuarioLogado = usuarioService.findByIdAndAtivo(userAuthenticated.id(), true);
-        return ResponseEntity.ok().body(denunciaService.finalizarAnalise(usuarioLogado, denunciaId, respostaRequest).toResponseDTO());
+        return ResponseEntity.ok().body(DenunciaMapper.toResponse((denunciaService.finalizarAnalise(usuarioLogado, denunciaId, respostaRequest))));
     }
     
 }

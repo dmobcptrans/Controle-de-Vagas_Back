@@ -20,9 +20,9 @@ import com.cptrans.petrocarga.modules.enderecoVaga.service.EnderecoVagaService;
 import com.cptrans.petrocarga.modules.operacaoVaga.entity.OperacaoVaga;
 import com.cptrans.petrocarga.modules.operacaoVaga.service.OperacaoVagaService;
 import com.cptrans.petrocarga.modules.vaga.entity.Vaga;
+import com.cptrans.petrocarga.modules.vaga.exceptions.VagaExceptions;
 import com.cptrans.petrocarga.modules.vaga.repository.VagaRepository;
 
-import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional; 
 
 @Service
@@ -66,12 +66,12 @@ public class VagaService {
     }
 
     public Vaga findById(UUID id) {
-        return vagaRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Vaga com ID " + id + " não encontrada."));
+        return vagaRepository.findById(id).orElseThrow(() -> new VagaExceptions.VagaNotFoundException());
     }
     
     public void deleteById(UUID id) {
         Vaga vaga = vagaRepository.findById(id)
-            .orElseThrow(() -> new EntityNotFoundException("Vaga com ID " + id + " não encontrada."));
+            .orElseThrow(() -> new VagaExceptions.VagaNotFoundException());
         
         vagaRepository.deleteById(vaga.getId());
     }
@@ -79,7 +79,7 @@ public class VagaService {
     @Transactional
     public Vaga updateById(UUID id, Vaga novaVaga) {
         Vaga vagaExistente = vagaRepository.findById(id)
-            .orElseThrow(() -> new EntityNotFoundException("Vaga com ID " + id + " não encontrada."));
+            .orElseThrow(() -> new VagaExceptions.VagaNotFoundException());
 
         if(novaVaga.getEndereco() != null){
             EnderecoVaga novoEndereco = enderecoVagaService.cadastrarEnderecoVaga(novaVaga.getEndereco());
@@ -89,7 +89,7 @@ public class VagaService {
         if (novaVaga.getTipoVaga() != null) {
             if(novaVaga.getTipoVaga().equals(TipoVagaEnum.PERPENDICULAR)) {
                 if ((novaVaga.getQuantidade() == null || novaVaga.getQuantidade() <= 0)) {
-                    throw new IllegalArgumentException("O campo 'quantidade' é obrigatório para vagas do tipo PERPENDICULAR e deve ser um número inteiro positivo.");
+                    throw new VagaExceptions.QuantidadeObrigatoriaException();
                 }
             } else {
                 novaVaga.setQuantidade(null);

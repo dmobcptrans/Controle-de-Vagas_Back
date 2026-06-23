@@ -4,7 +4,6 @@ import java.time.LocalTime;
 import java.util.UUID;
 
 import com.cptrans.petrocarga.enums.DiaSemanaEnum;
-import com.cptrans.petrocarga.modules.operacaoVaga.dto.response.OperacaoVagaResponseDTO;
 import com.cptrans.petrocarga.modules.vaga.entity.Vaga;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 
@@ -113,12 +112,4 @@ public class OperacaoVaga {
         return getClass().hashCode();
     }
     
-    public OperacaoVagaResponseDTO toResponseDTO() {
-        OperacaoVagaResponseDTO dto = new OperacaoVagaResponseDTO();
-        dto.setId(this.id);
-        dto.setDiaSemana(this.diaSemana);
-        dto.setHoraInicio(this.horaInicio);
-        dto.setHoraFim(this.horaFim);
-        return dto;
-    }
 }
