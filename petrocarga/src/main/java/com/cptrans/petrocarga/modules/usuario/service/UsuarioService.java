@@ -2,7 +2,6 @@ package com.cptrans.petrocarga.modules.usuario.service;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -154,7 +153,7 @@ public class UsuarioService {
         }
 
         usuario.setAceitarTermos(aceitarTermos);
-        usuario.setAceitouTermosEm(OffsetDateTime.now(DateUtils.FUSO_BRASIL));
+        usuario.setAceitouTermosEm(DateUtils.agora());
         usuario.setAtivo(true);
         usuario.setVerificationCode(null);
         usuario.setVerificationCodeExpiresAt(null);
@@ -291,7 +290,7 @@ public class UsuarioService {
             throw new IllegalArgumentException("Motorista não pode ser excluido pois possui reserva ativa.");
         }
         usuario.setAtivo(false);
-        usuario.setDesativadoEm(OffsetDateTime.now(DateUtils.FUSO_BRASIL));
+        usuario.setDesativadoEm(DateUtils.agora());
         usuarioRepository.save(usuario);
     }
 
@@ -340,7 +339,7 @@ public class UsuarioService {
         usuarioCadastrado.setCpfCripto(criptoService.encrypt(request.getCpf()));
         usuarioCadastrado.setCpfLast5(UsuarioUtils.gerarLastN(request.getCpf(), 5));
         usuarioCadastrado.setAceitarTermos(request.getAceitarTermos());
-        usuarioCadastrado.setAceitouTermosEm(OffsetDateTime.now(DateUtils.FUSO_BRASIL));
+        usuarioCadastrado.setAceitouTermosEm(DateUtils.agora());
         usuarioCadastrado.setVersaoTermos(UsuarioUtils.VERSAO_ATUAL_TERMOS);
         usuarioCadastrado.setTelefoneHash(hashService.hash(request.getTelefone()));
         usuarioCadastrado.setTelefoneCripto(criptoService.encrypt(request.getTelefone()));

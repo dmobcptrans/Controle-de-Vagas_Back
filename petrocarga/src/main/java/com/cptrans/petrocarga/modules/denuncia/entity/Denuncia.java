@@ -58,7 +58,7 @@ public class Denuncia {
     private String resposta;
     
     @Column(name = "criado_em", columnDefinition = "TIMESTAMP WITH TIME ZONE", nullable = false)
-    private final OffsetDateTime criadoEm = OffsetDateTime.now(DateUtils.FUSO_BRASIL);
+    private final OffsetDateTime criadoEm = DateUtils.agora();
 
     @OneToOne
     @JoinColumn(name = "atualizado_por", nullable = true)

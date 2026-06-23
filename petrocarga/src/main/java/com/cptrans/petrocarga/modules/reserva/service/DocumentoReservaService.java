@@ -3,7 +3,6 @@ package com.cptrans.petrocarga.modules.reserva.service;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.file.Paths;
-import java.time.OffsetDateTime;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,7 +35,7 @@ public class DocumentoReservaService {
     public String gerarHtmlReserva(Reserva reserva) {
         Context context = new Context();
         context.setVariable("reserva", new ReservaDetailedResponseDTO(reserva));
-        context.setVariable("agora", OffsetDateTime.now(DateUtils.FUSO_BRASIL));
+        context.setVariable("agora", DateUtils.agora());
 
         return templateEngine.process(
                 "pdf/comprovante-reserva",

@@ -1,7 +1,6 @@
 package com.cptrans.petrocarga.modules.disponibilidadeVaga.service;
 
 import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -62,9 +61,8 @@ public class DisponibilidadeVagaService {
     }
 
     public List<DisponibilidadeVaga> findByMes(Integer mes, Integer ano) {
-        OffsetDateTime inicioMes = DateUtils.toLocalDateInBrazil(OffsetDateTime.of((int)ano, (int)mes, 1, 0, 0, 0, 0, ZoneOffset.of(DateUtils.FUSO_BRASIL.toString()))).atStartOfDay(DateUtils.FUSO_BRASIL).withDayOfMonth(1).toOffsetDateTime();
-        Integer ultimoDiaMes = DateUtils.toLocalDateInBrazil(inicioMes).lengthOfMonth();
-        OffsetDateTime fimMes = DateUtils.toLocalDateInBrazil(inicioMes).withDayOfMonth(ultimoDiaMes).atTime(23, 59, 59).atZone(DateUtils.FUSO_BRASIL).toOffsetDateTime();
+        OffsetDateTime inicioMes = DateUtils.getInicioMes(mes, ano);
+        OffsetDateTime fimMes = DateUtils.getFimMes(mes, ano);
         return disponibilidadeVagaRepository.findByFimGreaterThanAndInicioLessThan(inicioMes, fimMes);
     }
 
@@ -187,7 +185,7 @@ public class DisponibilidadeVagaService {
         } catch (SchedulerException e) {
                 throw new RuntimeException("Erro ao cancelar scheduler de disponibilidade de vaga.", e);
         }
-        OffsetDateTime dataHoje = OffsetDateTime.now(DateUtils.FUSO_BRASIL);
+        OffsetDateTime dataHoje = DateUtils.agora();
         if (disponibilidadeVaga.getFim().isAfter(dataHoje) && disponibilidadeVaga.getInicio().isBefore(dataHoje)) {
             Vaga vaga = disponibilidadeVaga.getVaga();
             vaga.setStatus(StatusVagaEnum.INDISPONIVEL);
@@ -221,7 +219,7 @@ public class DisponibilidadeVagaService {
     }
 
     public Boolean disponibilidadeValida(DisponibilidadeVaga novaDisponibilidadeVaga, Vaga vaga) {
-        OffsetDateTime agora = OffsetDateTime.now(DateUtils.FUSO_BRASIL);
+        OffsetDateTime agora = DateUtils.agora();
         if(novaDisponibilidadeVaga.getFim().isBefore(novaDisponibilidadeVaga.getInicio())) {
             throw new IllegalArgumentException("A data de fim deve ser depois da data de inicio.");
         }
@@ -234,10 +232,6 @@ public class DisponibilidadeVagaService {
         List<DisponibilidadeVaga> disponibilidadeVagas = findByVagaId(vaga.getId());
         for (DisponibilidadeVaga disponibilidade : disponibilidadeVagas) {
             if(novaDisponibilidadeVaga.getInicio().toInstant().equals(disponibilidade.getInicio().toInstant()) && novaDisponibilidadeVaga.getFim().toInstant().equals(disponibilidade.getFim().toInstant()) && !disponibilidade.getId().equals(novaDisponibilidadeVaga.getId())) {
-                System.out.println("inicio: " + novaDisponibilidadeVaga.getInicio());
-                System.out.println("fim: " + novaDisponibilidadeVaga.getFim());
-                System.out.println("inicio: " + disponibilidade.getInicio());
-                System.out.println("fim: " + disponibilidade.getFim());
                 throw new IllegalArgumentException("Já existe uma disponibilidade para a vaga de id: " + vaga.getId() + " nesse horario.");
             }
         }

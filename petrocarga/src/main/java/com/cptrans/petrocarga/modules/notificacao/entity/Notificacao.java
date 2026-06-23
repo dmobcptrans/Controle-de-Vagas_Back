@@ -45,7 +45,7 @@ public class Notificacao {
     private boolean lida = false;
 
     @Column(name = "criada_em", nullable = false)
-    private final OffsetDateTime criadaEm = OffsetDateTime.now(DateUtils.FUSO_BRASIL);
+    private final OffsetDateTime criadaEm = DateUtils.agora();
 
     @Convert(converter = MetadataJsonConverter.class)
     @JdbcTypeCode(SqlTypes.JSON)

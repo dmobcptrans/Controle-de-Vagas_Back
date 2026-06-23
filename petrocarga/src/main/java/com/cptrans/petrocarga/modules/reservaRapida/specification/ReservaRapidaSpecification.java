@@ -61,8 +61,8 @@ public class ReservaRapidaSpecification {
             }
 
             if (data != null) {
-                OffsetDateTime inicioDia = data.atStartOfDay(DateUtils.FUSO_BRASIL).toOffsetDateTime();
-                OffsetDateTime inicioProximoDia = data.plusDays(1).atStartOfDay(DateUtils.FUSO_BRASIL).toOffsetDateTime();
+                OffsetDateTime inicioDia = data.atStartOfDay(DateUtils.FUSO_BRASILIA).toOffsetDateTime();
+                OffsetDateTime inicioProximoDia = inicioDia.plusDays(1);
 
                 predicates.add(
                     cb.greaterThanOrEqualTo(root.get("inicio"), inicioDia)
@@ -73,11 +73,9 @@ public class ReservaRapidaSpecification {
             }
 
             if (mes != null && ano != null) {
-                LocalDate primeiroDiaMes = LocalDate.of(ano, mes, 1);
-                LocalDate primeiroDiaProximoMes = primeiroDiaMes.plusMonths(1);
 
-                OffsetDateTime inicioMes = primeiroDiaMes.atStartOfDay(DateUtils.FUSO_BRASIL).toOffsetDateTime();
-                OffsetDateTime inicioProximoMes = primeiroDiaProximoMes.atStartOfDay(DateUtils.FUSO_BRASIL).toOffsetDateTime();
+                OffsetDateTime inicioMes = DateUtils.getInicioMes(mes, ano);
+                OffsetDateTime inicioProximoMes = inicioMes.plusMonths(1);
 
                 predicates.add(
                     cb.greaterThanOrEqualTo(root.get("inicio"), inicioMes)
