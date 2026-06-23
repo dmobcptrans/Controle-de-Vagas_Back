@@ -106,7 +106,7 @@ public class DenunciaService {
         if(denuncia.getStatus().equals(StatusDenunciaEnum.EM_ANALISE)) return denuncia;
         if(!denuncia.getStatus().equals(StatusDenunciaEnum.ABERTA)) throw new DataIntegrityViolationException("Denúncia já está em análise ou já foi finalizada.");
         
-        denuncia.setAtualizadoEm(OffsetDateTime.now(DateUtils.FUSO_BRASIL));
+        denuncia.setAtualizadoEm(DateUtils.agora());
         denuncia.setStatus(StatusDenunciaEnum.EM_ANALISE);
         denuncia.setAtualizadoPor(usuarioLogado);
 
@@ -126,7 +126,7 @@ public class DenunciaService {
         
         Denuncia denuncia = findById(denunciaId);
         if(!denuncia.getStatus().equals(StatusDenunciaEnum.ABERTA) && !denuncia.getStatus().equals(StatusDenunciaEnum.EM_ANALISE)) throw new DataIntegrityViolationException("Denúncia já foi finalizada.");
-        OffsetDateTime agora = OffsetDateTime.now(DateUtils.FUSO_BRASIL);
+        OffsetDateTime agora = DateUtils.agora();
 
         denuncia.setAtualizadoPor(usuarioLogado);
         denuncia.setAtualizadoEm(agora);

@@ -2,12 +2,10 @@ package com.cptrans.petrocarga.modules.usuario.service;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -34,31 +32,19 @@ import com.cptrans.petrocarga.modules.usuario.utils.UsuarioUtils;
 import com.cptrans.petrocarga.shared.utils.DateUtils;
 
 import jakarta.persistence.EntityNotFoundException;
+import lombok.RequiredArgsConstructor;
 
 
 @Service
+@RequiredArgsConstructor
 public class UsuarioService {
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-
-    @Autowired
-    private UsuarioRepository usuarioRepository;
-
-    @Autowired
-    private EmailSender emailSender;
-
-    @Autowired
-    private SpringDomainEventPublisher eventPublisher;
-
-    @Autowired
-    private ReservaUtils reservaUtils;
-
-    @Autowired
-    private HashService hashService;
-
-    @Autowired
-    private CriptoService criptoService;
+    private final PasswordEncoder passwordEncoder;
+    private final UsuarioRepository usuarioRepository;
+    private final EmailSender emailSender;
+    private final SpringDomainEventPublisher eventPublisher;
+    private final ReservaUtils reservaUtils;
+    private final HashService hashService;
+    private final CriptoService criptoService;
 
     @Value("${app.security.aes-criptography.active-key-version}")
     private Integer activeKeyVersion;
@@ -167,7 +153,7 @@ public class UsuarioService {
         }
 
         usuario.setAceitarTermos(aceitarTermos);
-        usuario.setAceitouTermosEm(OffsetDateTime.now(DateUtils.FUSO_BRASIL));
+        usuario.setAceitouTermosEm(DateUtils.agora());
         usuario.setAtivo(true);
         usuario.setVerificationCode(null);
         usuario.setVerificationCodeExpiresAt(null);
@@ -177,7 +163,7 @@ public class UsuarioService {
 
     @Transactional
     public void resendActivationCode(String email, String cpf) {
-        Optional<Usuario> usuarioOptional = findByEmailOrCpf(email, cpf);
+        Optional<Usuario> usuarioOptional = findByEmailOrCpfAndAtivoTrue(email, cpf);
 
         if (usuarioOptional.isEmpty()) return;
 
@@ -206,7 +192,7 @@ public class UsuarioService {
 
     @Transactional
     public void forgotPassword(String email, String cpf) {
-        Optional<Usuario> optUsuario = findByEmailOrCpf(email, cpf);
+        Optional<Usuario> optUsuario = findByEmailOrCpfAndAtivoTrue(email, cpf);
         
         if (optUsuario.isEmpty()) {
             // Por segurança, não revelamos se o email/cpf existe ou não
@@ -233,7 +219,7 @@ public class UsuarioService {
     @Transactional
     public void resetPassword(String email, String cpf, String code, String novaSenha) {
         
-        Usuario usuario = findByEmailOrCpf(email, cpf).orElseThrow(() -> new EntityNotFoundException("Credenciais inválidas ou código expirado."));
+        Usuario usuario = findByEmailOrCpfAndAtivoTrue(email, cpf).orElseThrow(() -> new EntityNotFoundException("Credenciais inválidas ou código expirado."));
         
         if (!usuario.isAtivo()) {
             throw new IllegalArgumentException("Usuário desativado.");
@@ -304,7 +290,7 @@ public class UsuarioService {
             throw new IllegalArgumentException("Motorista não pode ser excluido pois possui reserva ativa.");
         }
         usuario.setAtivo(false);
-        usuario.setDesativadoEm(OffsetDateTime.now(DateUtils.FUSO_BRASIL));
+        usuario.setDesativadoEm(DateUtils.agora());
         usuarioRepository.save(usuario);
     }
 
@@ -353,7 +339,7 @@ public class UsuarioService {
         usuarioCadastrado.setCpfCripto(criptoService.encrypt(request.getCpf()));
         usuarioCadastrado.setCpfLast5(UsuarioUtils.gerarLastN(request.getCpf(), 5));
         usuarioCadastrado.setAceitarTermos(request.getAceitarTermos());
-        usuarioCadastrado.setAceitouTermosEm(OffsetDateTime.now(DateUtils.FUSO_BRASIL));
+        usuarioCadastrado.setAceitouTermosEm(DateUtils.agora());
         usuarioCadastrado.setVersaoTermos(UsuarioUtils.VERSAO_ATUAL_TERMOS);
         usuarioCadastrado.setTelefoneHash(hashService.hash(request.getTelefone()));
         usuarioCadastrado.setTelefoneCripto(criptoService.encrypt(request.getTelefone()));
@@ -374,7 +360,7 @@ public class UsuarioService {
         usuarioRepository.save(usuario);
     }
 
-    public Optional<Usuario> findByEmailOrCpf(String email, String cpf) {
+    public Optional<Usuario> findByEmailOrCpfAndAtivoTrue(String email, String cpf) {
         if ((email == null && cpf == null) || (email != null && cpf != null)) {
             throw new IllegalArgumentException("Informe um email OU CPF.");
         }
@@ -383,11 +369,11 @@ public class UsuarioService {
 
         if (email != null) {
             email = email.trim().toLowerCase();
-            usuarOptional = usuarioRepository.findByEmailHash(hashService.hash(email));
+            usuarOptional = usuarioRepository.findByEmailHashAndAtivoTrue(hashService.hash(email));
         }
 
         if (cpf != null) {
-            usuarOptional = usuarioRepository.findByCpfHash(hashService.hash(cpf));
+            usuarOptional = usuarioRepository.findByCpfHashAndAtivoTrue(hashService.hash(cpf));
         }
 
         return usuarOptional;

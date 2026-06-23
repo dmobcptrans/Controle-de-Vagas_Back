@@ -1,7 +1,9 @@
 package com.cptrans.petrocarga.modules.empresa.entity;
 
+import java.util.List;
 import java.util.UUID;
 
+import com.cptrans.petrocarga.modules.motorista.entity.Motorista;
 import com.cptrans.petrocarga.modules.usuario.entity.Usuario;
 
 import jakarta.persistence.CascadeType;
@@ -12,6 +14,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 
@@ -33,6 +36,9 @@ public class Empresa {
 
     @Column(name = "razao_social", nullable = false)
     private String razaoSocial;
+
+    @OneToMany(mappedBy = "empresa", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Motorista> motoristas;
 
     // Constructors
     public Empresa() {}
@@ -68,5 +74,9 @@ public class Empresa {
 
     public void setRazaoSocial(String razaoSocial) {
         this.razaoSocial = razaoSocial;
+    }
+
+    public List<Motorista> getMotoristas() {
+        return motoristas;
     }
 }

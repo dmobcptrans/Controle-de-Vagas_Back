@@ -6,6 +6,7 @@ import java.util.UUID;
 import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 import com.cptrans.petrocarga.modules.auth.exceptions.AuthExceptions;
@@ -31,6 +32,15 @@ public class AuthUtils {
             if(authorities.contains(permissao)) return;
         }
         throw new AuthorizationDeniedException("Acesso negado.");
+    }
+
+    public static UserAuthenticated getUsuarioAutenticado(){
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (principal instanceof UserAuthenticated) {
+            return (UserAuthenticated) principal;
+        } else {
+            throw new AuthExceptions.UsuarioNaoAutenticadoException();
+        }
     }
 
     public static List<String> getRoles(UserAuthenticated userAuthenticated) {

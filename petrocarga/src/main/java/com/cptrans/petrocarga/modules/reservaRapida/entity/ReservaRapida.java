@@ -6,7 +6,6 @@ import java.util.UUID;
 import com.cptrans.petrocarga.enums.StatusReservaEnum;
 import com.cptrans.petrocarga.enums.TipoVeiculoEnum;
 import com.cptrans.petrocarga.modules.agente.entity.Agente;
-import com.cptrans.petrocarga.modules.reserva.dto.response.ReservaDTO;
 import com.cptrans.petrocarga.modules.reservaRapida.dto.response.ReservaRapidaResponseDTO;
 import com.cptrans.petrocarga.modules.vaga.entity.Vaga;
 
@@ -175,7 +174,4 @@ public class ReservaRapida {
         return new ReservaRapidaResponseDTO(this);
     }
 
-    public ReservaDTO toReservaDTO() {
-        return new ReservaDTO(this.id, this.vaga.getId(), this.vaga.getNumeroEndereco(), this.vaga.getReferenciaEndereco(), this.vaga.getEndereco().toResponseDTO(), this.inicio, this.fim, this.tipoVeiculo.getComprimento(), this.placa, this.status, this.agente.getUsuario(), this.criadoEm, this.posicaoPerpendicular, this.cidadeOrigem, this.entradaCidade);
-    }
 }

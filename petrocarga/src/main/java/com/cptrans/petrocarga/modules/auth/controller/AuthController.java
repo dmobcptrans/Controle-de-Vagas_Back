@@ -116,11 +116,13 @@ public class AuthController {
     @PostMapping("/completarCadastro")
     public ResponseEntity<UsuarioResponseDTO> completarCadastro(@AuthenticationPrincipal UserAuthenticated userAuthenticated, @RequestBody @Valid CompletarCadastroDTO request) {
         Usuario usuarioCompleto = authService.completarCadastro(request, userAuthenticated.id());
-        return ResponseEntity.ok(UsuarioMapper.toResponse(usuarioCompleto));
+        UsuarioResponseDTO response = UsuarioMapper.toResponse(usuarioCompleto);
+        return ResponseEntity.ok(response);
     }
     
 
     //TODO: Remover rota depois de cadastrar o primeiro admin em deploy
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     @PostMapping("/admin")
     public ResponseEntity<UsuarioResponseDTO> createAdmin(@RequestBody @Valid UsuarioRequestDTO request) {
         Usuario novoUsuario = usuarioService.createUsuario(request, PermissaoEnum.ADMIN);
@@ -139,7 +141,8 @@ public class AuthController {
         }
         UUID usuarioIdFromToken = userAuthenticated.id();
         Usuario usuarioLogado = usuarioService.findByIdAndAtivo(usuarioIdFromToken, true);
-        return ResponseEntity.ok(UsuarioMapper.toResponse(usuarioLogado));
+        UsuarioResponseDTO response = UsuarioMapper.toResponse(usuarioLogado);
+        return ResponseEntity.ok(response);
     }
 
     /**

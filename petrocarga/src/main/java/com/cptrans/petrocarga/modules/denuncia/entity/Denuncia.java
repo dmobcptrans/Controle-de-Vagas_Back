@@ -5,7 +5,6 @@ import java.util.UUID;
 
 import com.cptrans.petrocarga.enums.StatusDenunciaEnum;
 import com.cptrans.petrocarga.enums.TipoDenunciaEnum;
-import com.cptrans.petrocarga.modules.denuncia.dto.response.DenunciaResponseDTO;
 import com.cptrans.petrocarga.modules.reserva.entity.Reserva;
 import com.cptrans.petrocarga.modules.usuario.entity.Usuario;
 import com.cptrans.petrocarga.modules.vaga.entity.Vaga;
@@ -58,7 +57,7 @@ public class Denuncia {
     private String resposta;
     
     @Column(name = "criado_em", columnDefinition = "TIMESTAMP WITH TIME ZONE", nullable = false)
-    private final OffsetDateTime criadoEm = OffsetDateTime.now(DateUtils.FUSO_BRASIL);
+    private final OffsetDateTime criadoEm = DateUtils.agora();
 
     @OneToOne
     @JoinColumn(name = "atualizado_por", nullable = true)
@@ -178,9 +177,4 @@ public class Denuncia {
     public void setEncerradoEm(OffsetDateTime encerradoEm) {
         this.encerradoEm = encerradoEm;
     }
-
-    public DenunciaResponseDTO toResponseDTO(){
-        return new DenunciaResponseDTO(this);
-    }
-
 }

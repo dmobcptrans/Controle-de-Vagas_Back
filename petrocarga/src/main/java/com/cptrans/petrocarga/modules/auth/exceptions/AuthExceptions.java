@@ -23,6 +23,12 @@ public class AuthExceptions {
         }
     }
 
+    public static class CredenciaisInvalidasException extends AuthenticationException {
+        public CredenciaisInvalidasException() {
+            super("Credenciais inválidas.");
+        }
+    }
+
     @ExceptionHandler(UsuarioNaoAutenticadoException.class)
     public ResponseEntity<SystemResponse> handleUsuarioNaoAutenticadoException(UsuarioNaoAutenticadoException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new SystemResponse(ex.getMessage(), 401));
@@ -31,5 +37,10 @@ public class AuthExceptions {
     @ExceptionHandler(UsuarioNaoAutorizadoException.class)
     public ResponseEntity<SystemResponse> handleUsuarioNaoAutorizadoException(UsuarioNaoAutorizadoException ex) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new SystemResponse(ex.getMessage(), 403));
+    }
+
+    @ExceptionHandler(CredenciaisInvalidasException.class)
+    public ResponseEntity<SystemResponse> handleCredenciaisInvalidasException(CredenciaisInvalidasException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new SystemResponse(ex.getMessage(), 401));
     }
 }

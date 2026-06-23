@@ -3,7 +3,6 @@ package com.cptrans.petrocarga.modules.auth.service;
 import java.util.Optional;
 import java.util.UUID;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -12,6 +11,7 @@ import com.cptrans.petrocarga.enums.UsuarioProviderEnum;
 import com.cptrans.petrocarga.modules.auth.dto.request.AuthRequestDTO;
 import com.cptrans.petrocarga.modules.auth.dto.request.CompletarCadastroDTO;
 import com.cptrans.petrocarga.modules.auth.dto.response.AuthResponseDTO;
+import com.cptrans.petrocarga.modules.auth.exceptions.AuthExceptions;
 import com.cptrans.petrocarga.modules.cripto.HashService;
 import com.cptrans.petrocarga.modules.googleAuth.GoogleAuthService;
 import com.cptrans.petrocarga.modules.motorista.service.MotoristaService;
@@ -24,30 +24,18 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken.Payload;
 
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 
 @Service
+@RequiredArgsConstructor
 public class AuthService {
-    
-    @Autowired
-    private UsuarioRepository usuarioRepository;
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-
-    @Autowired
-    private JwtService jwtService;
-
-    @Autowired
-    private HashService hashService;
-
-    @Autowired
-    private GoogleAuthService googleAuthService;
-
-    @Autowired
-    private UsuarioService usuarioService;
-
-    @Autowired
-    private MotoristaService motoristaService;
+    private final UsuarioRepository usuarioRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
+    private final HashService hashService;
+    private final GoogleAuthService googleAuthService;
+    private final UsuarioService usuarioService;
+    private final MotoristaService motoristaService;
 
  
 
@@ -60,14 +48,10 @@ public class AuthService {
      */
     public AuthResponseDTO login(AuthRequestDTO request) {
 
-        Usuario usuario = usuarioService.findByEmailOrCpf(request.getEmail(), request.getCpf()).orElseThrow(() -> new IllegalArgumentException("Credenciais inválidas."));
+        Usuario usuario = usuarioService.findByEmailOrCpfAndAtivoTrue(request.getEmail(), request.getCpf()).orElseThrow(() -> new IllegalArgumentException("Credenciais inválidas."));
 
-        if(usuario.isAtivo().equals(false)) {
-            throw new IllegalArgumentException("Usuário desativado.");
-        }
-        if(!passwordEncoder.matches(request.getSenha(), usuario.getSenha())) {
-            throw new IllegalArgumentException("Credenciais inválidas.");
-        }
+        if (!passwordEncoder.matches(request.getSenha(), usuario.getSenha())) throw new AuthExceptions.CredenciaisInvalidasException();
+        
         String token = jwtService.gerarToken(usuario);
 
        return new AuthResponseDTO(UsuarioMapper.toResponse(usuario), token);

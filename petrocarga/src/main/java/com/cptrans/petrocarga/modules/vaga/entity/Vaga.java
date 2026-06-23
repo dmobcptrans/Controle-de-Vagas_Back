@@ -3,14 +3,11 @@ package com.cptrans.petrocarga.modules.vaga.entity;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
-
 import com.cptrans.petrocarga.enums.AreaVagaEnum;
 import com.cptrans.petrocarga.enums.StatusVagaEnum;
 import com.cptrans.petrocarga.enums.TipoVagaEnum;
 import com.cptrans.petrocarga.modules.enderecoVaga.entity.EnderecoVaga;
 import com.cptrans.petrocarga.modules.operacaoVaga.entity.OperacaoVaga;
-import com.cptrans.petrocarga.modules.vaga.dto.response.VagaResponseDTO;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -198,33 +195,4 @@ public class Vaga {
         this.quantidade = quantidade;
     }
 
-    public VagaResponseDTO toResponseDTO() {
-        VagaResponseDTO dto = new VagaResponseDTO();
-        dto.setId(this.id);
-        if (this.endereco != null) {
-            dto.setEndereco(this.endereco.toResponseDTO());
-        }
-        dto.setArea(this.area);
-        dto.setNumeroEndereco(this.numeroEndereco);
-        dto.setReferenciaEndereco(this.referenciaEndereco);
-        dto.setTipoVaga(this.tipoVaga);
-
-        dto.setLatitudeInicio(this.latitudeInicio);
-        dto.setLatitudeFim(this.latitudeFim);
-
-        dto.setLongitudeInicio(this.longitudeInicio);
-        dto.setLongitudeFim(this.longitudeFim);
-
-        dto.setComprimento(this.comprimento);
-        dto.setQuantidade(this.quantidade);
-        dto.setStatus(this.status);
-        if (this.operacoesVaga != null) {
-            dto.setOperacoesVaga(
-                this.operacoesVaga.stream()
-                    .map(OperacaoVaga::toResponseDTO)
-                    .collect(Collectors.toSet())
-            );
-        }
-        return dto;
-    }
 }

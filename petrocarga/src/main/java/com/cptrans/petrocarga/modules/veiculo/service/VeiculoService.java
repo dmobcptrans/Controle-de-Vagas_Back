@@ -1,6 +1,5 @@
 package com.cptrans.petrocarga.modules.veiculo.service;
 
-import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -170,7 +169,7 @@ public class VeiculoService {
             throw new IllegalArgumentException("Veículo não pode ser deletado pois possui reservas ativas ou reservadas.");
         }
         veiculo.setAtivo(false);
-        veiculo.setDeletadoEm(OffsetDateTime.now(DateUtils.FUSO_BRASIL));
+        veiculo.setDeletadoEm(DateUtils.agora());
         veiculoRepository.save(veiculo);
     }
 }

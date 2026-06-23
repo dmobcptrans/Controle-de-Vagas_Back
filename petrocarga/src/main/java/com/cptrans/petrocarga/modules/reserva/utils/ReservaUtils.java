@@ -1,14 +1,16 @@
 package com.cptrans.petrocarga.modules.reserva.utils;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import com.cptrans.petrocarga.enums.AreaVagaEnum;
 import com.cptrans.petrocarga.enums.PermissaoEnum;
 import com.cptrans.petrocarga.enums.StatusReservaEnum;
 import com.cptrans.petrocarga.enums.TipoVagaEnum;
@@ -16,145 +18,130 @@ import com.cptrans.petrocarga.modules.empresa.entity.Empresa;
 import com.cptrans.petrocarga.modules.empresa.exceptions.EmpresaExceptions;
 import com.cptrans.petrocarga.modules.empresa.repository.EmpresaRepository;
 import com.cptrans.petrocarga.modules.motorista.entity.Motorista;
+import com.cptrans.petrocarga.modules.reserva.dto.mapper.ReservaMapper;
 import com.cptrans.petrocarga.modules.reserva.dto.response.ReservaDTO;
 import com.cptrans.petrocarga.modules.reserva.entity.Reserva;
+import com.cptrans.petrocarga.modules.reserva.exceptions.ReservaExceptions;
 import com.cptrans.petrocarga.modules.reserva.repository.ReservaRepository;
+import com.cptrans.petrocarga.modules.reservaRapida.dto.mapper.ReservaRapidaMapper;
 import com.cptrans.petrocarga.modules.reservaRapida.entity.ReservaRapida;
 import com.cptrans.petrocarga.modules.reservaRapida.repository.ReservaRapidaRepository;
 import com.cptrans.petrocarga.modules.usuario.entity.Usuario;
 import com.cptrans.petrocarga.modules.vaga.entity.Vaga;
+import com.cptrans.petrocarga.modules.vaga.exceptions.VagaExceptions;
 import com.cptrans.petrocarga.modules.veiculo.entity.Veiculo;
+import com.cptrans.petrocarga.shared.exceptions.DateExceptions;
 import com.cptrans.petrocarga.shared.utils.DateUtils;
 
+import lombok.RequiredArgsConstructor;
+
 @Component
+@RequiredArgsConstructor
 public class ReservaUtils {
-    @Autowired
-    private EmpresaRepository empresaRepository;
-    @Autowired
-    private ReservaRepository reservaRepository;
-    @Autowired
-    private ReservaRapidaRepository reservaRapidaRepository;
+    private final EmpresaRepository empresaRepository;
+    private final ReservaRepository reservaRepository;
+    private final ReservaRapidaRepository reservaRapidaRepository;
 
     public static final String METODO_POST = "POST";
     public static final String METODO_PATCH = "PATCH";
     public static final Integer LIMITE_DE_RESERVAS_POR_PLACA = 3;
 
-    public static void validarTempoMaximoReserva(ReservaDTO novaReserva, Vaga vagaNovaReserva) {
-        OffsetDateTime agora = OffsetDateTime.now(DateUtils.FUSO_BRASIL);
-        if(novaReserva.getFim().toInstant().isBefore(novaReserva.getInicio().toInstant()) || novaReserva.getFim().toInstant().isBefore(agora.toInstant()) ) {
-            throw new IllegalArgumentException("Horário de Fim da reserva deve ser posterior ao horário de início e do horário atual.");
-        }
-
-        if(novaReserva.getInicio().toInstant().isBefore(agora.toInstant())) {
-            LocalDate dataAgora = agora.toLocalDate();
-            LocalDate dataInicio =  novaReserva.getInicio().toLocalDate();
-            LocalDate dataFim = novaReserva.getFim().toLocalDate();
-            if(novaReserva.getCriadoPor().getPermissao().equals(PermissaoEnum.AGENTE)){
-                if (dataAgora.equals(dataInicio) && dataAgora.equals(dataFim) && (agora.getHour() == novaReserva.getInicio().getHour())) {
-                    Integer diferencaMinutos = agora.getMinute() - novaReserva.getInicio().getMinute();
-                    if (diferencaMinutos >= 2 || diferencaMinutos < 0){
-                        throw new IllegalArgumentException("Horário da reserva deve ser posterior ao horário atual.");
-                    }else{
-                        return;
-                    }
-                }
-            }
-            throw new IllegalArgumentException("Horário da reserva deve ser posterior ao horário atual.");
-        }
-
-        Integer tempoReservaEmMinutos = (int) (novaReserva.getInicio().toInstant().until(novaReserva.getFim().toInstant(), java.time.temporal.ChronoUnit.MINUTES));
-        Boolean tempoValido = tempoReservaEmMinutos <= (vagaNovaReserva.getArea().getTempoMaximo() * 60) && tempoReservaEmMinutos > 0;
-        if(!tempoValido){
-            throw new IllegalArgumentException("Tempo total de reserva inválido.");
-        }
+    public static void validarTempoMaximoReserva(OffsetDateTime inicio, OffsetDateTime fim, AreaVagaEnum areaVaga, PermissaoEnum permissaoCriador) {
+        validarHorarioReserva(inicio, fim);
+        verificarExcecaoHorarioProAgente(permissaoCriador, inicio, fim);
+        validarTempoMaximoReserva(inicio, fim, areaVaga);
     }
 
-    public void validarEspacoDisponivelNaVaga(Reserva novaReserva, Usuario usuarioLogado, List<Reserva> reservasAtivasNaVaga, List<ReservaRapida> reservasRapidasAtivasNaVaga, String metodoChamador) {
+    public void validarEspacoDisponivelNaVaga(Reserva novaReserva, Usuario usuarioLogado, String metodoChamador) {
         Vaga vagaReserva = novaReserva.getVaga();
         Veiculo veiculoDaReserva = novaReserva.getVeiculo();
         Motorista motoristaDaReserva = novaReserva.getMotorista();
         Integer tamanhoDisponivelVaga = vagaReserva.getComprimento() - veiculoDaReserva.getTipo().getComprimento();
-        List<ReservaDTO> reservasVaga = juntarReservas(reservasAtivasNaVaga, reservasRapidasAtivasNaVaga);
-        ReservaDTO novaReservaDTO = novaReserva.toReservaDTO();
+        ReservaDTO novaReservaDTO = ReservaMapper.toReservaDTO(novaReserva);
+        List<ReservaDTO> reservasSobrepostas = getReservasAtivasSobrepostas(novaReserva.getInicio(), novaReserva.getFim());
         
-        validarLimiteReservasPorPlaca(novaReservaDTO, metodoChamador);
-        validarMotoristaReserva(motoristaDaReserva.getUsuario().getId(), novaReservaDTO, metodoChamador);
+        validarLimiteReservasPorPlaca(novaReservaDTO, reservasSobrepostas, metodoChamador);
+        validarMotoristaReserva(motoristaDaReserva.getUsuario().getId(), motoristaDaReserva.getId(), reservasSobrepostas, metodoChamador);
         
-        if(vagaReserva.getTipoVaga().equals(TipoVagaEnum.PERPENDICULAR)){
-            validarPosicaoPerpendicular(vagaReserva.getTipoVaga(), vagaReserva.getQuantidade(), novaReserva.getPosicaoPerpendicular());
-            validarCapacidadePerpendicularPorPosicao(vagaReserva, novaReservaDTO, reservasVaga, novaReserva.getPosicaoPerpendicular());
+        if (vagaReserva.getTipoVaga().equals(TipoVagaEnum.PERPENDICULAR)){
+            Integer posicaoPerpendicular = definirPosicaoVagaPerpendicular(vagaReserva.getTipoVaga(), vagaReserva.getQuantidade(), vagaReserva.getComprimento(), novaReservaDTO);
+            novaReserva.setPosicaoPerpendicular(posicaoPerpendicular);
+            novaReservaDTO.setPosicaoPerpendicular(posicaoPerpendicular);
+            validarPosicaoPerpendicular(vagaReserva.getTipoVaga(), vagaReserva.getQuantidade(), novaReservaDTO.getPosicaoPerpendicular());
+            validarCapacidadePerpendicularPorPosicao(vagaReserva.getTipoVaga(), vagaReserva.getComprimento(), novaReservaDTO, reservasSobrepostas, novaReserva.getPosicaoPerpendicular());
+            
             return;
         }
 
-        if(!reservasVaga.isEmpty()){
-            for(ReservaDTO reserva : reservasVaga){ 
-                Boolean reservaSobrepostas = novaReserva.getInicio().toInstant().isBefore(reserva.getFim().toInstant()) && novaReserva.getFim().toInstant().isAfter(reserva.getInicio().toInstant());
-                if(reservaSobrepostas){
-                    if(metodoChamador.equals(METODO_PATCH) && motoristaDaReserva.getUsuario().getId().equals(usuarioLogado.getId())){
-                    if(tamanhoDisponivelVaga < 0) throw new IllegalArgumentException("Não há espaço suficiente na vaga para a reserva no período solicitado devido a uma reserva existente. Espaço disponível: " + (tamanhoDisponivelVaga + veiculoDaReserva.getTipo().getComprimento()) + " metros.");
-                        return;
-                    }  
-                    tamanhoDisponivelVaga -= reserva.getTamanhoVeiculo();
-                    if(tamanhoDisponivelVaga < 0) throw new IllegalArgumentException("Não há espaço suficiente na vaga para a reserva no período solicitado devido a uma reserva existente. Espaço disponível: " + (tamanhoDisponivelVaga + veiculoDaReserva.getTipo().getComprimento()) + " metros.");
-                }
+        if (!reservasSobrepostas.isEmpty()){
+            for (ReservaDTO reserva : reservasSobrepostas){ 
+                if (metodoChamador.equals(METODO_PATCH) && motoristaDaReserva.getUsuario().getId().equals(usuarioLogado.getId())){
+                    if (tamanhoDisponivelVaga < 0) throw new ReservaExceptions.EspacoInsuficienteNoPeriodoException();
+                    return;
+                }  
+                tamanhoDisponivelVaga -= reserva.getTamanhoVeiculo();
+                if (tamanhoDisponivelVaga < 0) throw new ReservaExceptions.EspacoInsuficienteNoPeriodoException();
             }
         }
     }
 
-    public void validarLimiteReservasPorPlaca (ReservaDTO novaReserva, String metodoChamador){
+    public void validarLimiteReservasPorPlaca (ReservaDTO novaReserva, List<ReservaDTO> reservasSobrepostas, String metodoChamador){
         List<StatusReservaEnum> listaStatus = List.of(StatusReservaEnum.ATIVA, StatusReservaEnum.RESERVADA);
         Integer quantidadeReservasPorPlaca = reservaRepository.countByVeiculoPlacaIgnoringCaseAndStatusIn(novaReserva.getPlacaVeiculo(), listaStatus);
-        List<Reserva> reservasNormaisSobrepostas = reservaRepository.findByFimGreaterThanAndInicioLessThanAndStatusIn(novaReserva.getInicio(), novaReserva.getFim(), listaStatus);
-        List<ReservaRapida> reservasRapidasSobrepostas = reservaRapidaRepository.findByFimGreaterThanAndInicioLessThanAndStatusIn(novaReserva.getInicio(), novaReserva.getFim(), listaStatus);
-        List<ReservaDTO> reservasSobrepostas = juntarReservas(reservasNormaisSobrepostas, reservasRapidasSobrepostas);
-        if (quantidadeReservasPorPlaca.equals(LIMITE_DE_RESERVAS_POR_PLACA)) throw new IllegalArgumentException("Veículo de placa " + novaReserva.getPlacaVeiculo() + " ja atingiu o limite de " + LIMITE_DE_RESERVAS_POR_PLACA + " reservas ativas/reservadas.");
-        if(reservasSobrepostas != null && !reservasSobrepostas.isEmpty()  ){
-            for(ReservaDTO reserva : reservasSobrepostas){
-                if(reserva.getPlacaVeiculo().equals(novaReserva.getPlacaVeiculo()) && !metodoChamador.equals(METODO_PATCH)) {
-                    throw new IllegalArgumentException("Veículo de placa " + novaReserva.getPlacaVeiculo() + " ja possui uma reserva com status: " + reserva.getStatus() + " com inicio: " + reserva.getInicio().atZoneSameInstant(DateUtils.FUSO_BRASIL) + " e fim: " + reserva.getFim().atZoneSameInstant(DateUtils.FUSO_BRASIL) + ".");
+        if (quantidadeReservasPorPlaca >= (LIMITE_DE_RESERVAS_POR_PLACA)) throw new ReservaExceptions.LimiteDeReservasPorPlacaException(LIMITE_DE_RESERVAS_POR_PLACA);
+        if (reservasSobrepostas != null && !reservasSobrepostas.isEmpty()  ){
+            for (ReservaDTO reserva : reservasSobrepostas){
+                if (reserva.getPlacaVeiculo().equals(novaReserva.getPlacaVeiculo()) && metodoChamador.equals(METODO_POST)) {
+                    throw new ReservaExceptions.PlacaComConflitoDeHorarioException();
                 }
             } 
         }
     }
 
-    public void validarPermissoesReserva(Usuario usuarioLogado, Motorista motoristaDaReserva, Veiculo veiculoDaReserva) {
-        if (usuarioLogado.getPermissao().equals(PermissaoEnum.MOTORISTA) || usuarioLogado.getPermissao().equals(PermissaoEnum.EMPRESA)){
-            if(!veiculoDaReserva.getUsuario().getId().equals(usuarioLogado.getId())){
-                throw new IllegalArgumentException("Usuário não pode fazer reserva para um veículo de outro usuário.");
+    public void validarPermissoesReserva(UUID usuarioLogadoId, PermissaoEnum permissaoUsuarioLogado, Motorista motoristaDaReserva, Veiculo veiculoDaReserva) {
+        if (permissaoUsuarioLogado.equals(PermissaoEnum.MOTORISTA)){
+            if (!veiculoDaReserva.getUsuario().getId().equals(usuarioLogadoId)){
+                if (motoristaDaReserva.getEmpresa() != null && motoristaDaReserva.getVeiculosEmpresa() != null && !motoristaDaReserva.getVeiculosEmpresa().isEmpty()){
+                    List<Veiculo> veiculosEmpresa = motoristaDaReserva.getVeiculosEmpresa().stream().map(veiculoEmpresaMotorista -> veiculoEmpresaMotorista.getVeiculo()).toList();
+                    if (veiculosEmpresa.contains(veiculoDaReserva) && motoristaDaReserva.getEmpresa().getUsuario().getId().equals(veiculoDaReserva.getUsuario().getId())){
+                        return;
+                    }
+                }   
+                throw new ReservaExceptions.VeiculoNaoPertenceException();
             }
-        }
 
-        if (usuarioLogado.getPermissao().equals(PermissaoEnum.MOTORISTA)){
-            if(!motoristaDaReserva.getUsuario().getId().equals(usuarioLogado.getId())){
-                throw new IllegalArgumentException("Usuário não pode fazer reserva para outro motorista.");
+            if (!motoristaDaReserva.getUsuario().getId().equals(usuarioLogadoId)){
+                throw new ReservaExceptions.MotoristaInvalidoException();
             }
         }
         
-        if (usuarioLogado.getPermissao().equals(PermissaoEnum.EMPRESA)){
-            Empresa empresa = empresaRepository.findByUsuarioId(usuarioLogado.getId()).orElseThrow(() -> new EmpresaExceptions.EmpresaNotFoundException());
-            if(!motoristaDaReserva.getEmpresa().getId().equals(empresa.getId())){
-                throw new IllegalArgumentException("A empresa só pode fazer reserva para motoristas associados à ela.");
+        if (permissaoUsuarioLogado.equals(PermissaoEnum.EMPRESA)){
+            if (!veiculoDaReserva.getUsuario().getId().equals(usuarioLogadoId)){
+                throw new ReservaExceptions.VeiculoNaoPertenceException();
+            }
+            Empresa empresa = empresaRepository.findByUsuarioId(usuarioLogadoId).orElseThrow(() -> new EmpresaExceptions.EmpresaNotFoundException());
+            if (motoristaDaReserva.getEmpresa() == null || !motoristaDaReserva.getEmpresa().getId().equals(empresa.getId())){
+                throw new ReservaExceptions.MotoristaNaoPertenceEmpresaException();
             }
         }
     }
 
-    public void validarMotoristaReserva( UUID motoristaUsuarioId, ReservaDTO novaReserva, String metodoChamador) {
-        List<StatusReservaEnum> listaStatus = List.of(StatusReservaEnum.ATIVA, StatusReservaEnum.RESERVADA);
-        List<Reserva> reservasAtivasSobrepostasPorMotorista = reservaRepository.findByFimGreaterThanAndInicioLessThanAndMotoristaUsuarioIdAndStatusIn(novaReserva.getInicio(),novaReserva.getFim(), motoristaUsuarioId, listaStatus);
-        if(reservasAtivasSobrepostasPorMotorista != null && !reservasAtivasSobrepostasPorMotorista.isEmpty() && !metodoChamador.equals(METODO_PATCH)){
-            throw new IllegalArgumentException("Motorista já possui uma reserva ativa ou reservada com horário conflitante.");
+    public void validarMotoristaReserva(UUID motoristaUsuarioId, UUID motoristaId, List<ReservaDTO> reservasSobrepostas, String metodoChamador) {
+        List<ReservaDTO> reservasAtivasSobrepostasPorMotorista = reservasSobrepostas.stream().filter(reserva -> reserva.getCriadoPor().getId().equals(motoristaUsuarioId) || reserva.getMotoristaId().equals(motoristaId)).toList();
+        if(reservasAtivasSobrepostasPorMotorista != null && !reservasAtivasSobrepostasPorMotorista.isEmpty() && metodoChamador.equals(METODO_POST)) {
+            throw new ReservaExceptions.MotoristaComConflitoDeHorarioException();
         }
     }
 
     public static List<ReservaDTO> juntarReservas(List<Reserva> reservas, List<ReservaRapida> reservasRapidas) {
         List<ReservaDTO> listaFinalReservas = new ArrayList<>(); 
 
-        if(reservasRapidas != null && !reservasRapidas.isEmpty()) {
-                reservasRapidas.forEach(rr -> listaFinalReservas.add(new ReservaDTO(rr.getId(), rr.getVaga().getId(), rr.getVaga().getNumeroEndereco(), rr.getVaga().getReferenciaEndereco(), rr.getVaga().getEndereco().toResponseDTO(), rr.getInicio(), rr.getFim(), rr.getTipoVeiculo().getComprimento(), rr.getPlaca(), rr.getStatus(), rr.getAgente().getUsuario(), rr.getCriadoEm(), rr.getPosicaoPerpendicular(), rr.getCidadeOrigem(), rr.getEntradaCidade())));
+        if (reservasRapidas != null && !reservasRapidas.isEmpty()) {
+            reservasRapidas.forEach(ReservaRapidaMapper :: toReservaDTO);
         }
     
-        if(reservas != null && !reservas.isEmpty()) {
-            reservas.forEach(r-> listaFinalReservas.add(new ReservaDTO(r.getId(), r.getCidadeOrigem(), r.getEntradaCidade(), r.isCheckedIn(), r.getCheckInEm(), r.getCheckOutEm(), r.getVaga(), r.getInicio(), r.getFim(), r.getVeiculo(), r.getStatus(), r.getCriadoPor(), r.getCriadoEm(), r.getMotorista(), r.getPosicaoPerpendicular())));
+        if (reservas != null && !reservas.isEmpty()) {
+            reservas.forEach(ReservaMapper :: toReservaDTO);
         }
     
         return listaFinalReservas;
@@ -166,107 +153,131 @@ public class ReservaUtils {
 
     public static void validarFiltrosData(LocalDate data, Integer mes, Integer ano) {
         boolean informouData = data != null;
-        boolean informouMesOuAno = mes != null || ano != null;
+        boolean informouMesEAno = mes != null && ano != null;
 
-        if (informouData && informouMesOuAno) {
-            throw new IllegalArgumentException("Informe ou a data completa ou mês e ano.");
-        }
-
-        if (mes != null && ano == null) {
-            throw new IllegalArgumentException("Ao informar o mês, o ano também deve ser informado.");
-        }
-
-        if (ano != null && mes == null) {
-            throw new IllegalArgumentException("Ao informar o ano, o mês também deve ser informado.");
+        if ((informouData && informouMesEAno) || (!informouData && !informouMesEAno)) {
+            throw new DateExceptions.FiltroDataInvalidoException();
         }
 
         DateUtils.validarMesEAno(mes, ano);
     }
 
     public static void validarCapacidadePerpendicularPorPosicao(
-        Vaga vaga,
+        TipoVagaEnum tipoVaga,
+        Integer comprimentoVaga,
         ReservaDTO novaReserva,
-        List<ReservaDTO> reservasAtivasNaVaga,
+        List<ReservaDTO> reservasSobrepostasNaVaga,
         Integer posicaoPerpendicular
     ) {
-        if (!TipoVagaEnum.PERPENDICULAR.equals(vaga.getTipoVaga())) {
-            throw new IllegalArgumentException("Validação de posição perpendicular só pode ser aplicada para vagas perpendiculares.");
+        if (!TipoVagaEnum.PERPENDICULAR.equals(tipoVaga)) {
+            return;
         }
 
-        if (vaga.getComprimento() == null || vaga.getComprimento() <= 0) {
-            throw new IllegalArgumentException("Vaga perpendicular deve ter comprimento válido por posição.");
+        if (comprimentoVaga == null || comprimentoVaga <= 0) {
+            throw new VagaExceptions.ComprimentoInvalidoException();
+        }
+        if (novaReserva.getTamanhoVeiculo() > comprimentoVaga) {
+            throw new ReservaExceptions.VeiculoMaiorQueVagaException();
         }
 
-        if (novaReserva.getTamanhoVeiculo() > vaga.getComprimento()) {
-            throw new IllegalArgumentException("O veículo é maior do que o tamanho permitido para esta posição.");
-        }
-
-        int ocupacaoAtual = reservasAtivasNaVaga.stream()
-            .filter(reserva -> posicaoPerpendicular.equals(reserva.getPosicaoPerpendicular()))
-            .filter(reserva ->
-                reserva.getInicio().toInstant().isBefore(novaReserva.getFim().toInstant()) &&
-                reserva.getFim().toInstant().isAfter(novaReserva.getInicio().toInstant())
-            )
-            .mapToInt(ReservaDTO::getTamanhoVeiculo)
-            .sum();
+        int ocupacaoAtual = reservasSobrepostasNaVaga != null && !reservasSobrepostasNaVaga.isEmpty() ?
+                reservasSobrepostasNaVaga.stream()
+                .filter(reserva -> posicaoPerpendicular.equals(reserva.getPosicaoPerpendicular()))
+                .mapToInt(ReservaDTO::getTamanhoVeiculo)
+                .sum() : 0;
 
         int ocupacaoFinal = ocupacaoAtual + novaReserva.getTamanhoVeiculo();
 
-        if (ocupacaoFinal > vaga.getComprimento()) {
-            throw new IllegalArgumentException(
-                "Não há espaço suficiente na posição " + posicaoPerpendicular +
-                " para o período solicitado. Capacidade da posição: " + vaga.getComprimento() +
-                " metros. Ocupação já existente: " + ocupacaoAtual + " metros."
-            );
+        if (ocupacaoFinal > comprimentoVaga) {
+            throw new ReservaExceptions.EspacoInsuficienteNoPeriodoException();
         }
     }
 
     public static void validarPosicaoPerpendicular(TipoVagaEnum tipoVaga, Integer quantidadePosicoesVaga, Integer posicaoPerpendicular) {
         if (!TipoVagaEnum.PERPENDICULAR.equals(tipoVaga)) {
             if (posicaoPerpendicular != null) {
-                throw new IllegalArgumentException("Posição só pode ser informada para vaga do tipo perpendicular.");
+                throw new ReservaExceptions.PosicaoPerpendicularProibidaException();
             }
             return;
         }
 
         if (quantidadePosicoesVaga == null || quantidadePosicoesVaga <= 0) {
-            throw new IllegalArgumentException("Vaga perpendicular deve ter quantidade de posições válida.");
+            throw new VagaExceptions.QuantidadePosicoesInvalidaException();
         }
 
-        if (posicaoPerpendicular == null) {
-            throw new IllegalArgumentException("Para vaga perpendicular, a posição é obrigatória.");
+        if (posicaoPerpendicular == null || posicaoPerpendicular <= 0 || posicaoPerpendicular > quantidadePosicoesVaga) {
+            throw new ReservaExceptions.PosicaoPerpendicularInvalidaException(quantidadePosicoesVaga);
         }
 
-        if (posicaoPerpendicular < 1 || posicaoPerpendicular > quantidadePosicoesVaga) {
-            throw new IllegalArgumentException("Posição inválida para esta vaga. Informe um valor entre 1 e " + quantidadePosicoesVaga + ".");
-        }
     }
 
     public static Integer encontrarPosicaoDisponivel(
         Integer quantidadePosicoesVaga,
         Integer comprimentoVaga,
         ReservaDTO novaReserva,
-        List<ReservaDTO> reservasAtivas
+        List<ReservaDTO> reservasSobrepostasNaVaga
     ) {
-        if(quantidadePosicoesVaga == null || quantidadePosicoesVaga <= 0) {
-            throw new IllegalArgumentException("Quantidade de posições da vaga deve ser informada e maior que zero.");
+        if (quantidadePosicoesVaga == null || quantidadePosicoesVaga <= 0) {
+            throw new VagaExceptions.QuantidadePosicoesInvalidaException();
         }
         for (int posicao = 1; posicao <= quantidadePosicoesVaga; posicao++) {
             final int posicaoAtual = posicao;
-            int ocupado = reservasAtivas.stream()
-                .filter(reserva -> posicaoAtual == reserva.getPosicaoPerpendicular())
-                .filter(reserva ->
-                    reserva.getInicio().toInstant().isBefore(novaReserva.getFim().toInstant()) &&
-                    reserva.getFim().toInstant().isAfter(novaReserva.getInicio().toInstant())
-                )
-                .mapToInt(ReservaDTO::getTamanhoVeiculo)
-                .sum();
+            int ocupado = reservasSobrepostasNaVaga != null && !reservasSobrepostasNaVaga.isEmpty() ?
+                reservasSobrepostasNaVaga.stream()
+                    .filter(reserva -> posicaoAtual == reserva.getPosicaoPerpendicular())
+                    .mapToInt(ReservaDTO::getTamanhoVeiculo)
+                    .sum() : 0;
 
             if (ocupado + novaReserva.getTamanhoVeiculo() <= comprimentoVaga) {
                 return posicaoAtual;
             }
         }
 
-        throw new IllegalArgumentException("Não há posições disponíveis nesta vaga no período solicitado.");
+        throw new ReservaExceptions.TodasPosicoesOcupadasException();
+    }
+
+    public static void validarHorarioReserva(OffsetDateTime inicio, OffsetDateTime fim) {
+        if (inicio == null || fim == null) throw new ReservaExceptions.InicioEFimObrigatoriosException();
+        if (!inicio.toInstant().isBefore(fim.toInstant())) throw new ReservaExceptions.InicioEFimInvalidosException();
+    }
+
+    private static void validarTempoMaximoReserva(OffsetDateTime inicio, OffsetDateTime fim, AreaVagaEnum areaVaga) {
+        Integer tempoReservaEmMinutos = (int) (inicio.toInstant().until(fim.toInstant(), ChronoUnit.MINUTES));
+        Boolean tempoValido = ((tempoReservaEmMinutos <= (areaVaga.getTempoMaximo() * 60)) && (tempoReservaEmMinutos > 0));
+        if (!tempoValido){
+            throw new VagaExceptions.TempoPermanenciaInvalidoExcpetion(areaVaga.getTempoMaximo());
+        }
+    }
+
+
+    private static void verificarExcecaoHorarioProAgente(PermissaoEnum permissaoCriador, OffsetDateTime inicio, OffsetDateTime fim){
+        OffsetDateTime agora = DateUtils.agora();
+        LocalDate dataAgora = agora.toLocalDate();
+        LocalDate dataInicio =  inicio.toLocalDate();
+        LocalDate dataFim = fim.toLocalDate();
+        if (dataAgora.equals(dataInicio) && dataAgora.equals(dataFim)) {
+            long diferencaMinutos = Duration.between(agora, inicio).toMinutes();
+            if (diferencaMinutos >= 0) return;
+            else if (permissaoCriador.equals(PermissaoEnum.AGENTE) && diferencaMinutos >= -2) return;
+            else throw new ReservaExceptions.InicioEFimInvalidosException();
+        } else {
+            throw new ReservaExceptions.InicioEFimInvalidosException();
+        }
+    }
+
+    public List<ReservaDTO> getReservasAtivasSobrepostas(OffsetDateTime inicio, OffsetDateTime fim) {
+        List<StatusReservaEnum> listaStatus = List.of(StatusReservaEnum.ATIVA, StatusReservaEnum.RESERVADA);
+        List<Reserva> reservasNormaisSobrepostas = reservaRepository.findByFimGreaterThanAndInicioLessThanAndStatusIn(inicio, fim, listaStatus);
+        List<ReservaRapida> reservasRapidasSobrepostas = reservaRapidaRepository.findByFimGreaterThanAndInicioLessThanAndStatusIn(inicio, fim, listaStatus);
+        return juntarReservas(reservasNormaisSobrepostas, reservasRapidasSobrepostas);
+    }
+
+    public Integer definirPosicaoVagaPerpendicular(TipoVagaEnum tipoVaga, Integer quantidadePosicoesVaga, Integer comprimentoVaga, ReservaDTO novaReserva) {
+        if (tipoVaga != null && tipoVaga.equals(TipoVagaEnum.PERPENDICULAR)) {
+            if (novaReserva.getPosicaoPerpendicular() == null || novaReserva.getPosicaoPerpendicular() <= 0 || novaReserva.getPosicaoPerpendicular() > quantidadePosicoesVaga) {
+                return encontrarPosicaoDisponivel(quantidadePosicoesVaga, comprimentoVaga, novaReserva, getReservasAtivasSobrepostas(novaReserva.getInicio(), novaReserva.getFim()));
+            }
+        }
+        return novaReserva.getPosicaoPerpendicular();
     }
 }

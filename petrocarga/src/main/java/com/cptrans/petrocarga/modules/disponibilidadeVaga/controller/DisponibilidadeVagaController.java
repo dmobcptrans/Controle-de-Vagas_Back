@@ -3,7 +3,6 @@ package com.cptrans.petrocarga.modules.disponibilidadeVaga.controller;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -19,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.cptrans.petrocarga.modules.disponibilidadeVaga.dto.mapper.DisponibilidadeVagaMapper;
 import com.cptrans.petrocarga.modules.disponibilidadeVaga.dto.request.DisponibilidadeVagaRequestDTO;
 import com.cptrans.petrocarga.modules.disponibilidadeVaga.dto.request.MultiplasDisponibilidadesVagaRequestDTO;
 import com.cptrans.petrocarga.modules.disponibilidadeVaga.dto.response.DisponibilidadeVagaResponseDTO;
@@ -47,64 +47,58 @@ public class DisponibilidadeVagaController {
             if(mes == null) throw new IllegalArgumentException("Ao informar o ano, o mês também deve ser informado.");
             if(ano == null) throw new IllegalArgumentException("Ao informar o mês, o ano também deve ser informado.");
             DateUtils.validarMesEAno(mes, ano);
-            List<DisponibilidadeVagaResponseDTO> disponibilidadeVagas = disponibilidadeVagaService.findByMes(mes, ano).stream()
-                    .map(DisponibilidadeVagaResponseDTO::new)
-                    .collect(Collectors.toList());
+            List<DisponibilidadeVagaResponseDTO> disponibilidadeVagas = DisponibilidadeVagaMapper.toResponseList(disponibilidadeVagaService.findByMes(mes, ano));
             return ResponseEntity.ok(disponibilidadeVagas);
         }
         DateUtils.validarMesEAno(mes, ano);
-        List<DisponibilidadeVagaResponseDTO> disponibilidadeVagas = disponibilidadeVagaService.findAll().stream()
-                .map(DisponibilidadeVagaResponseDTO::new)
-                .collect(Collectors.toList());
+        List<DisponibilidadeVagaResponseDTO> disponibilidadeVagas = DisponibilidadeVagaMapper.toResponseList(disponibilidadeVagaService.findAll());
         return ResponseEntity.ok(disponibilidadeVagas);
     }
 
-/**
- * Retorna a DisponibilidadeVaga por ID.
- * 
- * @param id DisponibilidadeVaga Id.
- * @return DisponibilidadeVaga por Id.
- */
+    /**
+     * Retorna a DisponibilidadeVaga por ID.
+     * 
+     * @param id DisponibilidadeVaga Id.
+     * @return DisponibilidadeVaga por Id.
+     */
     @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR', 'AGENTE', 'MOTORISTA', 'EMPRESA')")
     @GetMapping("/{id}")
     public ResponseEntity<DisponibilidadeVagaResponseDTO> getDisponibilidadeVagaById(@PathVariable UUID id) {
         DisponibilidadeVaga disponibilidadeVaga = disponibilidadeVagaService.findById(id);
-        return ResponseEntity.ok(disponibilidadeVaga.toResponseDTO());
+        return ResponseEntity.ok(DisponibilidadeVagaMapper.toResponse(disponibilidadeVaga));
     }
 
-/**
- * Retorna uma lista de todas as DisponibilidadeVaga por vagaId.
- * 
- * @param vagaId Vaga Id.
- * @return Lista de todas as DisponibilityVaga registradas com base no vagaId.
- */
+    /**
+     * Retorna uma lista de todas as DisponibilidadeVaga por vagaId.
+     * 
+     * @param vagaId Vaga Id.
+     * @return Lista de todas as DisponibilityVaga registradas com base no vagaId.
+     */
     @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR', 'AGENTE', 'MOTORISTA', 'EMPRESA')")
     @GetMapping("/vaga/{vagaId}")
     public ResponseEntity<List<DisponibilidadeVagaResponseDTO>> getDisponibilidadeVagaByVagaId(@PathVariable UUID vagaId) {
-        List<DisponibilidadeVagaResponseDTO> disponibilidadeVaga = disponibilidadeVagaService.findByVagaId(vagaId).stream().map(DisponibilidadeVagaResponseDTO::new).collect(Collectors.toList());
+        List<DisponibilidadeVagaResponseDTO> disponibilidadeVaga = DisponibilidadeVagaMapper.toResponseList(disponibilidadeVagaService.findByVagaId(vagaId));
         return ResponseEntity.ok(disponibilidadeVaga);
     }
 
-/**
- * Cria uma nova DisponibilidadeVaga com base em um objeto DisponibilidadeVagaRequestDTO.
- * 
- * @param disponibilidadeVagaRequestDTO objeto DisponibilidadeVagaRequestDTO com todas as informações necessárias para criar uma nova DisponibilidadeVaga.
- * @return A DisponibilidadeVaga criada com sucesso.
- */
+    /**
+     * Cria uma nova DisponibilidadeVaga com base em um objeto DisponibilidadeVagaRequestDTO.
+     * 
+     * @param disponibilidadeVagaRequestDTO objeto DisponibilidadeVagaRequestDTO com todas as informações necessárias para criar uma nova DisponibilidadeVaga.
+     * @return A DisponibilidadeVaga criada com sucesso.
+     */
     @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR')")
     @PostMapping
     public ResponseEntity<DisponibilidadeVagaResponseDTO> createDisponibilidadeVaga(@RequestBody @Valid DisponibilidadeVagaRequestDTO disponibilidadeVagaRequestDTO) {
         DisponibilidadeVaga savedDisponibilidadeVaga = disponibilidadeVagaService.createDisponibilidadeVaga(disponibilidadeVagaRequestDTO.toEntity(), disponibilidadeVagaRequestDTO.getVagaId());
-        return ResponseEntity.status(HttpStatus.CREATED).body(savedDisponibilidadeVaga.toResponseDTO());
+        return ResponseEntity.status(HttpStatus.CREATED).body(DisponibilidadeVagaMapper.toResponse(savedDisponibilidadeVaga));
     }
 
     @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR')")
     @PostMapping("/vagas")
     public ResponseEntity<List<DisponibilidadeVagaResponseDTO>> createMultipleDisponibilidadeVagas(@RequestBody @Valid MultiplasDisponibilidadesVagaRequestDTO multiplasDisponibilidadesVagaRequestDTO) {
         List<DisponibilidadeVaga> savedDisponibilidadeVagas = disponibilidadeVagaService.createMultipleDisponibilidadeVagas(multiplasDisponibilidadesVagaRequestDTO.toEntity(), multiplasDisponibilidadesVagaRequestDTO.getListaVagaId());
-        List<DisponibilidadeVagaResponseDTO> response = savedDisponibilidadeVagas.stream()
-                .map(DisponibilidadeVaga::toResponseDTO)
-                .collect(Collectors.toList());
+        List<DisponibilidadeVagaResponseDTO> response = DisponibilidadeVagaMapper.toResponseList(savedDisponibilidadeVagas);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -113,7 +107,7 @@ public class DisponibilidadeVagaController {
     public ResponseEntity<DisponibilidadeVagaResponseDTO> updateDisponibilidadeVaga(@PathVariable UUID id, @RequestBody  DisponibilidadeVagaRequestDTO disponibilidadeVagaRequestDTO) {
         DisponibilidadeVaga disponibilidadeVaga = disponibilidadeVagaService.updateDisponibilidadeVaga(id, disponibilidadeVagaRequestDTO);
         disponibilidadeVagaService.save(disponibilidadeVaga);
-        return ResponseEntity.ok(disponibilidadeVaga.toResponseDTO());
+        return ResponseEntity.ok(DisponibilidadeVagaMapper.toResponse(disponibilidadeVaga));
       
     }
 
@@ -121,7 +115,7 @@ public class DisponibilidadeVagaController {
     @PatchMapping("/byCodigoPmp")
     public ResponseEntity<List<DisponibilidadeVagaResponseDTO>> updateDisponibilidadeVagaByCodigoPmp(@RequestBody  DisponibilidadeVagaRequestDTO disponibilidadeVagaRequestDTO, @RequestParam(required = true) String codigoPmp) {
         List<DisponibilidadeVaga> disponibilidadeVaga = disponibilidadeVagaService.updateDisponibilidadeVagaByCodigoPmp(disponibilidadeVagaRequestDTO, codigoPmp);
-        return ResponseEntity.ok(disponibilidadeVaga.stream().map(DisponibilidadeVaga::toResponseDTO).collect(Collectors.toList()));
+        return ResponseEntity.ok(DisponibilidadeVagaMapper.toResponseList(disponibilidadeVaga));
       
     }
 
@@ -129,7 +123,7 @@ public class DisponibilidadeVagaController {
     @PatchMapping("/byList")
     public ResponseEntity<List<DisponibilidadeVagaResponseDTO>> updateDisponibilidadeVagaByList(@RequestBody  DisponibilidadeVagaRequestDTO disponibilidadeVagaRequestDTO, @RequestParam(required = true) List<UUID> listaIds) {
         List<DisponibilidadeVaga> disponibilidadeVaga = disponibilidadeVagaService.updateDisponibilidadeVagaByList(disponibilidadeVagaRequestDTO, listaIds);
-        return ResponseEntity.ok(disponibilidadeVaga.stream().map(DisponibilidadeVaga::toResponseDTO).collect(Collectors.toList()));
+        return ResponseEntity.ok(DisponibilidadeVagaMapper.toResponseList(disponibilidadeVaga));
       
     }
 

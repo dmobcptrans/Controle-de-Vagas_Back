@@ -1,5 +1,6 @@
 package com.cptrans.petrocarga.modules.veiculoEmpresaMotorista.entity;
 
+
 import com.cptrans.petrocarga.modules.motorista.entity.Motorista;
 import com.cptrans.petrocarga.modules.veiculo.entity.Veiculo;
 

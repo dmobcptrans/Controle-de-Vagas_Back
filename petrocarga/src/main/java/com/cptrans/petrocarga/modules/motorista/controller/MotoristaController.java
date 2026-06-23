@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -29,14 +28,14 @@ import com.cptrans.petrocarga.modules.usuario.dto.request.UsuarioPATCHRequestDTO
 import com.cptrans.petrocarga.security.UserAuthenticated;
 
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/motoristas")
+@RequiredArgsConstructor
 public class MotoristaController {
 
-    @Autowired
-    private MotoristaService motoristaService;
-
+    private final MotoristaService motoristaService;
 
     /**
      * Retorna uma lista de motoristas com base nos filtros passados.
@@ -59,18 +58,11 @@ public class MotoristaController {
         @RequestParam(required = false) Boolean ativo
     ) {
         MotoristaFiltrosDTO filtros = new MotoristaFiltrosDTO(nome, telefone, cnh, ativo);
-        if(filtros.nome() != null || filtros.telefone() != null || filtros.cnh() != null || filtros.ativo() != null) {
-            List<MotoristaResponseDTO> motoristasFiltrados = motoristaService.findAllWithFiltros(filtros).stream()
-                    .map(motorista -> MotoristaMapper.toResponse(motorista))
+        List<MotoristaResponseDTO> motoristasFiltrados = motoristaService.findAllWithFiltros(filtros).stream()
+                    .map(MotoristaMapper::toResponse)
                     .collect(Collectors.toList());
-            return ResponseEntity.ok(motoristasFiltrados);
-        }
-        List<MotoristaResponseDTO> motoristas = motoristaService.findAll().stream()
-                .map(motorista -> MotoristaMapper.toResponse(motorista))
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(motoristas);
+        return ResponseEntity.ok(motoristasFiltrados);
     }
-
     /**
      * Retorna um motorista com base no seu id de usuario.
      * Só permite que o motorista seja acessado pelo seu próprio dono ou por um usuário com permissão de ADMIN.
@@ -84,6 +76,7 @@ public class MotoristaController {
     public ResponseEntity<MotoristaResponseDTO> getMotoristaById(@PathVariable UUID usuarioId, @RequestParam(required = false) Boolean ativo) {
         Motorista motorista = motoristaService.findByUsuarioIdAndAtivo(usuarioId, ativo);
         return ResponseEntity.ok(MotoristaMapper.toResponse(motorista));
+
     }
 
 
@@ -99,13 +92,15 @@ public class MotoristaController {
     public ResponseEntity<MotoristaResponseDTO> createMotorista(@RequestBody @Valid MotoristaRequestDTO request) {
         Motorista motorista = motoristaService.createMotorista(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(MotoristaMapper.toResponse(motorista));
+
     }
 
     /**
      * Atualiza um motorista com base nos dados passados.
      * 
      * Só permite que o motorista seja atualizado pelo seu próprio dono ou por um usuário com permissão de ADMIN.
-     * 
+
+    * 
      * Retorna o motorista atualizado com status OK.
      * 
      * @param usuarioId o id do usuário do motorista
@@ -115,8 +110,9 @@ public class MotoristaController {
     @PreAuthorize("#usuarioId == authentication.principal.id or hasRole('ADMIN')")
     @PatchMapping("/{usuarioId}")
     public ResponseEntity<MotoristaResponseDTO> updateMotorista(@AuthenticationPrincipal UserAuthenticated usuarioAutenticado, @PathVariable UUID usuarioId,  @RequestBody @Valid UsuarioPATCHRequestDTO motoristaRequestDTO) {
-        Motorista updatedMotorista = motoristaService.updateMotorista(usuarioAutenticado, usuarioId, motoristaRequestDTO);
-        return ResponseEntity.ok(MotoristaMapper.toResponse(updatedMotorista));
+        Motorista motorista = motoristaService.updateMotorista(usuarioAutenticado, usuarioId, motoristaRequestDTO);
+        return ResponseEntity.ok(MotoristaMapper.toResponse(motorista));
+
     }
 
     /**

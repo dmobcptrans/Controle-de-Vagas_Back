@@ -5,11 +5,10 @@ import java.util.UUID;
 
 import com.cptrans.petrocarga.enums.StatusReservaEnum;
 import com.cptrans.petrocarga.modules.motorista.entity.Motorista;
-import com.cptrans.petrocarga.modules.reserva.dto.response.ReservaDTO;
-import com.cptrans.petrocarga.modules.reserva.dto.response.ReservaResponseDTO;
 import com.cptrans.petrocarga.modules.usuario.entity.Usuario;
 import com.cptrans.petrocarga.modules.vaga.entity.Vaga;
 import com.cptrans.petrocarga.modules.veiculo.entity.Veiculo;
+import com.cptrans.petrocarga.shared.utils.DateUtils;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -22,8 +21,11 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 
 @Entity
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "reserva")
 public class Reserva {
 
@@ -55,7 +57,7 @@ public class Reserva {
     private String entradaCidade;
 
     @Column(name = "criado_em", columnDefinition = "TIMESTAMP WITH TIME ZONE")
-    private OffsetDateTime criadoEm;
+    private OffsetDateTime criadoEm = DateUtils.agora();
 
     @Column(nullable = false)
     private OffsetDateTime inicio;
@@ -65,7 +67,7 @@ public class Reserva {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private StatusReservaEnum status;
+    private StatusReservaEnum status = StatusReservaEnum.RESERVADA;
 
     @Column(name = "checked_in", nullable = false)
     private Boolean checkedIn = false;
@@ -79,11 +81,17 @@ public class Reserva {
     @Column(name = "posicao_perpendicular")
     private Integer posicaoPerpendicular;
 
-    // Constructors
-    public Reserva() {
-        this.criadoEm = OffsetDateTime.now();
-        this.status = StatusReservaEnum.RESERVADA;
-        this.checkedIn = false;
+    public Reserva(Vaga vaga, Motorista motorista, Veiculo veiculo, Usuario criadoPor, String cidadeOrigem, String entradaCidade, OffsetDateTime inicio, OffsetDateTime fim, Integer posicaoPerpendicular) {
+        this.vaga = vaga;
+        this.motorista = motorista;
+        this.veiculo = veiculo;
+        this.criadoPor = criadoPor;
+        this.cidadeOrigem = cidadeOrigem;
+        this.entradaCidade = entradaCidade;
+        this.inicio = inicio;
+        this.fim = fim;
+        this.posicaoPerpendicular = posicaoPerpendicular;
+
     }
 
     // Getters and Setters
@@ -207,10 +215,4 @@ public class Reserva {
         this.posicaoPerpendicular = posicaoPerpendicular;
     }
 
-    public ReservaResponseDTO toResponseDTO() {
-        return new ReservaResponseDTO(this);
-    }
-    public ReservaDTO toReservaDTO(){
-        return new ReservaDTO(this.id, this.cidadeOrigem, this.entradaCidade, this.checkedIn, this.checkInEm, this.checkOutEm, this.vaga, this.inicio, this.fim, this.veiculo, this.status, this.criadoPor, this.criadoEm, this.motorista, this.posicaoPerpendicular);
-    }
 }
