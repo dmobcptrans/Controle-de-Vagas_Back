@@ -7,19 +7,18 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
 
-import com.cptrans.petrocarga.enums.DiaSemanaEnum;
 import com.cptrans.petrocarga.modules.operacaoVaga.dto.response.OperacaoVagaResponseDTO;
 import com.cptrans.petrocarga.modules.operacaoVaga.entity.OperacaoVaga;
 
 @Component
 public class OperacaoVagaMapper {
-    private static Comparator<OperacaoVagaResponseDTO> compararPorCodigoEnum = Comparator.comparingInt(op -> DiaSemanaEnum.toEnumByDescricao(op.getDiaSemana()).getCodigo());
+    private static Comparator<OperacaoVagaResponseDTO> compararPorCodigoEnum = Comparator.comparingInt(op -> op.getDiaSemanaAsEnum().getCodigo());
     
     public static OperacaoVagaResponseDTO toResponse(OperacaoVaga operacaoVaga) {
         if (operacaoVaga == null) return null;
         OperacaoVagaResponseDTO response = new OperacaoVagaResponseDTO(
             operacaoVaga.getId(),
-            operacaoVaga.getDiaSemana().getDescricao(),
+            operacaoVaga.getDiaSemana(),
             operacaoVaga.getHoraInicio(),
             operacaoVaga.getHoraFim()
         );
