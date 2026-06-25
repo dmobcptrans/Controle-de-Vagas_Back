@@ -7,12 +7,10 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.quartz.SchedulerException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.cptrans.petrocarga.enums.PermissaoEnum;
@@ -20,13 +18,13 @@ import com.cptrans.petrocarga.enums.StatusReservaEnum;
 import com.cptrans.petrocarga.enums.TipoVagaEnum;
 import com.cptrans.petrocarga.modules.agente.entity.Agente;
 import com.cptrans.petrocarga.modules.agente.service.AgenteService;
+import com.cptrans.petrocarga.modules.auth.utils.AuthUtils;
 import com.cptrans.petrocarga.modules.disponibilidadeVaga.service.DisponibilidadeVagaService;
 import com.cptrans.petrocarga.modules.operacaoVaga.utils.OperacaoVagaUtils;
 import com.cptrans.petrocarga.modules.reserva.dto.response.ReservaDTO;
-import com.cptrans.petrocarga.modules.reserva.entity.Reserva;
-import com.cptrans.petrocarga.modules.reserva.repository.ReservaRepository;
 import com.cptrans.petrocarga.modules.reserva.utils.ReservaUtils;
 import com.cptrans.petrocarga.modules.reservaRapida.dto.mapper.ReservaRapidaMapper;
+import com.cptrans.petrocarga.modules.reservaRapida.dto.request.ReservaRapidaRequestDTO;
 import com.cptrans.petrocarga.modules.reservaRapida.entity.ReservaRapida;
 import com.cptrans.petrocarga.modules.reservaRapida.repository.ReservaRapidaRepository;
 import com.cptrans.petrocarga.modules.reservaRapida.specification.ReservaRapidaSpecification;
@@ -39,26 +37,20 @@ import com.cptrans.petrocarga.modules.vaga.service.VagaService;
 import com.cptrans.petrocarga.security.UserAuthenticated;
 import com.cptrans.petrocarga.shared.utils.DateUtils;
 
+import lombok.RequiredArgsConstructor;
+
 
 @Service
+@RequiredArgsConstructor
 public class ReservaRapidaService {
-    
-    @Autowired
-    private ReservaRapidaRepository reservaRapidaRepository;
-    @Autowired
-    private ReservaRepository reservaRepository;
-    @Autowired
-    private VagaService vagaService;
-    @Autowired
-    private ReservaRapidaUtils reservaRapidaUtils;
-    @Autowired
-    private UsuarioService usuarioService;
-    @Autowired
-    private AgenteService agenteService;
-    @Autowired
-    private ReservaSchedulerService reservaSchedulerService;
-    @Autowired
-    private DisponibilidadeVagaService disponibilidadeVagaService;
+    private final ReservaRapidaRepository reservaRapidaRepository;
+    private final VagaService vagaService;
+    private final ReservaRapidaUtils reservaRapidaUtils;
+    private final ReservaUtils reservaUtils;
+    private final UsuarioService usuarioService;
+    private final AgenteService agenteService;
+    private final ReservaSchedulerService reservaSchedulerService;
+    private final DisponibilidadeVagaService disponibilidadeVagaService;
     
     public List<ReservaRapida> findAll(List<StatusReservaEnum> status) {
         if(status == null ) status = new ArrayList<>();
@@ -137,18 +129,19 @@ public class ReservaRapidaService {
         return reservaRapidaRepository.findAll(ReservaRapidaSpecification.filtrar(agente.getUsuario().getId(), vagaId, placaVeiculo, data, mes, ano, listaStatus), pageable);
     }
 
-    public ReservaRapida create(ReservaRapida novaReservaRapida) {
-        if(!disponibilidadeVagaService.existsByVagaIdAndInicioAndFim(novaReservaRapida.getVaga().getId(), novaReservaRapida.getInicio(), novaReservaRapida.getFim())) {
+    public ReservaRapida create(ReservaRapidaRequestDTO request) {
+        if (!disponibilidadeVagaService.existsByVagaIdAndInicioAndFim(request.getVagaId(), request.getInicio(), request.getFim())) {
             throw new IllegalArgumentException("A vaga não está disponível para o período selecionado.");
         }
-        OperacaoVagaUtils.verificarLimiteHorarioOperacaoVaga(novaReservaRapida.getVaga().getOperacoesVaga(), novaReservaRapida.getInicio(), novaReservaRapida.getFim());
-        Vaga vagaReserva = vagaService.findById(novaReservaRapida.getVaga().getId());
-        List<StatusReservaEnum> listaStatus = new ArrayList<>(List.of(StatusReservaEnum.ATIVA, StatusReservaEnum.RESERVADA));
-        List<Reserva>  reservasAtivasNaVaga = reservaRepository.findByVagaIdAndStatusIn(vagaReserva.getId(), listaStatus);
-        List<ReservaRapida> reservasRapidasAtivasNaVaga = findByVagaIdAndStatusIn(vagaReserva.getId(), listaStatus);
-        UserAuthenticated userAuthenticated = (UserAuthenticated) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        Vaga vaga = vagaService.findById(request.getVagaId());
+        OperacaoVagaUtils.verificarLimiteHorarioOperacaoVaga(vaga.getOperacoesVaga(), request.getInicio(), request.getFim());
+        
+        UserAuthenticated userAuthenticated = AuthUtils.getUsuarioAutenticado();
         Usuario usuarioLogado = usuarioService.findById(userAuthenticated.id());
-        if(usuarioLogado.getPermissao().equals(PermissaoEnum.AGENTE)){
+
+        ReservaRapida novaReservaRapida = ReservaRapidaMapper.toEntity(request, vaga);
+        if (usuarioLogado.getPermissao().equals(PermissaoEnum.AGENTE)){
             Agente agenteLogado = agenteService.findByUsuarioId(usuarioLogado.getId());
             novaReservaRapida.setAgente(agenteLogado);
         }
@@ -156,16 +149,16 @@ public class ReservaRapidaService {
             novaReservaRapida.setCidadeOrigem("Petrópolis - RJ");
         }
         ReservaDTO novaReservaDTO = ReservaRapidaMapper.toReservaDTO(novaReservaRapida);
-        reservaRapidaUtils.validarQuantidadeReservasPorPlaca(novaReservaDTO);
+        List<ReservaDTO> reservasSoprepostasNaVaga = reservaUtils.getReservasAtivasSobrepostas(request.getInicio(), request.getFim());
         ReservaUtils.validarTempoMaximoReserva(novaReservaRapida.getInicio(), novaReservaRapida.getFim(), novaReservaRapida.getVaga().getArea(), novaReservaRapida.getAgente().getUsuario().getPermissao());
-        List<ReservaDTO> reservasTotaisAtivasNaVaga = ReservaUtils.juntarReservas(reservasAtivasNaVaga, reservasRapidasAtivasNaVaga);
-        
-        if (vagaReserva.getTipoVaga().equals(TipoVagaEnum.PERPENDICULAR) && novaReservaRapida.getPosicaoPerpendicular() == null) {
-            Integer novaPosicao = ReservaUtils.encontrarPosicaoDisponivel(vagaReserva.getQuantidade(), vagaReserva.getComprimento(), novaReservaDTO, reservasTotaisAtivasNaVaga);
+        reservaRapidaUtils.validarQuantidadeReservasPorPlaca(novaReservaDTO, reservasSoprepostasNaVaga);
+
+        if (vaga.getTipoVaga().equals(TipoVagaEnum.PERPENDICULAR)) {
+            Integer novaPosicao = ReservaUtils.encontrarPosicaoDisponivel(vaga.getQuantidade(), vaga.getComprimento(), novaReservaDTO, reservasSoprepostasNaVaga);
             novaReservaRapida.setPosicaoPerpendicular(novaPosicao);
         }
         
-        reservaRapidaUtils.validarEspacoDisponivelNaVaga(novaReservaRapida, vagaReserva, reservasTotaisAtivasNaVaga);
+        reservaRapidaUtils.validarEspacoDisponivelNaVaga(novaReservaRapida, vaga, reservasSoprepostasNaVaga);
         ReservaRapida reservaRapidaCriada = reservaRapidaRepository.save(novaReservaRapida);
         try {
             reservaSchedulerService.agendarFinalizacaoReserva(ReservaRapidaMapper.toReservaDTO(reservaRapidaCriada));

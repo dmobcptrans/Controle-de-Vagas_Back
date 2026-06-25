@@ -4,7 +4,6 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,25 +20,22 @@ import com.cptrans.petrocarga.enums.StatusReservaEnum;
 import com.cptrans.petrocarga.modules.agente.entity.Agente;
 import com.cptrans.petrocarga.modules.agente.service.AgenteService;
 import com.cptrans.petrocarga.modules.reserva.utils.ReservaUtils;
+import com.cptrans.petrocarga.modules.reservaRapida.dto.mapper.ReservaRapidaMapper;
 import com.cptrans.petrocarga.modules.reservaRapida.dto.request.ReservaRapidaRequestDTO;
 import com.cptrans.petrocarga.modules.reservaRapida.dto.response.ReservaRapidaResponseDTO;
 import com.cptrans.petrocarga.modules.reservaRapida.entity.ReservaRapida;
 import com.cptrans.petrocarga.modules.reservaRapida.service.ReservaRapidaService;
-import com.cptrans.petrocarga.modules.vaga.entity.Vaga;
-import com.cptrans.petrocarga.modules.vaga.service.VagaService;
 import com.cptrans.petrocarga.shared.dto.response.PageResponseDTO;
+
+import lombok.RequiredArgsConstructor;
 
 
 @RestController
 @RequestMapping("/reserva-rapida")
+@RequiredArgsConstructor
 public class ReservaRapidaController {
-    
-    @Autowired
-    private ReservaRapidaService reservaRapidaService;
-    @Autowired
-    private VagaService vagaService;
-    @Autowired
-    private AgenteService agenteService;
+    private final ReservaRapidaService reservaRapidaService;
+    private final AgenteService agenteService;
 
     /**
      * Cria uma nova reserva rápida por um AGENTE/ADMIN.
@@ -50,11 +46,9 @@ public class ReservaRapidaController {
      */
     @PreAuthorize("hasAnyRole('ADMIN', 'AGENTE')")
     @PostMapping()
-    public ResponseEntity<ReservaRapidaResponseDTO> createReservaRapida(@RequestBody ReservaRapidaRequestDTO reservaRapidaRequest) {
-        Vaga vaga = vagaService.findById(reservaRapidaRequest.getVagaId());
-        ReservaRapida novaReservaRapida = reservaRapidaService.create(reservaRapidaRequest.toEntity(vaga));
-        
-        return ResponseEntity.status(HttpStatus.CREATED).body(novaReservaRapida.toResponse());
+    public ResponseEntity<ReservaRapidaResponseDTO> createReservaRapida(@RequestBody ReservaRapidaRequestDTO request) {
+        ReservaRapida novaReservaRapida = reservaRapidaService.create(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(ReservaRapidaMapper.toResponse(novaReservaRapida));
     }
     
     /**
@@ -76,10 +70,10 @@ public class ReservaRapidaController {
         
         if(vagaId != null || placaVeiculo != null || data != null || (listaStatus != null && !listaStatus.isEmpty())) {
             placaVeiculo = placaVeiculo != null ? placaVeiculo.trim().toUpperCase() : null;
-            Page<ReservaRapidaResponseDTO> reservasRapidas = reservaRapidaService.findByAgenteWithFilters(agente, vagaId, placaVeiculo, data, listaStatus, mes, ano, numeroPagina, tamanhoPagina).map(ReservaRapida::toResponse);
+            Page<ReservaRapidaResponseDTO> reservasRapidas = reservaRapidaService.findByAgenteWithFilters(agente, vagaId, placaVeiculo, data, listaStatus, mes, ano, numeroPagina, tamanhoPagina).map(ReservaRapidaMapper::toResponse);
             return ResponseEntity.ok().body(new PageResponseDTO(reservasRapidas));
         }
-        Page<ReservaRapidaResponseDTO> reservasRapidas = reservaRapidaService.findByAgente(agente.getId(), numeroPagina, tamanhoPagina).map(ReservaRapida::toResponse);
+        Page<ReservaRapidaResponseDTO> reservasRapidas = reservaRapidaService.findByAgente(agente.getId(), numeroPagina, tamanhoPagina).map(ReservaRapidaMapper::toResponse);
         return ResponseEntity.ok(new PageResponseDTO(reservasRapidas));
     }
     
