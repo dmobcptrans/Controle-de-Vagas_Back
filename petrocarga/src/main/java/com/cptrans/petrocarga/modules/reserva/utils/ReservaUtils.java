@@ -264,7 +264,7 @@ public class ReservaUtils {
             if (diferencaMinutos >= 0) return;
             else if (permissaoCriador.equals(PermissaoEnum.AGENTE) && diferencaMinutos >= -2) return;
             else throw new ReservaExceptions.InicioEFimInvalidosException();
-        } else {
+        } else if(dataAgora.isAfter(dataInicio) || dataAgora.isAfter(dataFim)){
             throw new ReservaExceptions.InicioEFimInvalidosException();
         }
     }
