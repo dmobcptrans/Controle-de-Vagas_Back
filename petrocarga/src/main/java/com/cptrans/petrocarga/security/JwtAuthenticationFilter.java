@@ -83,12 +83,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
      * @return o token de autenticação da requisição, ou null caso o token não seja encontrado
      */
     private String resolveToken(HttpServletRequest request) {
-
-        String authHeader = request.getHeader("Authorization");
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            return authHeader.substring(7);
-        }
-
         if (request.getCookies() != null) {
             for (var cookie : request.getCookies()) {
                 if ("auth-token".equals(cookie.getName())) {
@@ -96,7 +90,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 }
             }
         }
-
+        
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            return authHeader.substring(7);
+        }
         return null;
     }
 
