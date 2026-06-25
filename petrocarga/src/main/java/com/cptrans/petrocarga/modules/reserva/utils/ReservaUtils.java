@@ -155,7 +155,7 @@ public class ReservaUtils {
         boolean informouData = data != null;
         boolean informouMesEAno = mes != null && ano != null;
 
-        if ((informouData && informouMesEAno) || (!informouData && !informouMesEAno)) {
+        if ((informouData && informouMesEAno)) {
             throw new DateExceptions.FiltroDataInvalidoException();
         }
 
