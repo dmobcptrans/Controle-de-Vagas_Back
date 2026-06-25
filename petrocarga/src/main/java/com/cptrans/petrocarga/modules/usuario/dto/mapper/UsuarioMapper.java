@@ -32,7 +32,7 @@ public class UsuarioMapper {
                 usuario.getCriadoEm(),
                 usuario.isAtivo(),
                 usuario.getDesativadoEm(),
-                VeiculoMapper.toResponseList(usuario.getVeiculos())
+                VeiculoMapper.toResponseList(usuario.getVeiculosAtivos())
             ), usuario.getPersonalDataKeyVersion());    
     }
 }

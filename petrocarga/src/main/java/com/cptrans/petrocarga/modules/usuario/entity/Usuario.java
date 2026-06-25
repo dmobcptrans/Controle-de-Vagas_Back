@@ -321,6 +321,13 @@ public class Usuario implements UserDetails{
         return veiculos;
     }
 
+    public List<Veiculo> getVeiculosAtivos(){
+        if (this.veiculos != null && !this.veiculos.isEmpty()) {
+            return this.veiculos.stream().filter(veiculo -> veiculo.isAtivo()).toList();
+        }
+        return null;
+    }
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
           return List.of(new SimpleGrantedAuthority("ROLE_" + permissao.name()));
