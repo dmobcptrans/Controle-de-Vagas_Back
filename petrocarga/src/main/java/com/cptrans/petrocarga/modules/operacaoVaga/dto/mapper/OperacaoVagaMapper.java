@@ -17,16 +17,17 @@ public class OperacaoVagaMapper {
     
     public static OperacaoVagaResponseDTO toResponse(OperacaoVaga operacaoVaga) {
         if (operacaoVaga == null) return null;
-        return new OperacaoVagaResponseDTO(
+        OperacaoVagaResponseDTO response = new OperacaoVagaResponseDTO(
             operacaoVaga.getId(),
             operacaoVaga.getDiaSemana().getDescricao(),
             operacaoVaga.getHoraInicio(),
             operacaoVaga.getHoraFim()
         );
+        return response;
     }
 
     public static Set<OperacaoVagaResponseDTO> toResponseSet(Set<OperacaoVaga> operacoesVaga) {
         if (operacoesVaga == null || operacoesVaga.isEmpty()) return null;
-        return operacoesVaga.stream().map(OperacaoVagaMapper::toResponse).sorted().collect(Collectors.toCollection(() -> new TreeSet<>(compararPorCodigoEnum)));
+        return operacoesVaga.stream().map(OperacaoVagaMapper::toResponse).collect(Collectors.toCollection(() -> new TreeSet<>(compararPorCodigoEnum)));
     }
 }
