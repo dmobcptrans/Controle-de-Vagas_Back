@@ -32,19 +32,17 @@ import com.cptrans.petrocarga.modules.usuario.service.UsuarioService;
 import com.cptrans.petrocarga.security.UserAuthenticated;
 
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
 
 
 @RestController
 @RequestMapping("/denuncias")
+@RequiredArgsConstructor
 public class DenunciaController {
-
-    @Autowired
-    private DenunciaService denunciaService;
-    @Autowired
-    private UsuarioService usuarioService;
-    @Autowired
-    private ReservaService reservaService;
+    private final DenunciaService denunciaService;
+    private final UsuarioService usuarioService;
+    private final ReservaService reservaService;
     
     /**
      * Cria uma denúncia com base nos dados do request.
