@@ -87,7 +87,7 @@ public class AgenteService {
         Agente novoAgente = new Agente();
         
         novoAgente.setUsuario(usuario);
-        novoAgente.setMatricula(novoAgente.getMatricula());
+        novoAgente.setMatricula(request.getMatricula().trim());
         return agenteRepository.save(novoAgente);
     }
 

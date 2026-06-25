@@ -55,7 +55,7 @@ public class DenunciaMapper {
     }
 
     public static List<DenunciaResponseDTO> toResponseList(List<Denuncia> denuncias){
-        if (denuncias == null || denuncias.isEmpty()) return null;
+        if (denuncias == null || denuncias.isEmpty()) return List.of();
         return denuncias.stream().map(DenunciaMapper::toResponse).toList();
     }
 }

@@ -137,11 +137,15 @@ public class ReservaUtils {
         List<ReservaDTO> listaFinalReservas = new ArrayList<>(); 
 
         if (reservasRapidas != null && !reservasRapidas.isEmpty()) {
-            reservasRapidas.forEach(ReservaRapidaMapper :: toReservaDTO);
+            reservasRapidas.forEach((rr) -> {
+                listaFinalReservas.add(ReservaRapidaMapper.toReservaDTO(rr));
+            });
         }
     
         if (reservas != null && !reservas.isEmpty()) {
-            reservas.forEach(ReservaMapper :: toReservaDTO);
+            reservas.forEach((r) -> {
+                listaFinalReservas.add(ReservaMapper.toReservaDTO(r));
+            });
         }
     
         return listaFinalReservas;
@@ -155,7 +159,7 @@ public class ReservaUtils {
         boolean informouData = data != null;
         boolean informouMesEAno = mes != null && ano != null;
 
-        if ((informouData && informouMesEAno) || (!informouData && !informouMesEAno)) {
+        if ((informouData && informouMesEAno)) {
             throw new DateExceptions.FiltroDataInvalidoException();
         }
 

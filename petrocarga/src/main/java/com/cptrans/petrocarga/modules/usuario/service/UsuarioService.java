@@ -79,15 +79,15 @@ public class UsuarioService {
         
         Usuario novoUsuario = UsuarioMapper.toEntity(request);
         
-        if(usuarioRepository.existsByEmailHash(emailHash)) {
+        if (usuarioRepository.existsByEmailHash(emailHash)) {
             throw new UsuarioExceptions.EmailAlreadyExistsException();
         }
-        if(usuarioRepository.existsByCpfHash(cpfHash)) {
+        if (usuarioRepository.existsByCpfHash(cpfHash)) {
             throw new UsuarioExceptions.CpfAlreadyExistsException();
         }
         
         novoUsuario.setPermissao(permissao);
-        novoUsuario.setSenha(passwordEncoder.encode(request.getSenha()));
+        if (request.getSenha() != null && request.getSenha().length() >= 6) novoUsuario.setSenha(passwordEncoder.encode(request.getSenha()));
         novoUsuario.setAtivo(false);
         
         SecureRandom random = new SecureRandom();

@@ -6,8 +6,8 @@ import java.util.UUID;
 import com.cptrans.petrocarga.enums.StatusReservaEnum;
 import com.cptrans.petrocarga.enums.TipoVeiculoEnum;
 import com.cptrans.petrocarga.modules.agente.entity.Agente;
-import com.cptrans.petrocarga.modules.reservaRapida.dto.response.ReservaRapidaResponseDTO;
 import com.cptrans.petrocarga.modules.vaga.entity.Vaga;
+import com.cptrans.petrocarga.shared.utils.DateUtils;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -52,7 +52,7 @@ public class ReservaRapida {
     private OffsetDateTime fim;
 
     @Column(name = "criado_em", columnDefinition = "TIMESTAMP WITH TIME ZONE")
-    private OffsetDateTime criadoEm;
+    private OffsetDateTime criadoEm = DateUtils.agora();
 
     @Column(name = "cidade_origem")
     private String cidadeOrigem;
@@ -62,16 +62,10 @@ public class ReservaRapida {
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
-    private StatusReservaEnum status;
+    private StatusReservaEnum status = StatusReservaEnum.ATIVA;
 
     @Column(name = "posicao_perpendicular")
     private Integer posicaoPerpendicular;
-
-    // Constructors
-    public ReservaRapida() {
-        this.criadoEm = OffsetDateTime.now();
-        this.status = StatusReservaEnum.ATIVA;
-    }
 
     // Getters and Setters
     public UUID getId() {
@@ -168,10 +162,6 @@ public class ReservaRapida {
 
     public void setPosicaoPerpendicular(Integer posicaoPerpendicular) {
         this.posicaoPerpendicular = posicaoPerpendicular;
-    }
-
-    public ReservaRapidaResponseDTO toResponse() {
-        return new ReservaRapidaResponseDTO(this);
     }
 
 }

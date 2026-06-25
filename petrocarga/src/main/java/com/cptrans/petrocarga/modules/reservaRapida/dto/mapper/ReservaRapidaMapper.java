@@ -7,14 +7,30 @@ import org.springframework.stereotype.Component;
 import com.cptrans.petrocarga.modules.enderecoVaga.dto.mapper.EnderecoVagaMapper;
 import com.cptrans.petrocarga.modules.enderecoVaga.entity.EnderecoVaga;
 import com.cptrans.petrocarga.modules.reserva.dto.response.ReservaDTO;
+import com.cptrans.petrocarga.modules.reservaRapida.dto.request.ReservaRapidaRequestDTO;
 import com.cptrans.petrocarga.modules.reservaRapida.dto.response.ReservaRapidaResponseDTO;
 import com.cptrans.petrocarga.modules.reservaRapida.entity.ReservaRapida;
 import com.cptrans.petrocarga.modules.usuario.dto.mapper.UsuarioMapper;
 import com.cptrans.petrocarga.modules.usuario.entity.Usuario;
 import com.cptrans.petrocarga.modules.vaga.entity.Vaga;
+import com.cptrans.petrocarga.modules.veiculo.utils.VeiculoUtils;
 
 @Component
 public class ReservaRapidaMapper {
+
+    public static ReservaRapida toEntity(ReservaRapidaRequestDTO request, Vaga vaga) {
+        ReservaRapida reservaRapida = new ReservaRapida();
+        reservaRapida.setVaga(vaga);
+        reservaRapida.setTipoVeiculo(request.getTipoVeiculo());
+        reservaRapida.setPlaca(request.getPlaca() != null ? VeiculoUtils.normalizarEValidar(request.getPlaca()) : null);
+        reservaRapida.setInicio(request.getInicio());
+        reservaRapida.setFim(request.getFim());
+        reservaRapida.setPosicaoPerpendicular(request.getPosicaoPerpendicular());
+        reservaRapida.setCidadeOrigem(request.getCidadeOrigem());
+        reservaRapida.setEntradaCidade(request.getEntradaCidade());
+        return reservaRapida;
+    }
+
     public static ReservaRapidaResponseDTO toResponse(ReservaRapida reservaRapida) {
         if (reservaRapida == null) return null;
         return new ReservaRapidaResponseDTO(reservaRapida);

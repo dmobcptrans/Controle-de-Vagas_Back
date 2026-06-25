@@ -32,7 +32,7 @@ public class VeiculoMapper {
     }
 
     public static List<VeiculoResponseDTO> toResponseList(List<Veiculo> veiculos) {
-        if (veiculos == null || veiculos.isEmpty()) return List.of();
+        if (veiculos == null || veiculos.isEmpty()) return null;
         return veiculos.stream().map(VeiculoMapper::toResponse).toList(); 
     }
 }

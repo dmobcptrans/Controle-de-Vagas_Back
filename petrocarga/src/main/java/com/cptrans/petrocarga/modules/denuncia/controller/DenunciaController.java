@@ -3,7 +3,6 @@ package com.cptrans.petrocarga.modules.denuncia.controller;
 import java.util.List;
 import java.util.UUID;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -32,19 +31,17 @@ import com.cptrans.petrocarga.modules.usuario.service.UsuarioService;
 import com.cptrans.petrocarga.security.UserAuthenticated;
 
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
 
 
 @RestController
 @RequestMapping("/denuncias")
+@RequiredArgsConstructor
 public class DenunciaController {
-
-    @Autowired
-    private DenunciaService denunciaService;
-    @Autowired
-    private UsuarioService usuarioService;
-    @Autowired
-    private ReservaService reservaService;
+    private final DenunciaService denunciaService;
+    private final UsuarioService usuarioService;
+    private final ReservaService reservaService;
     
     /**
      * Cria uma denúncia com base nos dados do request.

@@ -32,7 +32,7 @@ public class VagaMapper {
     } 
 
     public static List<VagaResponseDTO> toResponseList(List<Vaga> vagas){
-        if (vagas == null || vagas.isEmpty()) return null;
+        if (vagas == null || vagas.isEmpty()) return List.of();
         return vagas.stream().map(VagaMapper::toResponse).toList();
     }
 }
