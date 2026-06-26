@@ -114,7 +114,7 @@ public class ReservaRapidaService {
         }
     }
 
-    public List<ReservaRapida> findByPlaca(String placa) {  
+    public List<ReservaRapida> findByPlacaAtiva(String placa) {  
         return reservaRapidaRepository.findByPlacaIgnoringCaseAndStatus(placa, StatusReservaEnum.ATIVA);
     }
 

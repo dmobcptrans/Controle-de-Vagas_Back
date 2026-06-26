@@ -98,7 +98,7 @@ public class ReservaController {
     @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR','AGENTE')")
     @GetMapping("/placa")
     public ResponseEntity<List<ReservaDTO>> getAllReservasByPlaca(@RequestParam(required = true) String placa) {
-        List<ReservaDTO> reservas = reservaService.getReservasAtivasByPlaca(placa.trim().toUpperCase());
+        List<ReservaDTO> reservas = reservaService.getReservasAtivasByPlaca(placa);
         return ResponseEntity.ok(reservas);
     }
 
