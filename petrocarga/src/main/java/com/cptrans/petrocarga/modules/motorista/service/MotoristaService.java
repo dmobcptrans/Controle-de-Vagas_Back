@@ -5,17 +5,15 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.cptrans.petrocarga.enums.PermissaoEnum;
 import com.cptrans.petrocarga.enums.TipoCnhEnum;
-import com.cptrans.petrocarga.modules.auth.exceptions.AuthExceptions;
 import com.cptrans.petrocarga.modules.cripto.CriptoService;
 import com.cptrans.petrocarga.modules.cripto.HashService;
 import com.cptrans.petrocarga.modules.empresa.entity.Empresa;
 import com.cptrans.petrocarga.modules.empresa.service.EmpresaService;
+import com.cptrans.petrocarga.modules.motorista.dto.request.MotoristaEmpresaRequestDTO;
 import com.cptrans.petrocarga.modules.motorista.dto.request.MotoristaFiltrosDTO;
 import com.cptrans.petrocarga.modules.motorista.dto.request.MotoristaRequestDTO;
 import com.cptrans.petrocarga.modules.motorista.entity.Motorista;
@@ -67,23 +65,66 @@ public class MotoristaService {
     public Motorista createMotorista(MotoristaRequestDTO request) {
         Motorista novoMotorista = new Motorista();
         
-        if (request.getEmpresaId() != null) {
-            UserAuthenticated userAuthenticated =  !SecurityContextHolder.getContext().getAuthentication().getPrincipal().equals("anonymousUser") ? (UserAuthenticated) SecurityContextHolder.getContext().getAuthentication().getPrincipal() : null;
-            if (userAuthenticated == null) throw new AuthExceptions.UsuarioNaoAutenticadoException();
+        // if (request.getEmpresaId() != null) {
+        //     UserAuthenticated userAuthenticated =  !SecurityContextHolder.getContext().getAuthentication().getPrincipal().equals("anonymousUser") ? (UserAuthenticated) SecurityContextHolder.getContext().getAuthentication().getPrincipal() : null;
+        //     if (userAuthenticated == null) throw new AuthExceptions.UsuarioNaoAutenticadoException();
             
-            List<String> authorities = userAuthenticated.userDetails().getAuthorities().stream().map(GrantedAuthority::getAuthority).toList();
-            if (!authorities.contains(PermissaoEnum.EMPRESA.getRole()) && !authorities.contains(PermissaoEnum.ADMIN.getRole())) throw new AuthExceptions.UsuarioNaoAutorizadoException();
+        //     List<String> authorities = userAuthenticated.userDetails().getAuthorities().stream().map(GrantedAuthority::getAuthority).toList();
+        //     if (!authorities.contains(PermissaoEnum.EMPRESA.getRole()) && !authorities.contains(PermissaoEnum.ADMIN.getRole())) throw new AuthExceptions.UsuarioNaoAutorizadoException();
             
-            Empresa empresa = empresaService.findById(request.getEmpresaId());
-            if (authorities.contains(PermissaoEnum.EMPRESA.getRole()) && !userAuthenticated.id().equals(empresa.getUsuario().getId())) throw new AuthExceptions.UsuarioNaoAutorizadoException();
+        //     Empresa empresa = empresaService.findById(request.getEmpresaId());
+        //     if (authorities.contains(PermissaoEnum.EMPRESA.getRole()) && !userAuthenticated.id().equals(empresa.getUsuario().getId())) throw new AuthExceptions.UsuarioNaoAutorizadoException();
             
-            String cpfHash = hashService.hash(request.getUsuario().getCpf());
-            if (motoristaRepository.existsByUsuarioCpfHash(hashService.hash(cpfHash))) return associarMotoristaEmpresa(cpfHash, empresa);
+        //     String cpfHash = hashService.hash(request.getUsuario().getCpf());
+        //     if (motoristaRepository.existsByUsuarioCpfHash(hashService.hash(cpfHash))) return associarMotoristaEmpresa(cpfHash, empresa);
             
-            novoMotorista.setEmpresa(empresa);
-        }
+        //     novoMotorista.setEmpresa(empresa);
+        // }
     
         Usuario usuario = usuarioService.createUsuario(request.getUsuario(), PermissaoEnum.MOTORISTA);
+        novoMotorista.setUsuario(usuario);
+
+        String cnhString = request.getNumeroCnh().trim();
+        String cnhHash = hashService.hash(cnhString);
+        
+        if (motoristaRepository.existsByCnhHash(cnhHash)) throw new MotoristaExceptions.CnhAlreadyExistsException();
+        
+        String cnhCripto = criptoService.encrypt(cnhString);
+        novoMotorista.setCnhHash(cnhHash);
+        novoMotorista.setCnhCripto(cnhCripto);
+        novoMotorista.setCnhLast4(UsuarioUtils.gerarLastN(cnhString, 4));
+
+        novoMotorista.setDataValidadeCnh(request.getDataValidadeCnh());
+        novoMotorista.setTipoCnh(request.getTipoCnh());
+        return  motoristaRepository.save(novoMotorista);
+    }
+
+    @Transactional
+    public Motorista createMotoristaByEmpresa(UUID empresaUsuarioId, MotoristaEmpresaRequestDTO request) {
+        Empresa empresa = empresaService.findByUsuarioId(empresaUsuarioId);
+        
+        Optional<Motorista> motoristaByCpfOptional = motoristaRepository.findByUsuarioCpfHash(hashService.hash(request.getCpf().trim()));
+        if (motoristaByCpfOptional.isPresent()) {
+            Motorista motorista = motoristaByCpfOptional.get();
+            if (motorista.getEmpresa() != null && !motorista.getEmpresa().getId().equals(empresa.getId())) throw new MotoristaExceptions.MotoristaJaPossuiEmpresaException();
+            if (!motorista.getUsuario().isAtivo()) throw new MotoristaExceptions.MotoristaNotFoundException();
+            motorista.setEmpresa(empresa);
+            return motoristaRepository.save(motorista);
+        }
+
+        Optional<Motorista> motoristaByEmailOptional = motoristaRepository.findByUsuarioEmailHash(hashService.hash(request.getEmail().trim().toLowerCase()));
+        if (motoristaByEmailOptional.isPresent()) {
+            Motorista motorista = motoristaByEmailOptional.get();
+            if (motorista.getEmpresa() != null && !motorista.getEmpresa().getId().equals(empresa.getId())) throw new MotoristaExceptions.MotoristaJaPossuiEmpresaException();
+            if (!motorista.getUsuario().isAtivo()) throw new MotoristaExceptions.MotoristaNotFoundException();
+            motorista.setEmpresa(empresa);
+            return motoristaRepository.save(motorista);
+        }
+    
+        Usuario usuario = usuarioService.createMotoristaEmpresa(request);
+    
+        Motorista novoMotorista = new Motorista();
+    
         novoMotorista.setUsuario(usuario);
 
         String cnhString = request.getNumeroCnh().trim();
@@ -142,16 +183,16 @@ public class MotoristaService {
         usuarioService.deleteById(motorista.getUsuario().getId());
     }
 
-    private Motorista associarMotoristaEmpresa (String motoristaCpfHash, Empresa empresa) {
-        if (motoristaCpfHash == null || motoristaCpfHash.trim().isEmpty()) return null;
-        Motorista motorista = motoristaRepository.findByUsuarioCpfHashAndUsuarioAtivoTrue(motoristaCpfHash).orElseThrow(() -> new MotoristaExceptions.MotoristaNotFoundException());
-        if (motorista.getEmpresa() != null){
-            if (!motorista.getEmpresa().getId().equals(empresa.getId())) throw new MotoristaExceptions.MotoristaJaPossuiEmpresaException();
-            return motorista;
-        }
-        motorista.setEmpresa(empresa);
-        return motoristaRepository.save(motorista);
-    }
+    // private Motorista associarMotoristaEmpresa (String motoristaCpfHash, Empresa empresa) {
+    //     if (motoristaCpfHash == null || motoristaCpfHash.trim().isEmpty()) return null;
+    //     Motorista motorista = motoristaRepository.findByUsuarioCpfHashAndUsuarioAtivoTrue(motoristaCpfHash).orElseThrow(() -> new MotoristaExceptions.MotoristaNotFoundException());
+    //     if (motorista.getEmpresa() != null){
+    //         if (!motorista.getEmpresa().getId().equals(empresa.getId())) throw new MotoristaExceptions.MotoristaJaPossuiEmpresaException();
+    //         return motorista;
+    //     }
+    //     motorista.setEmpresa(empresa);
+    //     return motoristaRepository.save(motorista);
+    // }
 
 
     public Motorista completarCadastro(Usuario usuario, String numeroCnh, LocalDate dataValidadeCnh, TipoCnhEnum tipoCnh){

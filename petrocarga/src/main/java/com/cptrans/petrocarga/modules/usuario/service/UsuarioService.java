@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.cptrans.petrocarga.enums.PermissaoEnum;
 import com.cptrans.petrocarga.enums.UsuarioProviderEnum;
 import com.cptrans.petrocarga.modules.messaging.email.EmailSender;
+import com.cptrans.petrocarga.modules.motorista.dto.request.MotoristaEmpresaRequestDTO;
 import com.cptrans.petrocarga.modules.auth.dto.request.CompletarCadastroDTO;
 import com.cptrans.petrocarga.modules.cripto.CriptoService;
 import com.cptrans.petrocarga.modules.cripto.HashService;
@@ -90,17 +91,12 @@ public class UsuarioService {
         if (request.getSenha() != null && request.getSenha().length() >= 6) novoUsuario.setSenha(passwordEncoder.encode(request.getSenha()));
         novoUsuario.setAtivo(false);
         
-        SecureRandom random = new SecureRandom();
-        int code = random.nextInt(1_000_000);
-        String codeStr = String.format("%06d", code);
-        
-        novoUsuario.setVerificationCode(codeStr);
+        novoUsuario.setVerificationCode(gerarCodigoAleatorio());
         novoUsuario.setVerificationCodeExpiresAt(LocalDateTime.now().plusMinutes(10));
         
         String firstPassword = null;
         if (novoUsuario.getPermissao().equals(PermissaoEnum.GESTOR) || novoUsuario.getPermissao().equals(PermissaoEnum.AGENTE)) {
-            SecureRandom randomPassword = new SecureRandom();
-            firstPassword = String.format("%06d", randomPassword.nextInt(1_000_000));
+            firstPassword = gerarCodigoAleatorio();
             novoUsuario.setSenha(passwordEncoder.encode(firstPassword));
         }
 
@@ -176,9 +172,7 @@ public class UsuarioService {
             throw new IllegalArgumentException("Usuário desativado em " + usuario.getDesativadoEm() + ". Para mais informações, entre em contato com a CPTrans.");
         }
 
-        SecureRandom random = new SecureRandom();
-        int code = random.nextInt(1_000_000);
-        String codeStr = String.format("%06d", code);
+        String codeStr = gerarCodigoAleatorio();
         usuario.setVerificationCode(codeStr);
         usuario.setVerificationCodeExpiresAt(LocalDateTime.now().plusMinutes(10));
 
@@ -202,9 +196,7 @@ public class UsuarioService {
         Usuario usuario = optUsuario.get();
 
         // Gera código de 6 dígitos
-        SecureRandom random = new SecureRandom();
-        int code = random.nextInt(1_000_000);
-        String codeStr = String.format("%06d", code);
+        String codeStr = gerarCodigoAleatorio();
 
         // Reutiliza os campos de verification_code para reset de senha
         usuario.setVerificationCode(codeStr);
@@ -331,9 +323,9 @@ public class UsuarioService {
             throw new IllegalArgumentException("Cadastro já completo.");
 
         String cpfHash = hashService.hash(request.getCpf());
-        Optional<Usuario> usuarioByCpf = usuarioRepository.findByCpfHash(cpfHash);
+      
 
-        if (usuarioByCpf.isPresent() && !usuarioByCpf.get().getId().equals(usuarioCadastrado.getId())) throw new IllegalArgumentException("CPF já cadastrado.");
+        if (usuarioRepository.existsByCpfHashAndIdNot(cpfHash, usuarioId)) throw new IllegalArgumentException("CPF já cadastrado.");
 
         usuarioCadastrado.setCpfHash(cpfHash);
         usuarioCadastrado.setCpfCripto(criptoService.encrypt(request.getCpf()));
@@ -377,5 +369,51 @@ public class UsuarioService {
         }
 
         return usuarOptional;
+    }
+
+    @Transactional
+    public Usuario createMotoristaEmpresa(MotoristaEmpresaRequestDTO request) {
+        String nome = request.getNome().trim();
+        String cpf = request.getCpf().trim();
+        String cpfHash = hashService.hash(cpf);
+        String cpfCripto = criptoService.encrypt(cpf);
+        String cpfLast5 = UsuarioUtils.gerarLastN(cpf, 5);
+        String email = request.getEmail().trim().toLowerCase();
+        String emailHash = hashService.hash(email);
+        String emailCripto = criptoService.encrypt(email);
+        String senhaAleatoria = gerarCodigoAleatorio();
+        String telefone = request.getTelefone().trim();
+        String telefoneHash = hashService.hash(telefone);
+        String telefoneCripto = criptoService.encrypt(telefone);
+        String telefoneLast4 = UsuarioUtils.gerarLastN(telefone, 4);
+
+        Usuario novoUsuario = new Usuario();
+        novoUsuario.setPermissao(PermissaoEnum.MOTORISTA);
+
+        novoUsuario.setNome(nome);
+        novoUsuario.setCpfHash(cpfHash);
+        novoUsuario.setCpfCripto(cpfCripto);
+        novoUsuario.setCpfLast5(cpfLast5);
+        novoUsuario.setEmailHash(emailHash);
+        novoUsuario.setEmailCripto(emailCripto);
+        novoUsuario.setTelefoneHash(telefoneHash);
+        novoUsuario.setTelefoneCripto(telefoneCripto);
+        novoUsuario.setTelefoneLast4(telefoneLast4);
+        novoUsuario.setPersonalDataKeyVersion(activeKeyVersion);
+        novoUsuario.setSenha(passwordEncoder.encode(senhaAleatoria));
+        novoUsuario.setAtivo(false);
+        novoUsuario.setVerificationCode(gerarCodigoAleatorio());
+        novoUsuario.setVerificationCodeExpiresAt(LocalDateTime.now().plusMinutes(10));
+
+        Usuario novoUsuarioSalvo = usuarioRepository.save(novoUsuario);
+        eventPublisher.publish(new UsuarioCriadoEvent(email, novoUsuarioSalvo.getVerificationCode(), senhaAleatoria));
+
+        return novoUsuarioSalvo;
+    }
+
+    private String gerarCodigoAleatorio(){
+        SecureRandom random = new SecureRandom();
+        int code = random.nextInt(1_000_000);
+        return String.format("%06d", code);
     }
 }

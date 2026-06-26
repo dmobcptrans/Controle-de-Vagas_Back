@@ -228,8 +228,10 @@ public class ReservaService {
     }
 
     public List<ReservaDTO> getReservasAtivasByPlaca(String placa){
+        if (placa == null) return List.of();
+        placa = placa.trim().toUpperCase();
         List<Reserva> reservasPorPlaca = reservaRepository.findByVeiculoPlacaIgnoringCaseAndStatusIn(placa, new ArrayList<>(List.of(StatusReservaEnum.ATIVA, StatusReservaEnum.RESERVADA)));
-        List<ReservaRapida> reservasRapidasPorPlaca = reservaRapidaService.findByPlaca(placa != null ? placa.trim().toUpperCase() : null);
+        List<ReservaRapida> reservasRapidasPorPlaca = reservaRapidaService.findByPlacaAtiva(placa);
         List<ReservaDTO> listaReservasAtivasPorPlaca = ReservaUtils.juntarReservas(reservasPorPlaca, reservasRapidasPorPlaca);
         return listaReservasAtivasPorPlaca;
     }

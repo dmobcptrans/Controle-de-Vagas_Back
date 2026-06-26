@@ -20,7 +20,7 @@ public class MotoristaExceptions {
 
     public static class MotoristaNotFoundException extends EntityNotFoundException{
         public MotoristaNotFoundException() {
-            super("Motorista não encontrado.");
+            super("Motorista não encontrado ou inativo.");
         }
     }
 

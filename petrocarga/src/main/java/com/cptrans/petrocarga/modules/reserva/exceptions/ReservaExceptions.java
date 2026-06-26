@@ -31,7 +31,7 @@ public class ReservaExceptions {
 
     public static class InicioEFimInvalidosException extends IllegalArgumentException{
         public InicioEFimInvalidosException() {
-            super("O inicio da reserva deve ser menor que o fim e maior que o horário atual.");
+            super("O inicio da reserva deve ser menor que o fim e maior ou igual ao horário atual.");
         }
     }
 

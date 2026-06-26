@@ -127,7 +127,7 @@ public class ReservaUtils {
     }
 
     public void validarMotoristaReserva(UUID motoristaUsuarioId, UUID motoristaId, List<ReservaDTO> reservasSobrepostas, String metodoChamador) {
-        List<ReservaDTO> reservasAtivasSobrepostasPorMotorista = reservasSobrepostas.stream().filter(reserva -> reserva.getCriadoPor().getId().equals(motoristaUsuarioId) || reserva.getMotoristaId().equals(motoristaId)).toList();
+        List<ReservaDTO> reservasAtivasSobrepostasPorMotorista = reservasSobrepostas.stream().filter(reserva -> reserva.getCriadoPor().getId().equals(motoristaUsuarioId) || (reserva.getMotoristaId() != null && reserva.getMotoristaId().equals(motoristaId))).toList();
         if(reservasAtivasSobrepostasPorMotorista != null && !reservasAtivasSobrepostasPorMotorista.isEmpty() && metodoChamador.equals(METODO_POST)) {
             throw new ReservaExceptions.MotoristaComConflitoDeHorarioException();
         }

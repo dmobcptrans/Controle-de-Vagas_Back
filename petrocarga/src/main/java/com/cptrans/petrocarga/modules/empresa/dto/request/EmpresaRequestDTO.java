@@ -5,6 +5,7 @@ import org.hibernate.validator.constraints.br.CNPJ;
 
 import com.cptrans.petrocarga.modules.usuario.dto.request.UsuarioRequestDTO;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AccessLevel;
@@ -17,6 +18,7 @@ import lombok.NoArgsConstructor;
 @Getter
 public class EmpresaRequestDTO {
 
+    @Valid
     @NotNull(message = "O campo 'usuario' é obrigatório.")
     private UsuarioRequestDTO usuario;
 

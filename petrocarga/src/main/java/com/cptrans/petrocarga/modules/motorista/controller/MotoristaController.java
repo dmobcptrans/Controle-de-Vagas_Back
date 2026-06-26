@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.cptrans.petrocarga.modules.motorista.dto.mapper.MotoristaMapper;
+import com.cptrans.petrocarga.modules.motorista.dto.request.MotoristaEmpresaRequestDTO;
 import com.cptrans.petrocarga.modules.motorista.dto.request.MotoristaFiltrosDTO;
 import com.cptrans.petrocarga.modules.motorista.dto.request.MotoristaRequestDTO;
 import com.cptrans.petrocarga.modules.motorista.dto.response.MotoristaResponseDTO;
@@ -91,6 +92,14 @@ public class MotoristaController {
     @PostMapping("/cadastro")
     public ResponseEntity<MotoristaResponseDTO> createMotorista(@RequestBody @Valid MotoristaRequestDTO request) {
         Motorista motorista = motoristaService.createMotorista(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(MotoristaMapper.toResponse(motorista));
+
+    }
+
+    @PreAuthorize("#empresaUsuarioId == authentication.principal.id or hasRole('ADMIN')")
+    @PostMapping("/cadastroEmpresa/{empresaUsuarioId}")
+    public ResponseEntity<MotoristaResponseDTO> createMotoristaEmpresa(@PathVariable UUID empresaUsuarioId,@RequestBody @Valid MotoristaEmpresaRequestDTO request) {
+        Motorista motorista = motoristaService.createMotoristaByEmpresa(empresaUsuarioId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(MotoristaMapper.toResponse(motorista));
 
     }
