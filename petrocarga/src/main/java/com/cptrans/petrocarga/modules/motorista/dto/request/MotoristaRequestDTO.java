@@ -6,12 +6,18 @@ import java.util.UUID;
 import com.cptrans.petrocarga.enums.TipoCnhEnum;
 import com.cptrans.petrocarga.modules.usuario.dto.request.UsuarioRequestDTO;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Getter
 public class MotoristaRequestDTO {
-
+    @Valid
     @NotNull(message = "O campo 'usuario' é obrigatório.")
     private UsuarioRequestDTO usuario;
 
@@ -27,33 +33,4 @@ public class MotoristaRequestDTO {
     private LocalDate dataValidadeCnh;
 
     private UUID empresaId;
-
-    // public Motorista toEntity(Empresa empresa) {
-    //     Motorista motorista = new Motorista();
-    //     if (empresa != null){
-    //         motorista.setEmpresa(empresa);
-    //     }
-    //     motorista.setUsuario(this.usuario.toEntity());
-    //     motorista.setTipoCnh(this.tipoCnh);
-    //     motorista.setCnhHash(this.numeroCnh);
-    //     motorista.setDataValidadeCnh(this.dataValidadeCnh);
-    //     return motorista;
-    // }
-
-    // Getters and Setters
-    public UsuarioRequestDTO getUsuario() {
-        return usuario;
-    }
-    public TipoCnhEnum getTipoCnh() {
-        return tipoCnh;
-    }
-    public String getNumeroCnh() {
-        return numeroCnh;
-    }
-    public LocalDate getDataValidadeCnh() {
-        return dataValidadeCnh;
-    }
-    public UUID getEmpresaId() {
-        return empresaId;
-    }
 }

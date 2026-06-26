@@ -22,7 +22,9 @@ public interface UsuarioRepository extends JpaRepository<Usuario, UUID>, JpaSpec
     public Optional<Usuario> findByCpfHashAndAtivoTrue(String cpfHash);
     public Optional<Usuario> findByCpfHashAndIdNot(String cpfHash, UUID id);
     public Boolean existsByEmailHash(String emailHash);
+    public Boolean existsByEmailHashAndIdNot(String emailHash, UUID id);
     public Boolean existsByCpfHash(String cpfHash);
+    public Boolean existsByCpfHashAndIdNot(String cpfHash, UUID id);
     public List<Usuario> findByPermissao(PermissaoEnum permissao);
     public List<Usuario> findByPermissaoAndAtivo(PermissaoEnum permissao, Boolean ativo);
     public Optional<Usuario> findByIdAndAtivo(UUID id, Boolean ativo);
