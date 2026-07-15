@@ -7,6 +7,8 @@ import org.springframework.data.jpa.domain.Specification;
 
 import com.cptrans.petrocarga.modules.motorista.dto.request.MotoristaFiltrosDTO;
 import com.cptrans.petrocarga.modules.motorista.entity.Motorista;
+import com.cptrans.petrocarga.shared.utils.StringUtils;
+import com.cptrans.petrocarga.shared.utils.Utils;
 
 import jakarta.persistence.criteria.Predicate;
 
@@ -14,7 +16,7 @@ public class MotoristaSpecification {
     /**
      * Cria uma Specification para filtrar motoristas com base nos filtros passados.
      *
-     * Os filtros são: nome, telefone, cnh, ativo.
+     * Os filtros são: nome, telefone, cpf, cnh e ativo.
      * Se nenhum filtro for passado, então retorna uma Specification que não filtra nada.
      *
      * @param filtros o objeto com os filtros para a busca
@@ -27,27 +29,63 @@ public class MotoristaSpecification {
 
             List<Predicate> predicates = new ArrayList<>();
 
-            if (filtros.nome() != null) {
+            if (filtros.getId() != null) {
                 predicates.add(
-                    cb.like(cb.lower(root.get("usuario").get("nome")), "%" + filtros.nome().trim().toLowerCase() + "%")
+                    cb.equal(root.get("id"), filtros.getId())
                 );
             }
 
-            if (filtros.telefone() != null) {
+            if (filtros.getNome() != null) {
                 predicates.add(
-                    cb.equal(root.get("usuario").get("telefone"), filtros.telefone())
+                    cb.like(cb.lower(Utils.createUnaccentExpression(cb, root.get("usuario").get("nome"))), "%" + StringUtils.normalize(filtros.getNome().trim().toLowerCase()) + "%")
                 );
             }
 
-            if (filtros.cnh() != null) {
+            if (filtros.getTelefone() != null) {
                 predicates.add(
-                    cb.equal(root.get("numero_cnh"), filtros.cnh())
+                    cb.equal(root.get("usuario").get("telefoneHash"), filtros.getTelefone())
                 );
             }
 
-            if (filtros.ativo() != null) {
+            if (filtros.getEmail() != null) {
                 predicates.add(
-                    cb.equal(root.get("usuario").get("ativo") , filtros.ativo())
+                    cb.equal(root.get("usuario").get("emailHash"), filtros.getEmail())
+                );
+            }
+
+            if (filtros.getCpf() != null) {
+                predicates.add(
+                    cb.equal(root.get("usuario").get("cpfHash"), filtros.getCpf())
+                );
+            }
+
+            if (filtros.getCnh() != null) {
+                predicates.add(
+                    cb.equal(root.get("cnhHash"), filtros.getCnh())
+                );
+            }
+
+            if (filtros.getEmpresaId() != null) {
+                predicates.add(
+                    cb.equal(root.get("empresa").get("id"), filtros.getEmpresaId())
+                );
+            }
+
+            if (filtros.getEmpresaCnpj() != null) {
+                predicates.add(
+                    cb.like(root.get("empresa").get("cnpj"), "%" + filtros.getEmpresaCnpj().trim() + "%")
+                );
+            }
+
+            if (filtros.getEmpresaRazaoSocial() != null) {
+                predicates.add(
+                    cb.like(cb.lower(Utils.createUnaccentExpression(cb, root.get("empresa").get("usuario").get("nome"))), "%" + StringUtils.normalize(filtros.getEmpresaRazaoSocial().trim().toLowerCase()) + "%")
+                );
+            }
+
+            if (filtros.getAtivo() != null) {
+                predicates.add(
+                    cb.equal(root.get("usuario").get("ativo") , filtros.getAtivo())
                 );
             }
 

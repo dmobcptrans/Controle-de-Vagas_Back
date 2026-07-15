@@ -4,65 +4,70 @@ import java.util.List;
 
 import org.springframework.stereotype.Component;
 
+import com.cptrans.petrocarga.modules.empresa.entity.Empresa;
 import com.cptrans.petrocarga.modules.motorista.dto.response.MotoristaResponseDTO;
 import com.cptrans.petrocarga.modules.motorista.dto.response.MotoristaSimplificadoResponseDTO;
 import com.cptrans.petrocarga.modules.motorista.entity.Motorista;
 import com.cptrans.petrocarga.modules.usuario.dto.mapper.UsuarioMapper;
-import com.cptrans.petrocarga.modules.veiculo.dto.mapper.VeiculoMapper;
-import com.cptrans.petrocarga.modules.veiculo.dto.response.VeiculoResponseDTO;
-import com.cptrans.petrocarga.modules.veiculo.entity.Veiculo;
-import com.cptrans.petrocarga.modules.veiculoEmpresaMotorista.entity.VeiculoEmpresaMotorista;
+import com.cptrans.petrocarga.modules.usuario.entity.Usuario;
 import com.cptrans.petrocarga.shared.utils.CriptoUtils;
+
+import lombok.RequiredArgsConstructor;
 
 
 @Component
+@RequiredArgsConstructor
 public class MotoristaMapper {
-
+    private final CriptoUtils criptoUtils;
+    private final UsuarioMapper usuarioMapper;
     
-    public static MotoristaResponseDTO toResponse(Motorista motorista){
+    public MotoristaResponseDTO toResponse(Motorista motorista){
         if (motorista == null) return null;
-        return CriptoUtils.decrypt(
+        Usuario motoristaUsuario = motorista.getUsuario();
+        Empresa empresa = motorista.getEmpresa();
+        Usuario empresaUsuario = empresa != null ? empresa.getUsuario() : null;
+        return criptoUtils.decrypt(
             new MotoristaResponseDTO(
                 motorista.getId(),
-                (motorista.getUsuario() != null ? UsuarioMapper.toResponse(motorista.getUsuario()) : null),
+                (motoristaUsuario != null ? usuarioMapper.toResponse(motoristaUsuario, motorista.getCpfCripto()) : null),
                 motorista.getTipoCnh(),
                 motorista.getCnhCripto(),
                 motorista.getDataValidadeCnh(),
-                    (motorista.getEmpresa() != null ? motorista.getEmpresa().getId() : null),
-                    (motorista.getEmpresa() != null ? motorista.getEmpresa().getCnpj() : null),
-                    (motorista.getEmpresa() != null ? motorista.getEmpresa().getRazaoSocial() : null),
-                    resolveVeiculosEmpresa(motorista.getVeiculosEmpresa())
+                    (empresa != null ? empresa.getId() : null),
+                    (empresa != null ? empresa.getCnpj() : null),
+                    (empresaUsuario != null ? empresaUsuario.getNome() : null)
                 ), motorista.getUsuario().getPersonalDataKeyVersion());
     }
     
-    public static List<MotoristaResponseDTO> toResponseList(List<Motorista> motoristas){
-        if (motoristas == null || motoristas.isEmpty()) return List.of();
-        return motoristas.stream().map(MotoristaMapper::toResponse).toList();
+    public List<MotoristaResponseDTO> toResponseList(List<Motorista> motoristas){
+        if (motoristas == null || motoristas.isEmpty()) return null;
+        return motoristas.stream().map(this::toResponse).toList();
     }
 
-    public static MotoristaSimplificadoResponseDTO toResponseSimplificado(Motorista motorista){
+    public MotoristaSimplificadoResponseDTO toResponseSimplificado(Motorista motorista){
         if (motorista == null) return null;
+        Usuario motoristaUsuario = motorista.getUsuario();
+        String telefoneCriptoMotorista = motoristaUsuario != null ? motoristaUsuario.getTelefoneCripto() : null;
+        String emailCriptoMotorista = motoristaUsuario != null ? motoristaUsuario.getEmailCripto() : null;
+        Integer keyVersionMotorista = motoristaUsuario != null ? motoristaUsuario.getPersonalDataKeyVersion() : null;
+        String telefoneMotorista = telefoneCriptoMotorista != null && keyVersionMotorista != null ? criptoUtils.decrypt(telefoneCriptoMotorista, keyVersionMotorista) : null;
+        String emailMotorista = emailCriptoMotorista != null && keyVersionMotorista != null ? criptoUtils.decrypt(emailCriptoMotorista, keyVersionMotorista) : null;
+        Empresa empresa = motorista.getEmpresa();
+        Usuario empresaUsuario = empresa != null ? empresa.getUsuario() : null;
         return new MotoristaSimplificadoResponseDTO(
-            motorista.getId(),
-            motorista.getUsuario().getId(),
-            motorista.getUsuario().getNome(),
-            motorista.getUsuario().isAtivo(),
-            (motorista.getEmpresa() != null ? motorista.getEmpresa().getId() : null),
-            (motorista.getEmpresa() != null ? motorista.getEmpresa().getCnpj() : null),
-            (motorista.getEmpresa() != null ? motorista.getEmpresa().getRazaoSocial() : null)
-        );
+                motorista.getId(),
+                motorista.getUsuario().getNome(),
+                telefoneMotorista,
+                emailMotorista,
+                motorista.getUsuario().getAtivo(),
+                (empresa != null ? empresa.getId() : null),
+                (empresa != null ? empresa.getCnpj() : null),
+                (empresaUsuario != null ? empresaUsuario.getNome() : null)
+            );
     }
 
-    public static List<MotoristaSimplificadoResponseDTO> toResponseSimplificadoList(List<Motorista> motoristas){
+    public List<MotoristaSimplificadoResponseDTO> toResponseSimplificadoList(List<Motorista> motoristas){
         if (motoristas == null || motoristas.isEmpty()) return List.of();
-        return motoristas.stream().map(MotoristaMapper::toResponseSimplificado).toList();
-    }
-
-    private static List<VeiculoResponseDTO> resolveVeiculosEmpresa(List<VeiculoEmpresaMotorista> veiculosEmpresa) {
-        if (veiculosEmpresa == null || veiculosEmpresa.isEmpty()) return List.of();
-        return veiculosEmpresa.stream().map(vem -> {
-            Veiculo veiculo = vem.getVeiculo();
-            return VeiculoMapper.toResponse(veiculo);
-        }).toList();
+        return motoristas.stream().map(this::toResponseSimplificado).toList();
     }
 }

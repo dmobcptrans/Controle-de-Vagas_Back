@@ -36,6 +36,12 @@ public class MotoristaExceptions {
         }
     }
 
+    public static class MotoristaCadastradadoInativoException extends DataIntegrityViolationException{
+        public MotoristaCadastradadoInativoException() {
+            super("O Motorista foi encontrado no sistema, porém a conta está inativa.");
+        }
+    }
+
     @ExceptionHandler(CnhAlreadyExistsException.class)
     public ResponseEntity<SystemResponse> handleCnhVencidaException(CnhAlreadyExistsException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(new SystemResponse(ex.getMessage(), 409));
@@ -44,5 +50,20 @@ public class MotoristaExceptions {
     @ExceptionHandler(MotoristaNotFoundException.class)
     public ResponseEntity<SystemResponse> handleMotoristaNotFoundException(MotoristaNotFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new SystemResponse(ex.getMessage(), 404));
+    }
+
+    @ExceptionHandler(MotoristaJaPossuiEmpresaException.class)
+    public ResponseEntity<SystemResponse> handleMotoristaJaPossuiEmpresaException(MotoristaJaPossuiEmpresaException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(new SystemResponse(ex.getMessage(), 409));
+    }
+
+    @ExceptionHandler(MotoristaNaoPossuiEmpresaException.class)
+    public ResponseEntity<SystemResponse> handleMotoristaNaoPossuiEmpresaException(MotoristaNaoPossuiEmpresaException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(new SystemResponse(ex.getMessage(), 409));
+    }
+
+    @ExceptionHandler(MotoristaCadastradadoInativoException.class)
+    public ResponseEntity<SystemResponse> handleMotoristaCadastradadoInativoException(MotoristaCadastradadoInativoException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(new SystemResponse(ex.getMessage(), 409));
     }
 }
