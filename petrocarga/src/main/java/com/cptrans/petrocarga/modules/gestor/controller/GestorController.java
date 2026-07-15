@@ -1,9 +1,7 @@
 package com.cptrans.petrocarga.modules.gestor.controller;
 
-import java.util.List;
 import java.util.UUID;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -17,21 +15,25 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.cptrans.petrocarga.enums.OrdemEnum;
+import com.cptrans.petrocarga.modules.gestor.dto.mapper.GestorMapper;
 import com.cptrans.petrocarga.modules.gestor.dto.request.GestorFiltrosDTO;
+import com.cptrans.petrocarga.modules.gestor.dto.request.GestorRequestDTO;
+import com.cptrans.petrocarga.modules.gestor.dto.response.GestorResponseDTO;
+import com.cptrans.petrocarga.modules.gestor.entity.Gestor;
 import com.cptrans.petrocarga.modules.gestor.service.GestorService;
-import com.cptrans.petrocarga.modules.usuario.dto.mapper.UsuarioMapper;
 import com.cptrans.petrocarga.modules.usuario.dto.request.UsuarioPATCHRequestDTO;
-import com.cptrans.petrocarga.modules.usuario.dto.request.UsuarioRequestDTO;
-import com.cptrans.petrocarga.modules.usuario.dto.response.UsuarioResponseDTO;
-import com.cptrans.petrocarga.modules.usuario.entity.Usuario;
+import com.cptrans.petrocarga.shared.dto.response.PageResponseDTO;
 
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/gestores")
+@RequiredArgsConstructor
 public class GestorController {
-    @Autowired
-    private GestorService gestorService;
+    private final GestorService gestorService;
+    private final GestorMapper gestorMapper;
 
     /**
      * Retorna uma lista de gestores com base nos filtros passados.
@@ -47,18 +49,19 @@ public class GestorController {
      */
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping()
-    public ResponseEntity<List<UsuarioResponseDTO>> getAllGestores(@RequestParam(required = false) String nome, @RequestParam(required = false) String telefone, @RequestParam(required = false) String email, @RequestParam(required = false) Boolean ativo) {
-        if(nome != null || telefone != null || email != null || ativo != null) {
-            GestorFiltrosDTO filtros = new GestorFiltrosDTO(nome, telefone, email, ativo);
-            return ResponseEntity.ok(gestorService.findAllWithFiltros(filtros).stream()
-                    .map(gestor -> UsuarioMapper.toResponse(gestor))
-                    .toList());
-        }
-
-        List<UsuarioResponseDTO> gestores = gestorService.findAll().stream()
-                .map(gestor -> UsuarioMapper.toResponse(gestor))
-                .toList();
-        return ResponseEntity.ok(gestores);
+    public ResponseEntity<PageResponseDTO> getAllGestores(
+            @RequestParam(required = false) UUID id,
+            @RequestParam(required = false) String nome,
+            @RequestParam(required = false) String telefone,
+            @RequestParam(required = false) String email,
+            @RequestParam(required = false) String cpf,
+            @RequestParam(required = false) Boolean ativo,
+            @RequestParam(defaultValue = "0") int pagina,
+            @RequestParam(defaultValue = "10") int tamanhoPagina,
+            @RequestParam(defaultValue = "ASC") OrdemEnum ordem) {
+        GestorFiltrosDTO filtros = new GestorFiltrosDTO(id, nome, telefone, email, cpf, ativo);
+        return ResponseEntity.ok(gestorService.findAllWithFiltros(filtros, pagina, tamanhoPagina, ordem));
+                   
     }
 
     /**
@@ -69,9 +72,9 @@ public class GestorController {
      */
     @PreAuthorize("#usuarioId == authentication.principal.id or hasRole('ADMIN')")
     @GetMapping("/{usuarioId}")
-    public ResponseEntity<UsuarioResponseDTO> getGestorById(@PathVariable UUID usuarioId) {
-        Usuario gestor = gestorService.findByUsuarioId(usuarioId);
-        return ResponseEntity.ok(UsuarioMapper.toResponse(gestor));
+    public ResponseEntity<GestorResponseDTO> getGestorById(@PathVariable UUID usuarioId) {
+        Gestor gestor = gestorService.findByUsuarioId(usuarioId);
+        return ResponseEntity.ok(gestorMapper.toResponse(gestor));
     }
 
     /**
@@ -82,9 +85,9 @@ public class GestorController {
      */
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping()
-    public ResponseEntity<UsuarioResponseDTO> createGestor(@RequestBody @Valid UsuarioRequestDTO request) {
-        Usuario gestor = gestorService.createGestor(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(UsuarioMapper.toResponse(gestor));
+    public ResponseEntity<GestorResponseDTO> createGestor(@RequestBody @Valid GestorRequestDTO request) {
+        Gestor gestor = gestorService.createGestor(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(gestorMapper.toResponse(gestor));
     }
 
     /**
@@ -96,9 +99,9 @@ public class GestorController {
      */
     @PreAuthorize("#usuarioId == authentication.principal.id or hasRole('ADMIN')")
     @PatchMapping("/{usuarioId}")
-    public ResponseEntity<UsuarioResponseDTO> updateGestor(@PathVariable UUID usuarioId, @RequestBody @Valid UsuarioPATCHRequestDTO gestorRequestDTO) {
-        Usuario gestor = gestorService.updateGestor(usuarioId, gestorRequestDTO);
-        return ResponseEntity.ok(UsuarioMapper.toResponse(gestor));
+    public ResponseEntity<GestorResponseDTO> updateGestor(@PathVariable UUID usuarioId, @RequestBody @Valid UsuarioPATCHRequestDTO gestorRequestDTO) {
+        Gestor gestor = gestorService.updateGestor(usuarioId, gestorRequestDTO);
+        return ResponseEntity.ok(gestorMapper.toResponse(gestor));
     }
 
     /**
@@ -110,8 +113,8 @@ public class GestorController {
 
     @PreAuthorize("#usuarioId == authentication.principal.id or hasRole('ADMIN')")
     @DeleteMapping("/{usuarioId}")
-    public ResponseEntity<Void> deleteGestor(@PathVariable UUID usuarioId) {
-        gestorService.deleteByUsuarioId(usuarioId);
+    public ResponseEntity<Void> desativarbyId(@PathVariable UUID usuarioId) {
+        gestorService.desativarById(usuarioId);
         return ResponseEntity.noContent().build();
     }
 }
