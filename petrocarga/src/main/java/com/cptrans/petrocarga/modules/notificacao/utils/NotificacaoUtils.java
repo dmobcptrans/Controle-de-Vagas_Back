@@ -1,8 +1,12 @@
 package com.cptrans.petrocarga.modules.notificacao.utils;
 
+import java.util.List;
+
 import org.springframework.stereotype.Component;
 
 import com.cptrans.petrocarga.enums.PermissaoEnum;
+import com.cptrans.petrocarga.modules.auth.exceptions.AuthExceptions;
+import com.cptrans.petrocarga.modules.notificacao.exceptions.NotificacaoExceptions;
 
 @Component
 public class NotificacaoUtils {
@@ -21,11 +25,26 @@ public class NotificacaoUtils {
             case ADMIN, GESTOR, AGENTE -> {
                 break;
             }
-            case EMPRESA -> throw new IllegalArgumentException("Usuários com permissão EMPRESA não podem enviar notificações para outros usuários.");
-            case MOTORISTA -> throw new IllegalArgumentException("Usuários com permissão MOTORISTA não podem enviar notificações para outros usuários.");
-            default -> throw new IllegalArgumentException("Permissão de usuário inválida.");
+            case EMPRESA -> throw new NotificacaoExceptions.UsuarioNaoPodeEnviarNotificacaoException(PermissaoEnum.EMPRESA);
+            case MOTORISTA -> throw new NotificacaoExceptions.UsuarioNaoPodeEnviarNotificacaoException(PermissaoEnum.MOTORISTA);
+            default -> throw new AuthExceptions.UsuarioNaoAutorizadoException();
         }
         
     }
-}
 
+    public static void validateByRoles(List<String> roles,  PermissaoEnum permissaoDestinatario) {
+        if (roles == null || roles.isEmpty()) {
+            throw new AuthExceptions.UsuarioNaoAutenticadoException();
+        }
+        if (roles.contains(PermissaoEnum.ADMIN.getRole()) || roles.contains(PermissaoEnum.GESTOR.getRole()) || roles.contains(PermissaoEnum.AGENTE.getRole())) {
+            return;
+        }
+        if (roles.contains(PermissaoEnum.EMPRESA.getRole())) {
+            throw new NotificacaoExceptions.UsuarioNaoPodeEnviarNotificacaoException(PermissaoEnum.EMPRESA);
+        }
+        if (roles.contains(PermissaoEnum.MOTORISTA.getRole())) {
+            throw new NotificacaoExceptions.UsuarioNaoPodeEnviarNotificacaoException(PermissaoEnum.MOTORISTA);
+        }
+        throw new AuthExceptions.UsuarioNaoAutorizadoException();
+    }
+}

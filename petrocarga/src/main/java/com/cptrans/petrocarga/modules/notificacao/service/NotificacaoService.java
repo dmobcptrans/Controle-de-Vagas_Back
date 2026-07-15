@@ -12,7 +12,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -20,17 +19,20 @@ import org.springframework.stereotype.Service;
 import com.cptrans.petrocarga.enums.PermissaoEnum;
 import com.cptrans.petrocarga.enums.StatusDenunciaEnum;
 import com.cptrans.petrocarga.enums.TipoNotificacaoEnum;
+import com.cptrans.petrocarga.modules.auth.exceptions.AuthExceptions;
+import com.cptrans.petrocarga.modules.auth.utils.AuthUtils;
 import com.cptrans.petrocarga.modules.events.NotificacaoCriadaEvent;
 import com.cptrans.petrocarga.modules.events.SpringDomainEventPublisher;
 import com.cptrans.petrocarga.modules.notificacao.entity.Notificacao;
+import com.cptrans.petrocarga.modules.notificacao.exceptions.NotificacaoExceptions;
 import com.cptrans.petrocarga.modules.notificacao.repository.NotificacaoRepository;
 import com.cptrans.petrocarga.modules.notificacao.utils.NotificacaoUtils;
 import com.cptrans.petrocarga.modules.usuario.entity.Usuario;
+import com.cptrans.petrocarga.modules.usuario.exceptions.UsuarioExceptions;
 import com.cptrans.petrocarga.modules.usuario.service.UsuarioService;
 import com.cptrans.petrocarga.security.UserAuthenticated;
 import com.cptrans.petrocarga.shared.utils.DateUtils;
 
-import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 
 @Service
@@ -43,12 +45,13 @@ public class NotificacaoService {
     private SpringDomainEventPublisher eventPublisher;
 
     private Notificacao createNotificacao(UUID usuarioId, String titulo, String mensagem, TipoNotificacaoEnum tipo, Map<String, Object> dadosAdicionais) {
-        Usuario usuarioLogado = usuarioService.findById(((UserAuthenticated) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).id());
-        Usuario usuarioDestinatario = usuarioService.findById(usuarioId);
-        NotificacaoUtils.validateByPermissao(usuarioLogado.getPermissao(), usuarioDestinatario.getPermissao());
+        UserAuthenticated usuarioLogado = AuthUtils.getUsuarioAutenticado();
+        List<String> roles = AuthUtils.getRoles(usuarioLogado);
+        Usuario usuarioDestinatario = usuarioService.findByIdAndAtivoTrue(usuarioId);
+        NotificacaoUtils.validateByRoles(roles, usuarioDestinatario.getPermissao());
         if (dadosAdicionais == null) dadosAdicionais = new HashMap<>();
-        dadosAdicionais.put("remetenteId", usuarioLogado.getId());
-        dadosAdicionais.put("remetente", usuarioLogado.getNome());
+        dadosAdicionais.put("remetenteId", usuarioLogado.id());
+        dadosAdicionais.put("remetente", usuarioLogado.nome());
         Notificacao novaNotificacao = new Notificacao(usuarioDestinatario.getId(), titulo, mensagem, tipo, dadosAdicionais);
         
         return notificacaoRepository.save(novaNotificacao);
@@ -72,21 +75,21 @@ public class NotificacaoService {
     }
 
     public Notificacao findById(UUID notificacaoId) {
-        return notificacaoRepository.findById(notificacaoId).orElseThrow(() -> new EntityNotFoundException("Notificação não encontrada"));
+        return notificacaoRepository.findById(notificacaoId).orElseThrow(() -> new NotificacaoExceptions.NotificacaoNaoEncontradaException());
     }
     public Notificacao findByIdAndUsuarioId(UUID notificacaoId, UUID usuarioId) {
-        return notificacaoRepository.findByIdAndUsuarioId(notificacaoId, usuarioId).orElseThrow(() -> new EntityNotFoundException("Notificação não encontrada"));
+        return notificacaoRepository.findByIdAndUsuarioId(notificacaoId, usuarioId).orElseThrow(() -> new NotificacaoExceptions.NotificacaoNaoEncontradaException());
     }
 
     public Notificacao findByIdAndSetLida(UUID notificacaoId) {
         UserAuthenticated userAuthenticated = (UserAuthenticated) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         List<String> authorities = userAuthenticated.userDetails().getAuthorities().stream().map(GrantedAuthority::toString).toList();
-        Notificacao notificacao = notificacaoRepository.findById(notificacaoId).orElseThrow(() -> new EntityNotFoundException("Notificação não encontrada"));
+        Notificacao notificacao = findById(notificacaoId);
         if ((userAuthenticated.id().equals(notificacao.getUsuarioId()) || (authorities.contains(PermissaoEnum.ADMIN.getRole()) || authorities.contains(PermissaoEnum.GESTOR.getRole())))) {
             notificacao.marcarComoLida();
             return notificacaoRepository.save(notificacao);
         } else {
-            throw new AuthorizationDeniedException("Acesso negado à notificação");
+            throw new AuthExceptions.UsuarioNaoAutorizadoException();
         }
     }
 
@@ -115,28 +118,24 @@ public class NotificacaoService {
 
     @Transactional
     public List<Notificacao> sendNotificacaoToUsuariosByPermissao(PermissaoEnum permissao, Notificacao novaNotificacao) {
-        List<Usuario> usuarios = usuarioService.findByPermissaoAndAtivo(permissao, true);
-        Usuario usuarioLogado = usuarioService.findById(((UserAuthenticated) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).id());
+        List<Usuario> usuarios = findUsuariosAtivosByPermissao(permissao);
         List<Notificacao> notificacoesSalvas = new ArrayList<>();
         Map<String, Object> dadosAdicionais = new HashMap<>();
+        UserAuthenticated userAuthenticated = AuthUtils.getUsuarioAutenticado();
 
         if (novaNotificacao.getMetadata() != null) dadosAdicionais.putAll(novaNotificacao.getMetadata());
         
-        dadosAdicionais.put("remetenteId", usuarioLogado.getId());
-        dadosAdicionais.put("remetente", usuarioLogado.getNome());
+        dadosAdicionais.put("remetente", userAuthenticated.nome());
+        dadosAdicionais.put("remetenteId", userAuthenticated.id());
 
-        if(usuarios.isEmpty()) {
-            throw new EntityNotFoundException("Nenhum usuário encontrado com a permissão: " + permissao);
-        }
         for (Usuario usuario : usuarios) {
-            Notificacao novaNotificacaoUsuario = new Notificacao(usuario.getId(), novaNotificacao.getTitulo(), novaNotificacao.getMensagem(), novaNotificacao.getTipo());
-            novaNotificacaoUsuario.setMetadata(dadosAdicionais);
+            Notificacao novaNotificacaoUsuario = new Notificacao(usuario.getId(), novaNotificacao.getTitulo(), novaNotificacao.getMensagem(), novaNotificacao.getTipo(), dadosAdicionais);
             notificacoesSalvas.add(novaNotificacaoUsuario);
         }
         if (notificacoesSalvas.isEmpty()) return notificacoesSalvas;
 
         List<Notificacao> notificacoesCriadas = notificacaoRepository.saveAll(notificacoesSalvas);
-        if(!notificacoesCriadas.isEmpty()) {
+        if (!notificacoesCriadas.isEmpty()) {
             for (Notificacao notificacao : notificacoesCriadas) {
                 eventPublisher.publish(new NotificacaoCriadaEvent(notificacao));
             }
@@ -146,18 +145,14 @@ public class NotificacaoService {
 
     @Transactional
     public List<Notificacao> sendNotificacaoToUsuariosByPermissaoBySystem(PermissaoEnum permissao, Notificacao novaNotificacao) {
-        List<Usuario> usuarios = usuarioService.findByPermissaoAndAtivo(permissao, true);
+        List<Usuario> usuarios = findUsuariosAtivosByPermissao(permissao);
         List<Notificacao> notificacoesSalvas = new ArrayList<>();
         Map<String, Object> dadosAdicionais = new HashMap<>();
 
         if (novaNotificacao.getMetadata() != null) dadosAdicionais.putAll(novaNotificacao.getMetadata());
-
-        if(usuarios.isEmpty()) {
-            throw new EntityNotFoundException("Nenhum usuário encontrado com a permissão: " + permissao);
-        }
+    
         for (Usuario usuario : usuarios) {
-            Notificacao novaNotificacaoUsuario = new Notificacao(usuario.getId(), novaNotificacao.getTitulo(), novaNotificacao.getMensagem(), novaNotificacao.getTipo());
-            novaNotificacaoUsuario.setMetadata(dadosAdicionais);
+            Notificacao novaNotificacaoUsuario = new Notificacao(usuario.getId(), novaNotificacao.getTitulo(), novaNotificacao.getMensagem(), novaNotificacao.getTipo(), dadosAdicionais);
             notificacoesSalvas.add(novaNotificacaoUsuario);
         }
         if (notificacoesSalvas.isEmpty()) return notificacoesSalvas;
@@ -178,9 +173,8 @@ public class NotificacaoService {
     }
 
     public List<Notificacao> marcarSelecionadasComoLida(UUID usuarioId, List<UUID> listaNotificacaoId) {
-        List<Notificacao> notificacoes = notificacaoRepository.findByIdInAndUsuarioId(listaNotificacaoId, usuarioId);
+        List<Notificacao> notificacoes = findNotificacoesByIdListAndUsuarioId(listaNotificacaoId, usuarioId);
         List<Notificacao> notificacoesLidas = new ArrayList<>();
-        if(notificacoes == null || notificacoes.isEmpty()) throw new EntityNotFoundException("Nenhuma notificação encontrada");
         for(Notificacao notificacao : notificacoes) {
             notificacao.marcarComoLida();
             notificacoesLidas.add(notificacao);
@@ -189,8 +183,7 @@ public class NotificacaoService {
     }
 
     public void deletarSelecionadas(UUID usuarioId, List<UUID> listaNotificacaoId) {
-        List<Notificacao> notificacoes = notificacaoRepository.findByIdInAndUsuarioId(listaNotificacaoId, usuarioId);
-        if(notificacoes == null || notificacoes.isEmpty()) throw new EntityNotFoundException("Nenhuma notificação encontrada");
+        List<Notificacao> notificacoes = findNotificacoesByIdListAndUsuarioId(listaNotificacaoId, usuarioId);
         notificacaoRepository.deleteAll(notificacoes);
     }
 
@@ -201,31 +194,21 @@ public class NotificacaoService {
 
     public void notificarDenunciaCriada(Map<String, Object> dadosAdicionais) {
         Notificacao notificacaoDenuncia = new Notificacao("Nova Denúncia", "Uma nova denúncia foi criada", TipoNotificacaoEnum.DENUNCIA, dadosAdicionais);
-        sendNotificacaoToUsuariosByPermissao(PermissaoEnum.GESTOR, notificacaoDenuncia);
-        sendNotificacaoToUsuariosByPermissao(PermissaoEnum.AGENTE, notificacaoDenuncia);
+        sendNotificacaoToUsuariosByPermissaoBySystem(PermissaoEnum.GESTOR, notificacaoDenuncia);
+        sendNotificacaoToUsuariosByPermissaoBySystem(PermissaoEnum.AGENTE, notificacaoDenuncia);
     }
 
     public void notificarDenunciaAtualizada(Map<String, Object> dadosAdicionais, StatusDenunciaEnum statusDenuncia, UUID usuarioIdDenuncia) {
         Notificacao notificacaoDenuncia = new Notificacao("Denúncia Atualizada", "Sua denúncia foi atualizada para o status: '" + statusDenuncia + "'", TipoNotificacaoEnum.DENUNCIA, dadosAdicionais);
-        sendNotificationToUsuario(usuarioIdDenuncia, notificacaoDenuncia);
+        sendNotificationToUsuarioBySystem(usuarioIdDenuncia, notificacaoDenuncia, dadosAdicionais);
     }
 
     @Transactional
-    public Notificacao notificarCheckInDisponivel(UUID usuarioId, OffsetDateTime dataCheckin) {
-        final String TITULO = "Check-In Disponível";
-        final String MENSAGEM = "O horário de início da reserva está próximo. Abra o app para confirmar o check-in e não perder sua vaga.";
-        
+    public Notificacao notificarOcorrido(UUID usuarioId, String titulo, String mensagem, TipoNotificacaoEnum tipo, String descricaoData, OffsetDateTime dataOcorrido) {
         Map<String, Object> dadosAdicionais = new HashMap<>();
-        dadosAdicionais.put("inicioReserva", DateUtils.fusoHorarioBrasilia(dataCheckin).toString());
+        dadosAdicionais.put(descricaoData, DateUtils.fusoHorarioBrasilia(dataOcorrido).toString());
 
-        Notificacao notificacaoCheckIn = new Notificacao();
-        notificacaoCheckIn.setTitulo(TITULO);
-        notificacaoCheckIn.setMensagem(MENSAGEM);
-        notificacaoCheckIn.setTipo(TipoNotificacaoEnum.RESERVA);
-        notificacaoCheckIn.setUsuarioId(usuarioId);
-        notificacaoCheckIn.setMetadata(dadosAdicionais);
-
-        Notificacao notificacaoSalva = saveNotificacao(notificacaoCheckIn);
+        Notificacao notificacaoSalva = saveNotificacao(new Notificacao(usuarioId, titulo, mensagem, tipo, dadosAdicionais));
 
         eventPublisher.publish(new NotificacaoCriadaEvent(notificacaoSalva));
 
@@ -233,45 +216,43 @@ public class NotificacaoService {
     }
 
     @Transactional
-    public Notificacao notificarFimProximo(UUID usuarioId, OffsetDateTime dataFim) {
+    public Notificacao notificarCheckInDisponivel(UUID usuarioId, OffsetDateTime inicioReserva) {
+        final String TITULO = "Check-in Disponível";
+        final String MENSAGEM = "O horário de início da reserva está próximo. Abra o app para confirmar o check-in e não perder sua vaga.";
+        final String DESCRICAO_DATA = "inicioReserva";
+        return notificarOcorrido(usuarioId, TITULO, MENSAGEM, TipoNotificacaoEnum.RESERVA, DESCRICAO_DATA, inicioReserva);
+    }
+
+    @Transactional
+    public Notificacao notificarFimProximo(UUID usuarioId, OffsetDateTime fimReserva) {
         final String TITULO = "Fim da Reserva Próximo";
         final String MENSAGEM = "Sua reserva está próxima do fim, realize suas atividades à tempo para evitar problemas.";
-
-        Map<String, Object> dadosAdicionais = new HashMap<>();
-        dadosAdicionais.put("fimReserva", DateUtils.fusoHorarioBrasilia(dataFim).toString());
-
-        Notificacao notificacaoFimProximo = new Notificacao();
-        notificacaoFimProximo.setTitulo(TITULO);
-        notificacaoFimProximo.setMensagem(MENSAGEM);
-        notificacaoFimProximo.setTipo(TipoNotificacaoEnum.RESERVA);
-        notificacaoFimProximo.setUsuarioId(usuarioId);
-        notificacaoFimProximo.setMetadata(dadosAdicionais);
-
-        Notificacao notificacaoSalva = saveNotificacao(notificacaoFimProximo);
-
-        eventPublisher.publish(new NotificacaoCriadaEvent(notificacaoSalva));
-
-        return notificacaoSalva;
+        final String DESCRICAO_DATA = "fimReserva";
+        return notificarOcorrido(usuarioId, TITULO, MENSAGEM, TipoNotificacaoEnum.RESERVA, DESCRICAO_DATA, fimReserva);
     }
 
     @Transactional
-    public Notificacao notificarNoShow(UUID usuarioId, OffsetDateTime dataReserva){
+    public Notificacao notificarNoShow(UUID usuarioId, OffsetDateTime inicioReserva) {
         final String TITULO = "Não Comparecimento à Reserva";
         final String MENSAGEM = "Você não realizou check-in para a sua reserva à tempo. Sua reserva foi removida.";
-
-        Map<String, Object> dadosAdicionais = new HashMap<>();
-        dadosAdicionais.put("dataReserva", DateUtils.fusoHorarioBrasilia(dataReserva).toString());
-
-        Notificacao NO_SHOW_NOTIFICACAO = new Notificacao();
-        NO_SHOW_NOTIFICACAO.setTitulo(TITULO);
-        NO_SHOW_NOTIFICACAO.setMensagem(MENSAGEM);
-        NO_SHOW_NOTIFICACAO.setTipo(TipoNotificacaoEnum.RESERVA);
-        NO_SHOW_NOTIFICACAO.setUsuarioId(usuarioId);
-        NO_SHOW_NOTIFICACAO.setMetadata(dadosAdicionais);
-
-        Notificacao notificacaoSalva = saveNotificacao(NO_SHOW_NOTIFICACAO);
-
-        eventPublisher.publish(new NotificacaoCriadaEvent(notificacaoSalva));
-        return notificacaoSalva;
+        final String DESCRICAO_DATA = "inicioReserva";
+        return notificarOcorrido(usuarioId, TITULO, MENSAGEM, TipoNotificacaoEnum.RESERVA, DESCRICAO_DATA, inicioReserva) ;
     }
+
+    private List<Usuario> findUsuariosAtivosByPermissao(PermissaoEnum permissao) {
+        List<Usuario> usuarios = usuarioService.findByPermissaoAndAtivo(permissao, true);
+        if (usuarios == null || usuarios.isEmpty()) {
+            throw new UsuarioExceptions.NenhumUsuarioEncontradoByPermissaoException(permissao);
+        }
+        return usuarios;
+    }
+
+    private List<Notificacao> findNotificacoesByIdListAndUsuarioId(List<UUID> notificacaoIdList, UUID usuarioId) { 
+        List<Notificacao> notificacoes = notificacaoRepository.findByIdInAndUsuarioId(notificacaoIdList, usuarioId); 
+        if (notificacoes == null || notificacoes.isEmpty()) {
+            throw new NotificacaoExceptions.NenhumaNotificacaoEncontradaException();
+        }
+        return notificacoes;
+    } 
+
 }
