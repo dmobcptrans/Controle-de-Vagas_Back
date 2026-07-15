@@ -8,25 +8,23 @@ import com.cptrans.petrocarga.modules.motorista.dto.response.MotoristaResponseDT
 import com.cptrans.petrocarga.modules.usuario.dto.response.UsuarioResponseDTO;
 import com.cptrans.petrocarga.modules.veiculo.dto.response.VeiculoResponseDTO;
 
+import lombok.RequiredArgsConstructor;
+
 @Component
+@RequiredArgsConstructor
 public class CriptoUtils {
     
-    private static CriptoService criptoService;
+    private final CriptoService criptoService;
 
-    public CriptoUtils(CriptoService criptoService) {
-        CriptoUtils.criptoService = criptoService;
-     }
-
-    public static UsuarioResponseDTO decrypt(UsuarioResponseDTO userResponse, Integer keyVersion){
+    public UsuarioResponseDTO decrypt(UsuarioResponseDTO userResponse, Integer keyVersion){
         if (userResponse != null){
-            if (userResponse.getCpf() != null && userResponse.getCpf().length() > 11) userResponse.setCpf(criptoService.decrypt(userResponse.getCpf(), keyVersion));
             if (userResponse.getTelefone() != null && userResponse.getTelefone().length() > 11) userResponse.setTelefone(criptoService.decrypt(userResponse.getTelefone(), keyVersion));
             if (userResponse.getEmail() != null && !userResponse.getEmail().contains("@")) userResponse.setEmail(criptoService.decrypt(userResponse.getEmail(), keyVersion));
         }
         return userResponse;   
     }
 
-    public static  MotoristaResponseDTO decrypt(MotoristaResponseDTO motoristaResponse, Integer keyVersion){
+    public  MotoristaResponseDTO decrypt(MotoristaResponseDTO motoristaResponse, Integer keyVersion){
         if (motoristaResponse != null){
             if (motoristaResponse.getUsuario() != null){
                 UsuarioResponseDTO usuarioResponse = decrypt(motoristaResponse.getUsuario(), keyVersion);
@@ -37,19 +35,26 @@ public class CriptoUtils {
         return motoristaResponse;
     }
 
-    public static  VeiculoResponseDTO decrypt(VeiculoResponseDTO veiculoResponse, Integer keyVersion){
+    public  VeiculoResponseDTO decrypt(VeiculoResponseDTO veiculoResponse, Integer keyVersion){
         if (veiculoResponse != null){
             if (veiculoResponse.getCpfProprietario() != null) veiculoResponse.setCpfProprietario(criptoService.decrypt(veiculoResponse.getCpfProprietario(), keyVersion));
         }
         return veiculoResponse;
     }
     
-    public static  DenunciaResponseDTO decrypt (DenunciaResponseDTO denunciaResponse, Integer keyVersion) {
+    public  DenunciaResponseDTO decrypt (DenunciaResponseDTO denunciaResponse, Integer keyVersion) {
         if (denunciaResponse != null) {
             if (denunciaResponse.getTelefoneMotorista() != null) {
                 denunciaResponse.setTelefoneMotorista(criptoService.decrypt(denunciaResponse.getTelefoneMotorista(), keyVersion));
             }
         }
         return denunciaResponse;
+    }
+
+    public String decrypt(String value, Integer keyVersion) {
+        if (value != null && !value.isEmpty()) {
+            return criptoService.decrypt(value, keyVersion);
+        }
+        return value;
     }
 }
