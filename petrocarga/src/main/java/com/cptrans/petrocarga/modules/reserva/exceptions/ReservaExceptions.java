@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.cptrans.petrocarga.shared.dto.response.SystemResponse;
 
+import jakarta.persistence.EntityNotFoundException;
+
 @RestControllerAdvice
 public class ReservaExceptions {
     public static class VagaIndisponivelException extends DataIntegrityViolationException{
@@ -95,6 +97,18 @@ public class ReservaExceptions {
         }
     }
 
+    public static class ReservaNotFoundException extends EntityNotFoundException{
+        public ReservaNotFoundException() {
+            super("Reserva não encontrada.");
+        }
+    }
+
+    public static class TempoAlteracaoEsgotadoException extends DataIntegrityViolationException{
+        public TempoAlteracaoEsgotadoException(Integer deltaTempo, Integer tempoLimiteAlteracao) {
+            super("Impossível alterar reserva pois só faltam " + deltaTempo + " minutos para o início e o tempo limite de alteração é de " + tempoLimiteAlteracao + " minutos.");
+        }
+    }
+
     @ExceptionHandler(VagaIndisponivelException.class)
     public ResponseEntity<SystemResponse> handleVagaIndisponivelException(VagaIndisponivelException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(new SystemResponse(ex.getMessage(), 409));
@@ -162,6 +176,16 @@ public class ReservaExceptions {
 
     @ExceptionHandler(TodasPosicoesOcupadasException.class)
     public ResponseEntity<SystemResponse> handleTodasPosicoesOcupadasException(TodasPosicoesOcupadasException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(new SystemResponse(ex.getMessage(), 409));
+    }
+
+    @ExceptionHandler(ReservaNotFoundException.class)
+    public ResponseEntity<SystemResponse> handleReservaNotFoundException(ReservaNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new SystemResponse(ex.getMessage(), 404));
+    }
+
+    @ExceptionHandler(TempoAlteracaoEsgotadoException.class)
+    public ResponseEntity<SystemResponse> handleTempoAlteracaoEsgotadoException(TempoAlteracaoEsgotadoException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(new SystemResponse(ex.getMessage(), 409));
     }
 }

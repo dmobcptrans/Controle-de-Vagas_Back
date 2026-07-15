@@ -31,7 +31,7 @@ public class CustomUserDetailsService implements UserDetailsService {
  */
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        return usuarioRepository.findByEmailHashAndAtivoTrue(hashService.hash(email))
+        return usuarioRepository.findByEmailHashAndAtivo(hashService.hash(email), true)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado com email: " + email));
     }
 }

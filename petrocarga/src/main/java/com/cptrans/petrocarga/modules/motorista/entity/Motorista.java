@@ -20,21 +20,28 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.MapsId;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "motorista")
+@NoArgsConstructor
+@Getter
+@EqualsAndHashCode
 public class Motorista {
-
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id")
     private UUID id;
 
+    @MapsId
     @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    @JoinColumn(name = "usuario_id", nullable = false, unique = true)
+    @JoinColumn(name = "id", nullable = false, unique = true)
     private Usuario usuario;
 
     @Enumerated(EnumType.STRING)
@@ -50,6 +57,15 @@ public class Motorista {
     @Column(name = "cnh_last4", nullable = false)
     private String cnhLast4;
 
+    @Column(name = "cpf_hash", nullable = false)
+    private String cpfHash;
+
+    @Column(name = "cpf_cripto", unique = true, nullable = false)
+    private String cpfCripto;
+
+    @Column(name = "cpf_last5", nullable = false)
+    private String cpfLast5;
+
     @Column(name = "data_validade_cnh")
     private LocalDate dataValidadeCnh;
 
@@ -60,75 +76,43 @@ public class Motorista {
     @OneToMany(mappedBy = "motorista", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<VeiculoEmpresaMotorista> veiculosEmpresa;
 
-    // Constructors
-    public Motorista() {}
-
-    // Getters and Setters
-    public UUID getId() {
-        return id;
-    }
-
-    public void setId(UUID id) {
-        this.id = id;
-    }
-
-    public Usuario getUsuario() {
-        return usuario;
-    }
-
     public void setUsuario(Usuario usuario) {
         this.usuario = usuario;
-    }
-
-    public TipoCnhEnum getTipoCnh() {
-        return tipoCnh;
     }
 
     public void setTipoCnh(TipoCnhEnum tipoCnh) {
         this.tipoCnh = tipoCnh;
     }
 
-    public String getCnhHash() {
-        return cnhHash;
-    }
-
     public void setCnhHash(String cnhHash) {
         this.cnhHash = cnhHash;
-    }
-
-    public String getCnhCripto() {
-        return cnhCripto;
     }
 
     public void setCnhCripto(String cnhCripto) {
         this.cnhCripto = cnhCripto;
     }
 
-    public String getCnhLast4() {
-        return cnhLast4;
-    }
-
     public void setCnhLast4(String cnhLast4) {
         this.cnhLast4 = cnhLast4;
-    }
-
-    public LocalDate getDataValidadeCnh() {
-        return dataValidadeCnh;
     }
 
     public void setDataValidadeCnh(LocalDate dataValidadeCnh) {
         this.dataValidadeCnh = dataValidadeCnh;
     }
 
-    public Empresa getEmpresa() {
-        return empresa;
-    }
-
     public void setEmpresa(Empresa empresa) {
         this.empresa = empresa;
     }
 
-    public List<VeiculoEmpresaMotorista> getVeiculosEmpresa() {
-        return veiculosEmpresa;
+    public void setCpfHash(String cpfHash) {
+        this.cpfHash = cpfHash;
+    }
+
+    public void setCpfCripto(String cpfCripto) {
+        this.cpfCripto = cpfCripto;
+    }
+
+    public void setCpfLast5(String cpfLast5) {
+        this.cpfLast5 = cpfLast5;
     }
 }

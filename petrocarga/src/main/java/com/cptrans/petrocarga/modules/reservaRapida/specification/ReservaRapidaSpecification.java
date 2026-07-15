@@ -30,7 +30,7 @@ public class ReservaRapidaSpecification {
      * 
      */
     public static Specification<ReservaRapida> filtrar(
-        UUID usuarioId,
+        UUID agenteId,
         UUID vagaId,
         String placaVeiculo,
         LocalDate data,
@@ -42,9 +42,9 @@ public class ReservaRapidaSpecification {
 
             List<Predicate> predicates = new ArrayList<>();
 
-            if (usuarioId != null) {
+            if (agenteId != null) {
                 predicates.add(
-                    cb.equal(root.get("agente").get("usuario").get("id"), usuarioId)
+                    cb.equal(root.get("agente").get("id"), agenteId)
                 );
             }
 

@@ -1,8 +1,6 @@
 package com.cptrans.petrocarga.shared.exceptions;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
 import org.apache.catalina.connector.ClientAbortException;
 import org.slf4j.Logger;
@@ -24,13 +22,13 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 
 @RestControllerAdvice
-public class GlobalHandlerException {
+public class GlobalHandlerExceptions {
     
-    private static final Logger log = LoggerFactory.getLogger(GlobalHandlerException.class);
+    private static final Logger log = LoggerFactory.getLogger(GlobalHandlerExceptions.class);
 
-    public static class TermosNotAcceptedException extends DataIntegrityViolationException {
-        public TermosNotAcceptedException() {
-            super("Os termos de uso devem ser aceitos.");
+    public static class DadosInvalidosException extends IllegalArgumentException {
+        public DadosInvalidosException() {
+            super("Erro ao processar a requisição. Verifique os dados informados e tente novamente.");
         }
     }
 
@@ -69,7 +67,7 @@ public class GlobalHandlerException {
     * 
     */
     @ExceptionHandler(IOException.class)
-    public ResponseEntity<?> handleIOException(IOException ex, HttpServletRequest request) {
+    public ResponseEntity<SystemResponse> handleIOException(IOException ex, HttpServletRequest request) {
         String message = ex.getMessage();
         if (message != null && (message.contains("Broken pipe") || message.contains("Connection reset"))) {
             // Client disconnected - no response needed
@@ -77,10 +75,7 @@ public class GlobalHandlerException {
             return null;
         }
         // Other IO errors - return 500
-        Map<String, String> error = new HashMap<>();
-        error.put("erro", "Erro de I/O");
-        error.put("cause", message != null ? message : "unknown");
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new SystemResponse(ex.getMessage(), 500));
     }
 
     /**
@@ -90,15 +85,13 @@ public class GlobalHandlerException {
     * @return ResponseEntity com status 404 e um mapa contendo a mensagem de erro e causa
     */
     @ExceptionHandler(EntityNotFoundException.class)
-    public ResponseEntity<Map<String, String>> handleNotFound(EntityNotFoundException ex) {
-        Map<String, String> error = new HashMap<>();
-        error.put("erro", ex.getMessage());
-        String causeMessage = "unknown";
+    public ResponseEntity<SystemResponse> handleNotFound(EntityNotFoundException ex) {
+        String causeMessage = null;
         if (ex.getCause() != null && ex.getCause().toString() != null) {
             causeMessage = ex.getCause().getMessage();
         }
-        error.put("cause", causeMessage);
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+        
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new SystemResponse(causeMessage != null ? causeMessage : ex.getMessage(), 404));
     }
 
     /**
@@ -106,15 +99,13 @@ public class GlobalHandlerException {
      * @return ResponseEntity com status 400 e um mapa contendo a mensagem de erro e causa
      */
     @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<Map<String, String>> handleBadRequest(IllegalArgumentException ex) {
-        Map<String, String> error = new HashMap<>();
-        error.put("erro", ex.getMessage());
-        String causeMessage = "unknown";
+    public ResponseEntity<SystemResponse> handleBadRequest(IllegalArgumentException ex) {
+        String causeMessage = null;
         if (ex.getCause() != null && ex.getCause().getMessage() != null) {
             causeMessage = ex.getCause().getMessage();
         }
-        error.put("cause", causeMessage);
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+        
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new SystemResponse(causeMessage != null ? causeMessage : ex.getMessage(), 400));
     }
 
     /**
@@ -126,29 +117,13 @@ public class GlobalHandlerException {
      * @return Resposta com status 500 e a mensagem contendo o erro e causa
      */
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<Map<String, String>> handleGeneric(Exception ex, HttpServletRequest request) {
-        Map<String, String> error = new HashMap<>();
-        error.put("erro", "Erro interno no servidor");
-
-        // Monta mensagem detalhada para diagnóstico
-        String exType = ex.getClass().getName();
-        String exMsg = ex.getMessage();
-        String causeMessage;
-
-        if (exMsg != null && !exMsg.isBlank()) {
-            causeMessage = exType + ": " + exMsg;
-        } else if (ex.getCause() != null && ex.getCause().getMessage() != null) {
-            causeMessage = exType + " causado por " + ex.getCause().getClass().getName() + ": " + ex.getCause().getMessage();
-        } else {
-            causeMessage = exType + " (sem mensagem)";
+    public ResponseEntity<SystemResponse> handleGeneric(Exception ex, HttpServletRequest request) {
+        String causeMessage = null;
+        if (ex.getCause() != null && ex.getCause().getMessage() != null) {
+            causeMessage = ex.getCause().getMessage();
         }
-
-        error.put("cause", causeMessage);
-
-        log.error("=== ERRO NÃO TRATADO em {} {} ===", request.getMethod(), request.getRequestURI());
-        log.error("Tipo: {} | Mensagem: {}", exType, exMsg);
-        log.error("Stack trace completo:", ex);
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new SystemResponse(causeMessage != null ? causeMessage : ex.getMessage(), 500));
     }
 
     /**
@@ -157,45 +132,38 @@ public class GlobalHandlerException {
      * @return Resposta com status 409 e um mapa contendo a mensagem de erro e causa
      */
     @ExceptionHandler(DataIntegrityViolationException.class)
-    public ResponseEntity<Map<String, String>> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
-        Map<String, String> error = new HashMap<>();
-        error.put("erro", "Integridade de dados violada.");
+    public ResponseEntity<SystemResponse> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
         String causeMessage = ex.getMostSpecificCause().getMessage().split("Detalhe:")[0].trim();
-        error.put("cause", causeMessage);
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(new SystemResponse(causeMessage != null ? causeMessage : ex.getMessage(), 409));
     }
 
-/**
- * Trata MethodArgumentNotValidException (400) - quando o parâmetro de uma solicitação não é válido.
- * Exibe a mensagem de erro com a causa mais detalhada.
- * 
- * @return Resposta com status 400 e um mapa contendo a mensagem de erro e causa
- */
+    /**
+     * Trata MethodArgumentNotValidException (400) - quando o parâmetro de uma solicitação não é válido.
+     * Exibe a mensagem de erro com a causa mais detalhada.
+     * 
+     * @return Resposta com status 400 e um mapa contendo a mensagem de erro e causa
+     */
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, String>> handleMethodArgumentNotValid(MethodArgumentNotValidException ex) {
-        Map<String, String> error = new HashMap<>();
-         if (!ex.getAllErrors().isEmpty()) {
-        error.put("erro", ex.getAllErrors().get(0).getDefaultMessage());
-        } else {
-            error.put("erro", "Erro de validação desconhecido");
+    public ResponseEntity<SystemResponse> handleMethodArgumentNotValid(MethodArgumentNotValidException ex) {
+        String causeMessage = null;
+        if (!ex.getAllErrors().isEmpty()) {
+            causeMessage = ex.getAllErrors().get(0).getDefaultMessage();
         }
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new SystemResponse(causeMessage != null ? causeMessage : ex.getMessage(), 400));
     }
 
-/**
- * Trata ConstraintViolationException (400) - quando a solicitação viola uma regra de validação.
- * Exibe uma mensagem de erro com a causa mais detalhada.
- * @return Resposta com status 400 e um mapa contendo a mensagem de erro e causa
- */
+    /**
+     * Trata ConstraintViolationException (400) - quando a solicitação viola uma regra de validação.
+     * Exibe uma mensagem de erro com a causa mais detalhada.
+     * @return Resposta com status 400 e um mapa contendo a mensagem de erro e causa
+     */
     @ExceptionHandler(ConstraintViolationException.class)
-    public ResponseEntity<Map<String, String>> handleConstraintViolation(ConstraintViolationException ex) {
-        Map<String, String> error = new HashMap<>();
+    public ResponseEntity<SystemResponse> handleConstraintViolation(ConstraintViolationException ex) {
+        String causeMessage = null;
         if (!ex.getConstraintViolations().isEmpty()) {
-            error.put("erro", ex.getConstraintViolations().iterator().next().getMessage());
-        } else {
-            error.put("erro", "Erro de validação desconhecido");
+           causeMessage = ex.getConstraintViolations().iterator().next().getMessage();
         }
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new SystemResponse(causeMessage != null ? causeMessage : ex.getMessage(), 400));
     }
 
 /**
@@ -204,49 +172,37 @@ public class GlobalHandlerException {
  * @return Resposta com status 401 e um mapa contendo a mensagem de erro e causa
  */
     @ExceptionHandler(BadCredentialsException.class)
-    public ResponseEntity<Map<String, String>> handleBadCredentials(BadCredentialsException ex) {
-        Map<String, String> error = new HashMap<>();
-        error.put("erro", ex.getMessage());
-        error.put("cause", "Credenciais inválidas fornecidas.");
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+    public ResponseEntity<SystemResponse> handleBadCredentials(BadCredentialsException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new SystemResponse("Credenciais inválidas.", 401));
     }
 
-/**
- * Trata AuthorizationDeniedException (403) - quando o acesso é negado.
- * Exibe uma mensagem de erro com a causa mais detalhada.
- * @return Resposta com status 403 e um mapa contendo a mensagem de erro e causa
- */
+    /**
+     * Trata AuthorizationDeniedException (403) - quando o acesso é negado.
+     * Exibe uma mensagem de erro com a causa mais detalhada.
+     * @return Resposta com status 403 e um mapa contendo a mensagem de erro e causa
+     */
     @ExceptionHandler(AuthorizationDeniedException.class)
-    public ResponseEntity<Map<String, String>> handleAuthorizationDenied(AuthorizationDeniedException ex) {
-        Map<String, String> error = new HashMap<>();
-        error.put("erro", "Acesso negado.");
-        String causeMessage = "unknown";
-        if (ex.getCause() != null && ex.getCause().getMessage() != null) {
-            causeMessage = ex.getCause().getMessage();
-        }
-        error.put("cause", causeMessage);
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
+    public ResponseEntity<SystemResponse> handleAuthorizationDenied(AuthorizationDeniedException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new SystemResponse("Acesso negado.", 403));
     }
 
-/**
- * Trata IllegalStateExcepion (400) - quando o estado do objeto é inválido para uma operação solicitada.
- * Exibe uma mensagem de erro com a causa mais detalhada.
- * @return Resposta com status 400 e um mapa contendo a mensagem de erro e causa
- */
+    /**
+     * Trata IllegalStateExcepion (400) - quando o estado do objeto é inválido para uma operação solicitada.
+     * Exibe uma mensagem de erro com a causa mais detalhada.
+     * @return Resposta com status 400 e um mapa contendo a mensagem de erro e causa
+     */
     @ExceptionHandler(IllegalStateException.class)
-    public ResponseEntity<Map<String, String>> handleIllegalStateException(IllegalStateException ex) {
-        Map<String, String> error = new HashMap<>();
-        error.put("erro", ex.getMessage());
-        String causeMessage = "unknown";
+    public ResponseEntity<SystemResponse> handleIllegalStateException(IllegalStateException ex) {
+        String causeMessage = null;
         if (ex.getCause() != null && ex.getCause().getMessage() != null) {
             causeMessage = ex.getCause().getMessage();
         }
-        error.put("cause", causeMessage);
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+        
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new SystemResponse(causeMessage != null ? causeMessage : ex.getMessage(), 400));
     }
 
-    @ExceptionHandler(TermosNotAcceptedException.class)
-    public ResponseEntity<SystemResponse> handleTermosNotAccepted(TermosNotAcceptedException ex) {
+    @ExceptionHandler(DadosInvalidosException.class)
+    public ResponseEntity<SystemResponse> handleDadosInvalidos(DadosInvalidosException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new SystemResponse(ex.getMessage(), 400));
     }
 }

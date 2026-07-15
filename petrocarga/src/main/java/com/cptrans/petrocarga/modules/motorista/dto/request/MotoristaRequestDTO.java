@@ -3,6 +3,8 @@ package com.cptrans.petrocarga.modules.motorista.dto.request;
 import java.time.LocalDate;
 import java.util.UUID;
 
+import org.hibernate.validator.constraints.br.CPF;
+
 import com.cptrans.petrocarga.enums.TipoCnhEnum;
 import com.cptrans.petrocarga.modules.usuario.dto.request.UsuarioRequestDTO;
 
@@ -20,6 +22,10 @@ public class MotoristaRequestDTO {
     @Valid
     @NotNull(message = "O campo 'usuario' é obrigatório.")
     private UsuarioRequestDTO usuario;
+
+    @NotNull(message="O campo 'cpf' é obrigatório.")
+    @CPF(message="CPF inválido.")
+    private String cpf;
 
     @NotNull(message = "O campo 'tipoCnh' é obrigatório.")
     private TipoCnhEnum tipoCnh;

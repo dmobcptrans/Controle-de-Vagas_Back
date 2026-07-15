@@ -12,8 +12,12 @@ import lombok.NoArgsConstructor;
 @Getter
 public class EmpresaFiltrosRequestDTO {
     private UUID empresaId;
-    private UUID usuarioId;
     private String cnpj;
-    private String razaoSocial;
     private String nome;
+    private String telefone;
+    private Boolean ativo;
+
+    public void setTelefone(String telefone) {
+        this.telefone = telefone;
+    }
 }

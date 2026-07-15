@@ -1,43 +1,26 @@
 package com.cptrans.petrocarga.modules.denuncia.utils;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import java.util.UUID;
+
 import org.springframework.stereotype.Component;
 
-import com.cptrans.petrocarga.enums.PermissaoEnum;
 import com.cptrans.petrocarga.enums.StatusReservaEnum;
-import com.cptrans.petrocarga.modules.denuncia.entity.Denuncia;
-import com.cptrans.petrocarga.modules.empresa.entity.Empresa;
-import com.cptrans.petrocarga.modules.empresa.service.EmpresaService;
-import com.cptrans.petrocarga.modules.motorista.entity.Motorista;
-import com.cptrans.petrocarga.modules.motorista.service.MotoristaService;
+import com.cptrans.petrocarga.modules.auth.exceptions.AuthExceptions;
+import com.cptrans.petrocarga.modules.denuncia.exceptions.DenunciaExceptions;
+
 
 @Component
 public class DenunciaUtils {
-
-    @Autowired
-    private static EmpresaService empresaService;
-    @Autowired
-    private static MotoristaService motoristaService;
-
     /**
      * Valida se uma denúncia pode ser criada com base nos dados informados.
      * 
      * @param novaDenuncia Denúncia a ser validada.
      * @throws IllegalArgumentException Se a denúncia não puder ser criada com base nos dados informados.
      */
-    public static void validarCriacaoDenuncia(Denuncia novaDenuncia) {
-        
-        if (!novaDenuncia.getReserva().getStatus().equals(StatusReservaEnum.RESERVADA) && !novaDenuncia.getReserva().getStatus().equals(StatusReservaEnum.ATIVA)) throw new IllegalArgumentException("Reserva nao pode ser diferente de 'reservada' ou 'ativa'.");
+    public static void validarCriacaoDenuncia(StatusReservaEnum statusReserva, UUID criadorReservaId, UUID motoristaReservaId, UUID criadorDenunciaId) {
+        if (!statusReserva.equals(StatusReservaEnum.RESERVADA) && !statusReserva.equals(StatusReservaEnum.ATIVA)) throw new DenunciaExceptions.ReservaStatusInvalidException();
 
-        if (!novaDenuncia.getReserva().getCriadoPor().equals(novaDenuncia.getCriadoPor())){
-            if (!novaDenuncia.getReserva().getCriadoPor().getPermissao().equals(PermissaoEnum.EMPRESA) || !novaDenuncia.getCriadoPor().getPermissao().equals(PermissaoEnum.MOTORISTA) ) throw new IllegalArgumentException("Usuário nao pode denunciar uma reserva de outro usuário.");
-
-            Motorista motorista = motoristaService.findByUsuarioId(novaDenuncia.getCriadoPor().getId());
-            Empresa empresa = empresaService.findByUsuarioId(novaDenuncia.getReserva().getCriadoPor().getId());
-
-            if(!motorista.getEmpresa().getId().equals(empresa.getId())) {
-                throw new IllegalArgumentException("Usuário nao pode denunciar uma reserva de outro usuário.");
-            }
-        }
+        if (!criadorReservaId.equals(criadorDenunciaId) && motoristaReservaId.equals(criadorDenunciaId)) throw new AuthExceptions.UsuarioNaoAutorizadoException();
     }
+
 }

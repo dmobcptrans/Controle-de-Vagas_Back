@@ -1,46 +1,73 @@
 package com.cptrans.petrocarga.modules.denuncia.service;
 
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
 
+import com.cptrans.petrocarga.enums.OrdemEnum;
 import com.cptrans.petrocarga.enums.PermissaoEnum;
 import com.cptrans.petrocarga.enums.StatusDenunciaEnum;
-import com.cptrans.petrocarga.enums.TipoDenunciaEnum;
+import com.cptrans.petrocarga.enums.StatusReservaEnum;
+import com.cptrans.petrocarga.modules.denuncia.dto.mapper.DenunciaMapper;
+import com.cptrans.petrocarga.modules.denuncia.dto.request.DenunciaFiltrosRequestDTO;
+import com.cptrans.petrocarga.modules.denuncia.dto.request.DenunciaRequestDTO;
 import com.cptrans.petrocarga.modules.denuncia.dto.request.FinalizarDenunciaRequestDTO;
+import com.cptrans.petrocarga.modules.denuncia.dto.response.DenunciaResponseDTO;
 import com.cptrans.petrocarga.modules.denuncia.entity.Denuncia;
 import com.cptrans.petrocarga.modules.denuncia.repository.DenunciaRepository;
+import com.cptrans.petrocarga.modules.denuncia.specification.DenunciaSpecification;
 import com.cptrans.petrocarga.modules.denuncia.utils.DenunciaUtils;
 import com.cptrans.petrocarga.modules.notificacao.service.NotificacaoService;
+import com.cptrans.petrocarga.modules.reserva.entity.Reserva;
+import com.cptrans.petrocarga.modules.reserva.service.ReservaService;
 import com.cptrans.petrocarga.modules.usuario.entity.Usuario;
+import com.cptrans.petrocarga.modules.usuario.service.UsuarioService;
 import com.cptrans.petrocarga.security.UserAuthenticated;
+import com.cptrans.petrocarga.shared.dto.response.PageResponseDTO;
 import com.cptrans.petrocarga.shared.utils.DateUtils;
 
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 
 @Service
+@RequiredArgsConstructor
 public class DenunciaService {
-    
-    @Autowired
-    private DenunciaRepository denunciaRepository;
-    @Autowired
-    private NotificacaoService notificacaoService;
+    private final DenunciaRepository denunciaRepository;
+    private final NotificacaoService notificacaoService;
+    private final ReservaService reservaService;
+    private final UsuarioService usuarioService;
+    private final DenunciaMapper denunciaMapper;
+
+    private final Sort SORT_ASC = Sort.by("criadoEm").ascending();
+    private final Sort SORT_DESC = Sort.by("criadoEm").descending();
 
     @Transactional
-    public Denuncia create(Denuncia novaDenuncia){
-        if (denunciaRepository.existsByReservaId(novaDenuncia.getReserva().getId())) throw new DataIntegrityViolationException ("Já existe uma denuncia criada para essa reserva.");
+    public Denuncia create(UserAuthenticated userAuthenticated, DenunciaRequestDTO request){
+        if (denunciaRepository.existsByReservaId(request.getReservaId())) throw new DataIntegrityViolationException ("Já existe uma denuncia criada para essa reserva.");
+            
+        Usuario usuarioLogado = usuarioService.findByIdAndAtivoTrue(userAuthenticated.id());
+        Reserva reserva = reservaService.findByIdAndStatusIn(request.getReservaId(), List.of(StatusReservaEnum.RESERVADA, StatusReservaEnum.ATIVA));
         
-        DenunciaUtils.validarCriacaoDenuncia(novaDenuncia);
+        DenunciaUtils.validarCriacaoDenuncia(reserva.getStatus(), reserva.getCriadoPor().getId(), reserva.getMotorista().getId(), usuarioLogado.getId());
         
+        Denuncia novaDenuncia = new Denuncia(
+            request.getDescricao(),
+            usuarioLogado,
+            reserva,
+            request.getTipo()
+        );
+
         Denuncia denunciaSalva = denunciaRepository.save(novaDenuncia);
         
         Map<String, Object> dadosAdicionais = new HashMap<>();
@@ -55,24 +82,12 @@ public class DenunciaService {
         return denunciaRepository.findAll();
     }
 
-    public List<Denuncia> findAllWithFilters(UUID vagaId, List<StatusDenunciaEnum> listaStatus, List<TipoDenunciaEnum> listaTipos) {
-        List<Denuncia> response = new ArrayList<>();
-
-        if (vagaId != null && listaStatus != null && !listaStatus.isEmpty() && listaTipos != null && !listaTipos.isEmpty()) return denunciaRepository.findByVagaIdAndStatusInAndTipoIn(vagaId, listaStatus, listaTipos);
-
-        if (vagaId != null) response.addAll(denunciaRepository.findByVagaId(vagaId));
-        
-        if (listaStatus != null && !listaStatus.isEmpty()) {
-            if(response.isEmpty()) response.addAll(denunciaRepository.findByStatusIn(listaStatus));
-            else response = response.stream().filter(denuncia -> listaStatus.contains(denuncia.getStatus())).toList();
-        }
-
-        if (listaTipos != null && !listaTipos.isEmpty()) {
-            if(response.isEmpty()) response.addAll(denunciaRepository.findByTipoIn(listaTipos));
-            else response = response.stream().filter(denuncia -> listaTipos.contains(denuncia.getTipo())).toList();
-        }
-
-        return response;
+    public PageResponseDTO findAllWithFilters(DenunciaFiltrosRequestDTO filtros, int pagina, int tamanhoPagina, OrdemEnum ordem) {
+        Pageable pageable = PageRequest.of(pagina, tamanhoPagina, ordem != OrdemEnum.DESC ? SORT_ASC : SORT_DESC);
+        Page<Denuncia> page = denunciaRepository.findAll(DenunciaSpecification.filtrar(filtros), pageable);
+        if (page == null || page.isEmpty()) return new PageResponseDTO(page);
+        Page<DenunciaResponseDTO> pageResponse = page.map(denunciaMapper::toResponse);
+        return new PageResponseDTO(pageResponse);
     }
 
     public Denuncia findById(UUID denunciaId) {
@@ -91,8 +106,18 @@ public class DenunciaService {
         return denuncia;
     }
     
-    public List<Denuncia> findAllByUsuarioIdAndStatus(UUID usuarioId, StatusDenunciaEnum status) {
-        return denunciaRepository.findByCriadoPorIdAndStatus(usuarioId, status);
+    public PageResponseDTO findAllByUsuarioIdAndStatusIn(UUID usuarioId, List<StatusDenunciaEnum> listaStatus, int pagina, int tamanhoPagina, OrdemEnum ordem) {
+        Pageable pageable = PageRequest.of(pagina, tamanhoPagina, ordem != OrdemEnum.DESC ? SORT_ASC : SORT_DESC);
+        if (listaStatus == null || listaStatus.isEmpty()){
+            Page<Denuncia> page = denunciaRepository.findByCriadoPorId(usuarioId, pageable);
+            if (page == null || page.isEmpty()) return new PageResponseDTO(page);
+            Page<DenunciaResponseDTO> pageResponse = page.map(denunciaMapper::toResponse);
+            return new PageResponseDTO(pageResponse);
+        }
+        Page<Denuncia> page = denunciaRepository.findByCriadoPorIdAndStatusIn(usuarioId, listaStatus, pageable);
+        if (page == null || page.isEmpty()) return new PageResponseDTO(page);
+        Page<DenunciaResponseDTO> pageResponse = page.map(denunciaMapper::toResponse);
+        return new PageResponseDTO(pageResponse);
     }
 
     public List<Denuncia> findAllByUsuarioId(UUID usuarioId) {

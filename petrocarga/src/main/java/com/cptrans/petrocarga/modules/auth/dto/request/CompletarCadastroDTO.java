@@ -9,23 +9,24 @@ import com.cptrans.petrocarga.enums.TipoCnhEnum;
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
+@NoArgsConstructor
+@Getter
 public class CompletarCadastroDTO {
-    
     @NotNull(message = "CPF é obrigatório!")
     @NotBlank(message = "CPF não pode estar em branco.")
     @CPF(message = "Informe um cpf válido")
     private String cpf;
 
-    
     @Size(min = 10, max = 11)
     private String telefone;
 
-    
     @NotNull(message = "Aceitar Termos é obrigatório")
     private Boolean aceitarTermos;
-   
     
     @NotNull(message = "O campo 'tipoCnh' é obrigatório.")
     private TipoCnhEnum tipoCnh;
@@ -38,64 +39,10 @@ public class CompletarCadastroDTO {
     @Future(message = "Data de validade da CNH deve ser futura.")
     private LocalDate dataValidadeCnh;
 
-    
-    @Size(min = 6, max = 100)
+    @NotNull(message = "O campo 'senha' é obrigatório.")
+    @Pattern(
+        regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^a-zA-Z\\d]).{6,}$",
+        message = "A senha deve conter no mínimo 6 caracteres, uma letra maiúscula, uma letra minúscula, um número e um caractere especial."
+    )
     private String senha;
-
-    public CompletarCadastroDTO() {
-    }
-
-
-    public CompletarCadastroDTO(String cpf, String telefone, Boolean aceitarTermos, TipoCnhEnum tipoCnh, String numeroCnh,
-            LocalDate dataValidadeCnh) {
-        this.cpf = cpf;
-        this.telefone = telefone;
-        this.aceitarTermos = aceitarTermos;
-        this.tipoCnh = tipoCnh;
-        this.numeroCnh = numeroCnh;
-        this.dataValidadeCnh = dataValidadeCnh;
-    }
-
-
-    public CompletarCadastroDTO(String cpf, String telefone, Boolean aceitarTermos, TipoCnhEnum tipoCnh, String numeroCnh, String senha, LocalDate dataValidadeCnh) {
-        this.cpf = cpf;
-        this.telefone = telefone;
-        this.aceitarTermos = aceitarTermos;
-        this.tipoCnh = tipoCnh;
-        this.numeroCnh = numeroCnh;
-        this.dataValidadeCnh = dataValidadeCnh;
-        this.senha = senha;
-    }
-
-
-    public String getCpf() {
-        return cpf;
-    }
-
-    public String getTelefone() {
-        return telefone;
-    }
-
-    public Boolean getAceitarTermos() {
-        return aceitarTermos;
-    }
-
-    public String getSenha(){
-        return senha;
-    }
-
-    public TipoCnhEnum getTipoCnh() {
-        return tipoCnh;
-    }
-
-
-    public String getNumeroCnh() {
-        return numeroCnh;
-    }
-
-
-    public LocalDate getDataValidadeCnh() {
-        return dataValidadeCnh;
-    }
-
 }

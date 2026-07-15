@@ -6,17 +6,14 @@ import java.util.List;
 import java.util.UUID;
 
 import org.quartz.SchedulerException;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.cptrans.petrocarga.enums.StatusVagaEnum;
+import com.cptrans.petrocarga.modules.auth.utils.AuthUtils;
 import com.cptrans.petrocarga.modules.disponibilidadeVaga.dto.request.DisponibilidadeVagaRequestDTO;
 import com.cptrans.petrocarga.modules.disponibilidadeVaga.entity.DisponibilidadeVaga;
 import com.cptrans.petrocarga.modules.disponibilidadeVaga.repository.DisponibilidadeVagaRepository;
 import com.cptrans.petrocarga.modules.scheduler.handlers.DisponibilidadeVagaScheduler;
-import com.cptrans.petrocarga.modules.usuario.entity.Usuario;
-import com.cptrans.petrocarga.modules.usuario.service.UsuarioService;
 import com.cptrans.petrocarga.modules.vaga.entity.Vaga;
 import com.cptrans.petrocarga.modules.vaga.repository.VagaRepository;
 import com.cptrans.petrocarga.modules.vaga.service.VagaService;
@@ -25,20 +22,15 @@ import com.cptrans.petrocarga.shared.utils.DateUtils;
 
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 
 @Service
+@RequiredArgsConstructor
 public class DisponibilidadeVagaService {
-
-    @Autowired
-    private DisponibilidadeVagaRepository disponibilidadeVagaRepository;
-    @Autowired
-    private VagaService vagaService;
-    @Autowired
-    private UsuarioService usuarioService;
-    @Autowired
-    private DisponibilidadeVagaScheduler disponibilidadeVagaScheduler;
-    @Autowired
-    private VagaRepository vagaRepository;
+    private final DisponibilidadeVagaRepository disponibilidadeVagaRepository;
+    private final VagaService vagaService;
+    private final DisponibilidadeVagaScheduler disponibilidadeVagaScheduler;
+    private final VagaRepository vagaRepository;
 
     public DisponibilidadeVaga save (DisponibilidadeVaga disponibilidadeVaga) {
         return disponibilidadeVagaRepository.save(disponibilidadeVaga); 
@@ -67,12 +59,11 @@ public class DisponibilidadeVagaService {
     }
 
     public DisponibilidadeVaga createDisponibilidadeVaga(DisponibilidadeVaga novaDisponibilidadeVaga, UUID vagaId) {
-        UserAuthenticated usuarioLogado = (UserAuthenticated) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        Usuario usuario = usuarioService.findById(usuarioLogado.id());
+        UserAuthenticated usuarioLogado = AuthUtils.getUsuarioAutenticado();
         Vaga vaga = vagaService.findById(vagaId);
         if(!disponibilidadeValida(novaDisponibilidadeVaga, vaga)) throw new IllegalArgumentException("Informações inválidas.");
         novaDisponibilidadeVaga.setVaga(vaga);
-        novaDisponibilidadeVaga.setCriadoPor(usuario);
+        novaDisponibilidadeVaga.setCriadoPorId(usuarioLogado.id());
 
         DisponibilidadeVaga disponibilidadeCriada = disponibilidadeVagaRepository.save(novaDisponibilidadeVaga);
         
@@ -86,8 +77,7 @@ public class DisponibilidadeVagaService {
     }
 
     public List<DisponibilidadeVaga> createMultipleDisponibilidadeVagas(DisponibilidadeVaga novaDisponibilidadeVaga, List<UUID> listaVagaId) {
-        UserAuthenticated userAuthenticated = (UserAuthenticated) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        Usuario usuarioLogado = usuarioService.findById(userAuthenticated.id());
+        UserAuthenticated usuarioLogado = AuthUtils.getUsuarioAutenticado();
         List<Vaga> listaVagas = new ArrayList<>();
         List<DisponibilidadeVaga> disponibilidadesCriadas = new ArrayList<>();
 
@@ -104,7 +94,7 @@ public class DisponibilidadeVagaService {
                 disponibilidadeVaga.setInicio(novaDisponibilidadeVaga.getInicio());
                 disponibilidadeVaga.setFim(novaDisponibilidadeVaga.getFim());
                 disponibilidadeVaga.setVaga(vaga);
-                disponibilidadeVaga.setCriadoPor(usuarioLogado);
+                disponibilidadeVaga.setCriadoPorId(usuarioLogado.id());
                 disponibilidadesCriadas.add(disponibilidadeVaga);
 
             } 
@@ -120,8 +110,7 @@ public class DisponibilidadeVagaService {
     }
 
     public DisponibilidadeVaga updateDisponibilidadeVaga(UUID disponibilidadeId, DisponibilidadeVagaRequestDTO novaDisponibilidadeVaga) {
-        UserAuthenticated userAuthenticated = (UserAuthenticated) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        Usuario usuarioLogado = usuarioService.findById(userAuthenticated.id());
+        UserAuthenticated usuarioLogado = AuthUtils.getUsuarioAutenticado();
         DisponibilidadeVaga disponibilidadeCadastrada = findById(disponibilidadeId);
 
         if (novaDisponibilidadeVaga.getVagaId() != null) {
@@ -129,7 +118,7 @@ public class DisponibilidadeVagaService {
             if(!vaga.equals(disponibilidadeCadastrada.getVaga())) disponibilidadeCadastrada.setVaga(vaga);
         } 
         
-        if (!usuarioLogado.equals(disponibilidadeCadastrada.getCriadoPor()))disponibilidadeCadastrada.setCriadoPor(usuarioLogado);
+        if (!usuarioLogado.id().equals(disponibilidadeCadastrada.getCriadoPorId())) disponibilidadeCadastrada.setCriadoPorId(usuarioLogado.id());
         
         if (novaDisponibilidadeVaga.getInicio() != null) disponibilidadeCadastrada.setInicio(novaDisponibilidadeVaga.getInicio());
         

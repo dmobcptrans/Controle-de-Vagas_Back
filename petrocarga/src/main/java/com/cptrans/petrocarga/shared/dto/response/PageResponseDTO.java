@@ -4,11 +4,18 @@ import java.util.List;
 
 import org.springframework.data.domain.Page;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 public class PageResponseDTO {
+    @Schema(description = "Conteúdo da página", example = "[{}]")
     List<?> content;
+    @Schema(description = "Total de elementos", example = "0")
     Long totalElementos;
+    @Schema(description = "Total de páginas", example = "1")
     int totalPaginas;
+    @Schema(description = "Tamanho da página", example = "10")
     int tamanhoPagina;
+    @Schema(description = "Número da página", example = "0")
     int pagina;
 
     public PageResponseDTO(List<?> content, Long totalElements, int totalPages, int size, int number) {
@@ -20,6 +27,7 @@ public class PageResponseDTO {
     }
 
     public PageResponseDTO(Page<?> page){
+        if (page == null) return;
         this.content = page.getContent();
         this.totalElementos = page.getTotalElements();
         this.totalPaginas = page.getTotalPages();

@@ -19,11 +19,16 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "notificacao")
+@NoArgsConstructor
+@Getter
+@EqualsAndHashCode
 public class Notificacao {
-    
     @Id
     @GeneratedValue
     private UUID id;
@@ -51,9 +56,6 @@ public class Notificacao {
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
     private Map<String, Object> metadata;
-
-    public Notificacao() {
-    }
 
     public Notificacao(UUID usuarioId, String titulo, String mensagem, TipoNotificacaoEnum tipo, Map<String, Object> metadata) {
         this.usuarioId = usuarioId;
@@ -87,52 +89,20 @@ public class Notificacao {
         this.lida = true;
     }
 
-    public UUID getId() {
-        return id;
-    }
-
-    public UUID getUsuarioId() {
-        return usuarioId;
-    }
-
     public void setUsuarioId(UUID usuarioId) {
         this.usuarioId = usuarioId;
-    }
-
-    public String getTitulo() {
-        return titulo;
     }
 
     public void setTitulo(String titulo) {
         this.titulo = titulo;
     }
 
-    public String getMensagem() {
-        return mensagem;
-    }
-
     public void setMensagem(String mensagem) {
         this.mensagem = mensagem;
     }
 
-    public TipoNotificacaoEnum getTipo() {
-        return tipo;
-    }
-
     public void setTipo(TipoNotificacaoEnum tipo) {
         this.tipo = tipo;
-    }
-
-    public boolean isLida() {
-        return lida;
-    }
-
-    public OffsetDateTime getCriadaEm() {
-        return criadaEm;
-    }
-
-    public Map<String, Object> getMetadata() {
-        return metadata;
     }
 
     public void setMetadata(Map<String, Object> metadata) {

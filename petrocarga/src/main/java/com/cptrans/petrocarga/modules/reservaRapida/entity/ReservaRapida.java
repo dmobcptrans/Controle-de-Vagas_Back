@@ -20,11 +20,17 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "reserva_rapida")
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Getter
+@EqualsAndHashCode
 public class ReservaRapida {
-
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id")
@@ -67,97 +73,55 @@ public class ReservaRapida {
     @Column(name = "posicao_perpendicular")
     private Integer posicaoPerpendicular;
 
-    // Getters and Setters
-    public UUID getId() {
-        return id;
-    }
-
-    public void setId(UUID id) {
-        this.id = id;
-    }
-
-    public Vaga getVaga() {
-        return vaga;
+    public ReservaRapida(Vaga vaga,TipoVeiculoEnum tipoVeiculo, String placaVeiculo, OffsetDateTime inicio, OffsetDateTime fim, Integer posicaoPerpendicular, String cidadeOrigem, String entradaCidade) {
+        this.vaga = vaga;
+        this.tipoVeiculo = tipoVeiculo;
+        this.placa = placaVeiculo;
+        this.inicio = inicio;
+        this.fim = fim;
+        this.posicaoPerpendicular = posicaoPerpendicular;
+        this.cidadeOrigem = cidadeOrigem;
+        this.entradaCidade = entradaCidade;
     }
 
     public void setVaga(Vaga vaga) {
         this.vaga = vaga;
     }
 
-    public Agente getAgente() {
-        return agente;
-    }
-
     public void setAgente(Agente agente) {
         this.agente = agente;
-    }
-
-    public TipoVeiculoEnum getTipoVeiculo() {
-        return tipoVeiculo;
     }
 
     public void setTipoVeiculo(TipoVeiculoEnum tipoVeiculo) {
         this.tipoVeiculo = tipoVeiculo;
     }
 
-    public String getPlaca() {
-        return placa;
-    }
-
     public void setPlaca(String placa) {
         this.placa = placa;
-    }
-
-    public OffsetDateTime getInicio() {
-        return inicio;
     }
 
     public void setInicio(OffsetDateTime inicio) {
         this.inicio = inicio;
     }
 
-    public OffsetDateTime getFim() {
-        return fim;
-    }
-
     public void setFim(OffsetDateTime fim) {
         this.fim = fim;
-    }
-
-    public OffsetDateTime getCriadoEm() {
-        return criadoEm;
     }
 
     public void setCriadoEm(OffsetDateTime criadoEm) {
         this.criadoEm = criadoEm;
     }
 
-    public String getCidadeOrigem() {
-        return cidadeOrigem;
-    }
-
     public void setCidadeOrigem(String cidadeOrigem) {
         this.cidadeOrigem = cidadeOrigem;
-    }
-
-    public String getEntradaCidade() {
-        return entradaCidade;
     }
 
     public void setEntradaCidade(String entradaCidade) {
         this.entradaCidade = entradaCidade;
     }
 
-    public StatusReservaEnum getStatus() {
-        return status;
-    }
-
     public void setStatus(StatusReservaEnum status) {
         this.status = status;
-    }
-
-    public Integer getPosicaoPerpendicular() {
-        return posicaoPerpendicular;
     }
 
     public void setPosicaoPerpendicular(Integer posicaoPerpendicular) {

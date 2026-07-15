@@ -1,5 +1,6 @@
 package com.cptrans.petrocarga.modules.reserva.dto.mapper;
 
+
 import org.springframework.stereotype.Component;
 
 import com.cptrans.petrocarga.modules.enderecoVaga.dto.mapper.EnderecoVagaMapper;
@@ -18,9 +19,16 @@ import com.cptrans.petrocarga.modules.vaga.entity.Vaga;
 import com.cptrans.petrocarga.modules.veiculo.dto.mapper.VeiculoMapper;
 import com.cptrans.petrocarga.modules.veiculo.entity.Veiculo;
 
+import lombok.RequiredArgsConstructor;
+
 @Component
+@RequiredArgsConstructor
 public class ReservaMapper {
-    public static Reserva toEntity (ReservaRequestDTO request, Vaga vaga, Motorista motorista, Veiculo veiculo, Usuario criadoPor){ 
+    private final MotoristaMapper motoristaMapper;
+    private final UsuarioMapper usuarioMapper;
+    private final VeiculoMapper veiculoMapper;
+
+    public Reserva toEntity (ReservaRequestDTO request, Vaga vaga, Motorista motorista, Veiculo veiculo, Usuario criadoPor){ 
         return new Reserva(
             vaga,
             motorista,
@@ -34,7 +42,7 @@ public class ReservaMapper {
         );
     }
 
-    public static ReservaResponseDTO toResponse(Reserva reserva) {
+    public ReservaResponseDTO toResponse(Reserva reserva, String cpfOrCnpjCriador) {
         if (reserva == null) return null;
         Vaga vaga = reserva.getVaga();
         Veiculo veiculo = reserva.getVeiculo();
@@ -43,23 +51,23 @@ public class ReservaMapper {
         return new ReservaResponseDTO(
             reserva.getId(),
             VagaMapper.toResponse(vaga),
-            MotoristaMapper.toResponseSimplificado(motorista),
-            VeiculoMapper.toResponse(veiculo),
-            UsuarioMapper.toResponse(criadoPor),
+            motoristaMapper.toResponseSimplificado(motorista),
+            veiculoMapper.toResponse(veiculo),
+            usuarioMapper.toResponse(criadoPor, cpfOrCnpjCriador),
             reserva.getCidadeOrigem(),
             reserva.getEntradaCidade(),
             reserva.getCriadoEm(),
             reserva.getInicio(),
             reserva.getFim(),
             reserva.getStatus(),
-            reserva.isCheckedIn(),
+            reserva.getCheckedIn(),
             reserva.getCheckInEm(),
             reserva.getCheckOutEm(),
             reserva.getPosicaoPerpendicular()
         );
     }
 
-    public static ReservaDetailedResponseDTO toDetailedResponse(Reserva reserva) {
+    public ReservaDetailedResponseDTO toDetailedResponse(Reserva reserva) {
         if (reserva == null) return null;
         Vaga vaga = reserva.getVaga();
         EnderecoVaga enderecoVaga = vaga != null ? vaga.getEndereco() : null;
@@ -91,7 +99,7 @@ public class ReservaMapper {
         );
     }
 
-    public static ReservaDTO toReservaDTO(Reserva reserva){
+    public ReservaDTO toReservaDTO(Reserva reserva, String cpfOrCnpjCriador) {
         if (reserva == null) return null;
         Vaga vaga = reserva.getVaga();
         EnderecoVaga enderecoVaga = vaga != null ? vaga.getEndereco() : null;
@@ -104,7 +112,7 @@ public class ReservaMapper {
             vaga != null ? vaga.getId() : null,
             motorista != null ? motorista.getId() : null,
             usuarioMotorista != null ? usuarioMotorista.getNome() : null,
-            usuarioMotorista != null ? usuarioMotorista.getCpfCripto() : null,
+            motorista != null ? motorista.getCpfCripto() : null,
             vaga != null ? vaga.getNumeroEndereco() : null,
             vaga != null ? vaga.getReferenciaEndereco() : null,
             EnderecoVagaMapper.toResponse(enderecoVaga),
@@ -119,10 +127,10 @@ public class ReservaMapper {
             reserva.getCidadeOrigem(),
             reserva.getEntradaCidade(),
             reserva.getStatus(),
-            reserva.isCheckedIn(),
+            reserva.getCheckedIn(),
             reserva.getCheckInEm(),
             reserva.getCheckOutEm(),
-            UsuarioMapper.toResponse(criadoPor),
+            usuarioMapper.toResponse(criadoPor, cpfOrCnpjCriador),
             reserva.getCriadoEm(),
             reserva.getPosicaoPerpendicular()
         );

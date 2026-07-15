@@ -7,6 +7,8 @@ import org.springframework.data.jpa.domain.Specification;
 
 import com.cptrans.petrocarga.modules.agente.dto.request.AgenteFiltrosDTO;
 import com.cptrans.petrocarga.modules.agente.entity.Agente;
+import com.cptrans.petrocarga.shared.utils.StringUtils;
+import com.cptrans.petrocarga.shared.utils.Utils;
 
 import jakarta.persistence.criteria.Predicate;
 
@@ -30,19 +32,7 @@ public class AgenteSpecification {
 
             if (filtros.nome() != null) {
                 predicates.add(
-                    cb.like(cb.lower(root.get("usuario").get("nome")), "%" + filtros.nome().trim().toLowerCase() + "%")
-                );
-            }
-
-            if (filtros.telefone() != null) {
-                predicates.add(
-                    cb.equal(root.get("usuario").get("telefone"), filtros.telefone())
-                );
-            }
-
-            if (filtros.email() != null) {
-                predicates.add(
-                    cb.equal(root.get("usuario").get("email"), filtros.email().trim().toLowerCase())
+                    cb.like(Utils.createUnaccentExpression(cb, cb.lower(root.get("usuario").get("nome"))), "%" + StringUtils.normalize(filtros.nome().trim().toLowerCase()) + "%")
                 );
             }
 
@@ -54,7 +44,7 @@ public class AgenteSpecification {
 
             if (filtros.matricula() != null) {
                 predicates.add(
-                    cb.equal(root.get("matricula"), filtros.matricula())
+                    cb.like(root.get("matricula"), "%" + filtros.matricula().trim() + "%")
                 );
             }
 

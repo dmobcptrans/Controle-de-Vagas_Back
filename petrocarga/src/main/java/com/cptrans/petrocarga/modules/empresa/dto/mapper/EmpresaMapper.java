@@ -7,47 +7,42 @@ import org.springframework.stereotype.Component;
 import com.cptrans.petrocarga.modules.empresa.dto.response.EmpresaResponseDTO;
 import com.cptrans.petrocarga.modules.empresa.dto.response.EmpresaSimplificadoResponseDTO;
 import com.cptrans.petrocarga.modules.empresa.entity.Empresa;
-import com.cptrans.petrocarga.modules.motorista.dto.mapper.MotoristaMapper;
 import com.cptrans.petrocarga.modules.usuario.dto.mapper.UsuarioMapper;
-import com.cptrans.petrocarga.shared.utils.CriptoUtils;
+
+import lombok.RequiredArgsConstructor;
 
 
 @Component
+@RequiredArgsConstructor
 public class EmpresaMapper {
-    
-    public static EmpresaResponseDTO toResponse(Empresa empresa) {
+    private final UsuarioMapper usuarioMapper;
+
+    public EmpresaResponseDTO toResponse(Empresa empresa) {
         if (empresa == null) return null;
         return new EmpresaResponseDTO(
             empresa.getId(),
-            CriptoUtils.decrypt(UsuarioMapper.toResponse(empresa.getUsuario()),
-            empresa.getUsuario().getPersonalDataKeyVersion()),
-            empresa.getCnpj(),
-            empresa.getRazaoSocial(),
-            empresa.getMotoristas() != null && !empresa.getMotoristas().isEmpty() ? MotoristaMapper.toResponseSimplificadoList(empresa.getMotoristas()) : null
+            usuarioMapper.toResponse(empresa.getUsuario(), empresa.getCnpj())
         );
     }
 
-    public static List<EmpresaResponseDTO> toResponseList(List<Empresa> empresas) { 
+    public List<EmpresaResponseDTO> toResponseList(List<Empresa> empresas) { 
         if (empresas == null || empresas.isEmpty()) return List.of();
-        return empresas.stream().map(EmpresaMapper::toResponse).toList(); 
+        return empresas.stream().map(this::toResponse).toList(); 
     }
 
-    public static EmpresaSimplificadoResponseDTO toResponseSimplificado(Empresa empresa) {
+    public EmpresaSimplificadoResponseDTO toResponseSimplificado(Empresa empresa) {
         if (empresa == null) return null;
         return new EmpresaSimplificadoResponseDTO(
             empresa.getId(),
-            empresa.getUsuario().getId(),
             empresa.getUsuario().getNome(),
             empresa.getCnpj(),
-            empresa.getRazaoSocial(),
-            empresa.getUsuario().isAtivo()
+            empresa.getUsuario().getAtivo()
         );
     }
 
-    public static List<EmpresaSimplificadoResponseDTO> toResponseSimplificadoList(List<Empresa> empresas) { 
+    public List<EmpresaSimplificadoResponseDTO> toResponseSimplificadoList(List<Empresa> empresas) { 
         if (empresas == null || empresas.isEmpty()) return List.of();
-        return empresas.stream().map(EmpresaMapper::toResponseSimplificado).toList(); 
+        return empresas.stream().map(this::toResponseSimplificado).toList(); 
     }
     
-
 }

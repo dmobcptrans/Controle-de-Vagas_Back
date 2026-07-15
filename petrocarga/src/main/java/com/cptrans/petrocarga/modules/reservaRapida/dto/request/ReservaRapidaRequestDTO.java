@@ -4,84 +4,38 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 import com.cptrans.petrocarga.enums.TipoVeiculoEnum;
-import com.cptrans.petrocarga.modules.reservaRapida.entity.ReservaRapida;
-import com.cptrans.petrocarga.modules.vaga.entity.Vaga;
-import com.cptrans.petrocarga.modules.veiculo.utils.VeiculoUtils;
 
-import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Getter
 public class ReservaRapidaRequestDTO {
-
-    @NotNull
+    @NotNull(message = "Vaga obrigatória.")
     private UUID vagaId;
 
-    @Valid
+    @NotNull(message = "Tipo de veículo obrigatório.")
     private TipoVeiculoEnum tipoVeiculo;
 
+    @NotNull(message = "Placa obrigatória.")
     @Size(min = 7, max = 7, message = "Placa deve ter 7 caracteres.")
     private String placa;
 
-    @NotNull
+    @NotNull(message = "Data de inicio obrigatória.")
     private OffsetDateTime inicio;
 
-    @NotNull
+    @NotNull(message = "Data de fim obrigatória.")
     private OffsetDateTime fim;
 
     private Integer posicaoPerpendicular;
 
+    @NotBlank(message = "Cidade de origem não pode estar vazia.")
     private String cidadeOrigem;
 
+    @NotBlank(message = "Cidade de entrada não pode estar vazia.")
     private String entradaCidade;
-
-    public ReservaRapidaRequestDTO() {
-        
-    }
-
-    public ReservaRapida toEntity(Vaga vaga) {
-        ReservaRapida reservaRapida = new ReservaRapida();
-        reservaRapida.setVaga(vaga);
-        reservaRapida.setTipoVeiculo(this.tipoVeiculo);
-        reservaRapida.setPlaca(this.placa != null ? VeiculoUtils.normalizarEValidar(this.placa) : null);
-        reservaRapida.setInicio(this.inicio);
-        reservaRapida.setFim(this.fim);
-        reservaRapida.setPosicaoPerpendicular(this.posicaoPerpendicular);
-        reservaRapida.setCidadeOrigem(this.cidadeOrigem);
-        reservaRapida.setEntradaCidade(this.entradaCidade);
-        return reservaRapida;
-    }
-
-        // Getters and Setters
-        public UUID getVagaId() {
-        return vagaId;
-    }
-
-    public TipoVeiculoEnum getTipoVeiculo() {
-        return tipoVeiculo;
-    }
-
-    public String getPlaca() {
-        return placa;
-    }
-
-    public OffsetDateTime getInicio() {
-        return inicio;
-    }
-
-    public OffsetDateTime getFim() {
-        return fim;
-    }
-
-    public Integer getPosicaoPerpendicular() {
-        return posicaoPerpendicular;
-    }
-
-    public String getCidadeOrigem() {
-        return cidadeOrigem;
-    }
-
-    public String getEntradaCidade() {
-        return entradaCidade;
-    }
 }

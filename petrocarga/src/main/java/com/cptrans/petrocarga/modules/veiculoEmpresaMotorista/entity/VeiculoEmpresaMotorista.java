@@ -1,6 +1,6 @@
 package com.cptrans.petrocarga.modules.veiculoEmpresaMotorista.entity;
 
-
+import com.cptrans.petrocarga.modules.empresa.entity.Empresa;
 import com.cptrans.petrocarga.modules.motorista.entity.Motorista;
 import com.cptrans.petrocarga.modules.veiculo.entity.Veiculo;
 
@@ -11,11 +11,19 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.MapsId;
 import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "veiculo_empresa_motorista")
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@Getter
+@EqualsAndHashCode
 public class VeiculoEmpresaMotorista {
-
     @EmbeddedId
     private VeiculoEmpresaMotoristaId id;
 
@@ -25,43 +33,31 @@ public class VeiculoEmpresaMotorista {
     private Veiculo veiculo;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @MapsId("empresaId")
+    @JoinColumn(name = "empresa_id")
+    private Empresa empresa;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("motoristaId")
     @JoinColumn(name = "motorista_id")
     private Motorista motorista;
 
-    // Constructors
-    public VeiculoEmpresaMotorista() {
-        this.id = new VeiculoEmpresaMotoristaId();
-    }
-
-    public VeiculoEmpresaMotorista(Veiculo veiculo, Motorista motorista) {
+    public VeiculoEmpresaMotorista(Veiculo veiculo, Empresa empresa, Motorista motorista) {
+        this.id = new VeiculoEmpresaMotoristaId(veiculo.getId(), empresa.getId(), motorista.getId());
         this.veiculo = veiculo;
+        this.empresa = empresa;
         this.motorista = motorista;
-        this.id = new VeiculoEmpresaMotoristaId(veiculo.getId(), motorista.getId());
-    }
-
-    // Getters and Setters
-    public VeiculoEmpresaMotoristaId getId() {
-        return id;
-    }
-
-    public void setId(VeiculoEmpresaMotoristaId id) {
-        this.id = id;
-    }
-
-    public Veiculo getVeiculo() {
-        return veiculo;
     }
 
     public void setVeiculo(Veiculo veiculo) {
         this.veiculo = veiculo;
     }
 
-    public Motorista getMotorista() {
-        return motorista;
-    }
-
     public void setMotorista(Motorista motorista) {
         this.motorista = motorista;
+    }
+
+    public void setEmpresa(Empresa empresa) {
+        this.empresa = empresa;
     }
 }

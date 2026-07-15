@@ -5,9 +5,10 @@ import java.util.List;
 
 import org.springframework.data.jpa.domain.Specification;
 
-import com.cptrans.petrocarga.enums.PermissaoEnum;
 import com.cptrans.petrocarga.modules.gestor.dto.request.GestorFiltrosDTO;
-import com.cptrans.petrocarga.modules.usuario.entity.Usuario;
+import com.cptrans.petrocarga.modules.gestor.entity.Gestor;
+import com.cptrans.petrocarga.shared.utils.StringUtils;
+import com.cptrans.petrocarga.shared.utils.Utils;
 
 import jakarta.persistence.criteria.Predicate;
 
@@ -21,38 +22,46 @@ public class GestorSpecification {
      * @param filtros o objeto com os filtros para a busca
      * @return a Specification que filtra os gestores com base nos filtros passados
      */
-     public static Specification<Usuario> filtrar(
+     public static Specification<Gestor> filtrar(
         GestorFiltrosDTO filtros
     ) {
         return (root, query, cb) -> {
 
             List<Predicate> predicates = new ArrayList<>();
 
-             predicates.add(
-                    cb.equal(root.get("permissao"), PermissaoEnum.GESTOR)
-                );
-
-            if (filtros.nome() != null) {
+            if (filtros.getId() != null) {
                 predicates.add(
-                    cb.like(cb.lower(root.get("nome")), "%" + filtros.nome().trim().toLowerCase() + "%")
+                    cb.equal(root.get("id"), filtros.getId())
                 );
             }
 
-            if (filtros.telefone() != null) {
+            if (filtros.getNome() != null) {
                 predicates.add(
-                    cb.equal(root.get("telefone"), filtros.telefone())
+                    cb.like(cb.lower(Utils.createUnaccentExpression(cb, root.get("usuario").get("nome"))), "%" + StringUtils.normalize(filtros.getNome().trim().toLowerCase())+ "%")
                 );
             }
 
-            if (filtros.email() != null) {
+            if (filtros.getTelefone() != null) {
                 predicates.add(
-                    cb.equal(root.get("email"), filtros.email().trim().toLowerCase())
+                    cb.equal(root.get("usuario").get("telefoneHash"), filtros.getTelefone())
                 );
             }
 
-            if (filtros.ativo() != null) {
+            if (filtros.getEmail() != null) {
                 predicates.add(
-                    cb.equal(root.get("ativo"), filtros.ativo())
+                    cb.equal(root.get("usuario").get("emailHash"), filtros.getEmail().trim().toLowerCase())
+                );
+            }
+
+            if (filtros.getAtivo() != null) {
+                predicates.add(
+                    cb.equal(root.get("usuario").get("ativo"), filtros.getAtivo())
+                );
+            }
+
+            if (filtros.getCpf() != null) {
+                predicates.add(
+                    cb.equal(root.get("cpfHash"), filtros.getCpf())
                 );
             }
 

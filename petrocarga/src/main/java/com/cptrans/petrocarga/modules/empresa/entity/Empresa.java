@@ -5,78 +5,55 @@ import java.util.UUID;
 
 import com.cptrans.petrocarga.modules.motorista.entity.Motorista;
 import com.cptrans.petrocarga.modules.usuario.entity.Usuario;
+import com.cptrans.petrocarga.modules.veiculoEmpresaMotorista.entity.VeiculoEmpresaMotorista;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.MapsId;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "empresa")
+@NoArgsConstructor
+@Getter
+@EqualsAndHashCode
 public class Empresa {
-
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id")
     private UUID id;
 
+    @MapsId
     @OneToOne(fetch = FetchType.LAZY, cascade=CascadeType.ALL)
-    @JoinColumn(name = "usuario_id", nullable = false, unique = true)
+    @JoinColumn(name = "id", nullable = false, unique = true)
     private Usuario usuario;
 
     @Column(nullable = false, unique = true, length = 14)
     private String cnpj;
 
-    @Column(name = "razao_social", nullable = false)
-    private String razaoSocial;
-
     @OneToMany(mappedBy = "empresa", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Motorista> motoristas;
 
-    // Constructors
-    public Empresa() {}
-
-    // Getters and Setters
-    public UUID getId() {
-        return id;
-    }
+    @OneToMany(mappedBy = "empresa", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<VeiculoEmpresaMotorista> veiculosEmpresaMotoristas;
 
     public void setId(UUID id) {
         this.id = id;
-    }
-
-    public Usuario getUsuario() {
-        return usuario;
     }
 
     public void setUsuario(Usuario usuario) {
         this.usuario = usuario;
     }
 
-    public String getCnpj() {
-        return cnpj;
-    }
-
     public void setCnpj(String cnpj) {
         this.cnpj = cnpj;
-    }
-
-    public String getRazaoSocial() {
-        return razaoSocial;
-    }
-
-    public void setRazaoSocial(String razaoSocial) {
-        this.razaoSocial = razaoSocial;
-    }
-
-    public List<Motorista> getMotoristas() {
-        return motoristas;
     }
 }

@@ -1,12 +1,10 @@
 package com.cptrans.petrocarga.modules.motorista.dto.response;
 
 import java.time.LocalDate;
-import java.util.List;
 import java.util.UUID;
 
 import com.cptrans.petrocarga.enums.TipoCnhEnum;
 import com.cptrans.petrocarga.modules.usuario.dto.response.UsuarioResponseDTO;
-import com.cptrans.petrocarga.modules.veiculo.dto.response.VeiculoResponseDTO;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -25,7 +23,6 @@ public class MotoristaResponseDTO {
     private UUID empresaId;
     private String empresaCnpj;
     private String empresaRazaoSocial;
-    private List<VeiculoResponseDTO> veiculosEmpresa;
 
     public void setNumeroCnh(String numeroCnh) {
         this.numeroCnh = numeroCnh;

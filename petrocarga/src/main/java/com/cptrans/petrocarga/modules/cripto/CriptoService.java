@@ -79,8 +79,9 @@ public class CriptoService {
      * @throws RuntimeException se ocorrer um erro durante o processo de descriptografia
      */
     public String decrypt(String encryptedString, Integer version) {
+        if (version == null) return null;
+        
         try {
-
             String key = keys.get(version);
 
             byte[] decoded = Base64.getDecoder().decode(encryptedString);

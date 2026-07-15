@@ -1,5 +1,6 @@
 package com.cptrans.petrocarga.modules.auth.dto.request;
 
+import org.hibernate.validator.constraints.br.CNPJ;
 import org.hibernate.validator.constraints.br.CPF;
 
 import jakarta.validation.Valid;
@@ -12,5 +13,9 @@ public record ForgotPasswordRequest(
      
     @Valid
     @CPF(message = "Informe um CPF válido.")
-    String cpf) {
+    String cpf,
+
+    @Valid
+    @CNPJ(message = "Informe um CNPJ válido.")
+    String cnpj) {
 }

@@ -6,12 +6,14 @@ import com.cptrans.petrocarga.enums.TipoVeiculoEnum;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Getter
+@EqualsAndHashCode
 public class VeiculoResponseDTO {
 
     private UUID id;
@@ -23,6 +25,7 @@ public class VeiculoResponseDTO {
     private UUID usuarioId;
     private String cpfProprietario;
     private String cnpjProprietario;
+    private Boolean ativo;
 
     public void setCpfProprietario(String cpfProprietario) {
         this.cpfProprietario = cpfProprietario;

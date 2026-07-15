@@ -13,7 +13,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import com.cptrans.petrocarga.enums.PermissaoEnum;
 import com.cptrans.petrocarga.enums.StatusReservaEnum;
 import com.cptrans.petrocarga.enums.TipoVagaEnum;
 import com.cptrans.petrocarga.modules.agente.entity.Agente;
@@ -25,16 +24,16 @@ import com.cptrans.petrocarga.modules.reserva.dto.response.ReservaDTO;
 import com.cptrans.petrocarga.modules.reserva.utils.ReservaUtils;
 import com.cptrans.petrocarga.modules.reservaRapida.dto.mapper.ReservaRapidaMapper;
 import com.cptrans.petrocarga.modules.reservaRapida.dto.request.ReservaRapidaRequestDTO;
+import com.cptrans.petrocarga.modules.reservaRapida.dto.response.ReservaRapidaResponseDTO;
 import com.cptrans.petrocarga.modules.reservaRapida.entity.ReservaRapida;
 import com.cptrans.petrocarga.modules.reservaRapida.repository.ReservaRapidaRepository;
 import com.cptrans.petrocarga.modules.reservaRapida.specification.ReservaRapidaSpecification;
 import com.cptrans.petrocarga.modules.reservaRapida.utils.ReservaRapidaUtils;
 import com.cptrans.petrocarga.modules.scheduler.handlers.ReservaSchedulerService;
-import com.cptrans.petrocarga.modules.usuario.entity.Usuario;
-import com.cptrans.petrocarga.modules.usuario.service.UsuarioService;
 import com.cptrans.petrocarga.modules.vaga.entity.Vaga;
 import com.cptrans.petrocarga.modules.vaga.service.VagaService;
 import com.cptrans.petrocarga.security.UserAuthenticated;
+import com.cptrans.petrocarga.shared.dto.response.PageResponseDTO;
 import com.cptrans.petrocarga.shared.utils.DateUtils;
 
 import lombok.RequiredArgsConstructor;
@@ -47,10 +46,10 @@ public class ReservaRapidaService {
     private final VagaService vagaService;
     private final ReservaRapidaUtils reservaRapidaUtils;
     private final ReservaUtils reservaUtils;
-    private final UsuarioService usuarioService;
     private final AgenteService agenteService;
     private final ReservaSchedulerService reservaSchedulerService;
     private final DisponibilidadeVagaService disponibilidadeVagaService;
+    private final ReservaRapidaMapper reservaRapidaMapper;
     
     public List<ReservaRapida> findAll(List<StatusReservaEnum> status) {
         if(status == null ) status = new ArrayList<>();
@@ -124,9 +123,12 @@ public class ReservaRapidaService {
         return reservaRapidaRepository.findByAgenteId(agenteId, pageable);
     }
     
-    public Page<ReservaRapida> findByAgenteWithFilters(Agente agente, UUID vagaId, String placaVeiculo, LocalDate data, List<StatusReservaEnum> listaStatus, Integer mes, Integer ano, Integer numeroPagina, Integer tamanhoPagina) {
+    public PageResponseDTO findByAgenteIdWithFilters(UUID agenteId, UUID vagaId, String placaVeiculo, LocalDate data, List<StatusReservaEnum> listaStatus, Integer mes, Integer ano, Integer numeroPagina, Integer tamanhoPagina) {
         Pageable pageable = PageRequest.of(numeroPagina, tamanhoPagina, Sort.by("inicio").descending());
-        return reservaRapidaRepository.findAll(ReservaRapidaSpecification.filtrar(agente.getUsuario().getId(), vagaId, placaVeiculo, data, mes, ano, listaStatus), pageable);
+        Page<ReservaRapida> page = reservaRapidaRepository.findAll(ReservaRapidaSpecification.filtrar(agenteId, vagaId, placaVeiculo, data, mes, ano, listaStatus), pageable);
+        if (page == null || page.isEmpty()) return new PageResponseDTO(page);
+        Page<ReservaRapidaResponseDTO> pageResponse = page.map(reservaRapidaMapper::toResponse);
+        return new PageResponseDTO(pageResponse); 
     }
 
     public ReservaRapida create(ReservaRapidaRequestDTO request) {
@@ -138,17 +140,15 @@ public class ReservaRapidaService {
         OperacaoVagaUtils.verificarLimiteHorarioOperacaoVaga(vaga.getOperacoesVaga(), request.getInicio(), request.getFim());
         
         UserAuthenticated userAuthenticated = AuthUtils.getUsuarioAutenticado();
-        Usuario usuarioLogado = usuarioService.findById(userAuthenticated.id());
 
-        ReservaRapida novaReservaRapida = ReservaRapidaMapper.toEntity(request, vaga);
-        if (usuarioLogado.getPermissao().equals(PermissaoEnum.AGENTE)){
-            Agente agenteLogado = agenteService.findByUsuarioId(usuarioLogado.getId());
-            novaReservaRapida.setAgente(agenteLogado);
-        }
+        ReservaRapida novaReservaRapida = reservaRapidaMapper.toEntity(request, vaga);
+        Agente agenteLogado = agenteService.findByIdAndAtivoTrue(userAuthenticated.id());
+        novaReservaRapida.setAgente(agenteLogado);
+
         if (novaReservaRapida.getCidadeOrigem() == null ){
             novaReservaRapida.setCidadeOrigem("Petrópolis - RJ");
         }
-        ReservaDTO novaReservaDTO = ReservaRapidaMapper.toReservaDTO(novaReservaRapida);
+        ReservaDTO novaReservaDTO = reservaRapidaMapper.toReservaDTO(novaReservaRapida, novaReservaRapida.getAgente().getCpfCripto());
         List<ReservaDTO> reservasSoprepostasNaVaga = reservaUtils.getReservasAtivasSobrepostas(request.getInicio(), request.getFim());
         ReservaUtils.validarTempoMaximoReserva(novaReservaRapida.getInicio(), novaReservaRapida.getFim(), novaReservaRapida.getVaga().getArea(), novaReservaRapida.getAgente().getUsuario().getPermissao());
         reservaRapidaUtils.validarQuantidadeReservasPorPlaca(novaReservaDTO, reservasSoprepostasNaVaga);
@@ -161,7 +161,7 @@ public class ReservaRapidaService {
         reservaRapidaUtils.validarEspacoDisponivelNaVaga(novaReservaRapida, vaga, reservasSoprepostasNaVaga);
         ReservaRapida reservaRapidaCriada = reservaRapidaRepository.save(novaReservaRapida);
         try {
-            reservaSchedulerService.agendarFinalizacaoReserva(ReservaRapidaMapper.toReservaDTO(reservaRapidaCriada));
+            reservaSchedulerService.agendarFinalizacaoReserva(reservaRapidaMapper.toReservaDTO(reservaRapidaCriada, reservaRapidaCriada.getAgente().getCpfCripto()));
         } catch (SchedulerException e) {
             throw new RuntimeException("Erro ao agendar finalização da reserva: " + e.getMessage());
         }
