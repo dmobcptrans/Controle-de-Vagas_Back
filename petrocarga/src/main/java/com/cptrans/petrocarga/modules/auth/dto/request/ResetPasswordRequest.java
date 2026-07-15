@@ -1,5 +1,6 @@
 package com.cptrans.petrocarga.modules.auth.dto.request;
 
+import org.hibernate.validator.constraints.br.CNPJ;
 import org.hibernate.validator.constraints.br.CPF;
 
 
@@ -16,6 +17,10 @@ public record ResetPasswordRequest(
     @Valid
     @CPF(message = "Informe um CPF válido.")
     String cpf,
+
+    @Valid
+    @CNPJ(message = "Informe um CNPJ válido.")
+    String cnpj,
     
     @Valid
     @NotNull(message = "O campo 'codigo' é obrigatório.")

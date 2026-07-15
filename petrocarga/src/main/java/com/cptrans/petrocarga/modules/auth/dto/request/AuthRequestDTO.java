@@ -1,12 +1,20 @@
 package com.cptrans.petrocarga.modules.auth.dto.request;
 
+import org.hibernate.validator.constraints.br.CNPJ;
 import org.hibernate.validator.constraints.br.CPF;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@Getter
 public class AuthRequestDTO {
     
     @Valid
@@ -18,23 +26,12 @@ public class AuthRequestDTO {
     public String cpf;
 
     @Valid
+    @CNPJ(message = "Informe um CNPJ válido.")
+    public String cnpj;
+
+    @Valid
     @NotNull(message = "O campo 'senha' é obrigatório.")
     @Size(min = 6, max = 100, message = "Senha deve conter no mínimo 6 caracteres.")
     public String senha;
 
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public String getSenha() {
-        return senha;
-    }
-
-    public String getCpf() {
-        return cpf;
-    }
 }

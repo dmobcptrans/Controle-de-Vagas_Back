@@ -4,10 +4,10 @@ import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -15,6 +15,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.cptrans.petrocarga.config.swagger.response.DefaultResponses;
+import com.cptrans.petrocarga.config.swagger.response.GetResponses;
+import com.cptrans.petrocarga.config.swagger.response.PostResponses;
 import com.cptrans.petrocarga.enums.PermissaoEnum;
 import com.cptrans.petrocarga.modules.auth.dto.request.AccountActivationRequest;
 import com.cptrans.petrocarga.modules.auth.dto.request.AuthRequestDTO;
@@ -30,9 +33,11 @@ import com.cptrans.petrocarga.modules.usuario.dto.request.UsuarioRequestDTO;
 import com.cptrans.petrocarga.modules.usuario.dto.response.UsuarioResponseDTO;
 import com.cptrans.petrocarga.modules.usuario.entity.Usuario;
 import com.cptrans.petrocarga.modules.usuario.service.UsuarioService;
+import com.cptrans.petrocarga.modules.usuario.utils.UsuarioUtils;
 import com.cptrans.petrocarga.security.UserAuthenticated;
 import com.cptrans.petrocarga.shared.dto.response.SystemResponse;
 
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -44,9 +49,9 @@ import lombok.RequiredArgsConstructor;
 public class AuthController {
 
     private final AuthService authService;
-
-    // TODO: Remover instância depois de cadastrar o primeiro admin em deploy
     private final UsuarioService usuarioService;
+    private final UsuarioUtils usuarioUtils;
+    private final UsuarioMapper usuarioMapper;
     
     @Value("${app.cookie-settings.secure:true}")
     private boolean secure;
@@ -54,17 +59,17 @@ public class AuthController {
     @Value("${app.cookie-settings.same-site:None}")
     private String sameSite;
 
-    /**
-     * Faz login com as credenciais informadas no corpo da requisição.
-     * Retorna um objeto AuthResponseDTO com o token de autenticação.
-     * O token será armazenado em um cookie chamado "auth-token" com validade de 2 horas.
-     *
-     * @param request O corpo da requisição AuthRequestDTO com as credenciais do usuário.
-     * @param response O objeto HttpServletResponse que será usado para adicionar o cookie com o token de autenticação.
-     * @return Um objeto ResponseEntity com o corpo AuthResponseDTO e o status de resposta HTTP OK.
-     */
+    //POST /auth/login
+    @Operation(
+        summary = "Realizar login",
+        description = "Realiza o login e retorna o usuário logado."
+    )
+    @PostResponses
     @PostMapping("/login")
-    public ResponseEntity<AuthResponseDTO> login(@RequestBody @Valid AuthRequestDTO request, HttpServletResponse response) {
+    public ResponseEntity<UsuarioResponseDTO> login(
+            @RequestBody @Valid AuthRequestDTO request,
+            HttpServletResponse response
+        ) {
         AuthResponseDTO auth = authService.login(request);
         ResponseCookie cookie = ResponseCookie.from("auth-token", auth.getToken())
             .httpOnly(true)
@@ -76,20 +81,17 @@ public class AuthController {
         
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
-        return ResponseEntity.ok(auth);
+        return ResponseEntity.ok(auth.getUsuario());
     }
 
-    /**
-     * Faz login com o token do Google informado no parâmetro da requisição.
-     * Retorna um objeto AuthResponseDTO com o token de autenticação.
-     * O token será armazenado em um cookie chamado "auth-token" com validade de 2 horas.
-     *
-     * @param token O token do Google recebido do cliente.
-     * @param response O objeto HttpServletResponse que será usado para adicionar o cookie com o token de autenticação.
-     * @return Um objeto ResponseEntity com o corpo AuthResponseDTO e o status de resposta HTTP OK.
-     */
+    //POST /auth/loginWithGoogle
+    @Operation(
+        summary = "Realizar login com Google",
+        description = "Realiza o login utilizando o token da conta Google e retorna o usuário logado."
+    )
+    @PostResponses
     @PostMapping("/loginWithGoogle")
-    public ResponseEntity<AuthResponseDTO> loginWithGoogle(@RequestBody(required = true) @Valid GoogleAuthRequestDTO googleRequest, HttpServletResponse response) {
+    public ResponseEntity<UsuarioResponseDTO> loginWithGoogle(@RequestBody(required = true) @Valid GoogleAuthRequestDTO googleRequest, HttpServletResponse response) {
         AuthResponseDTO auth = authService.loginWithGoogle(googleRequest.token());
         ResponseCookie cookie = ResponseCookie.from("auth-token", auth.getToken())
             .httpOnly(true)
@@ -101,57 +103,60 @@ public class AuthController {
         
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
-        return ResponseEntity.ok(auth);
+        return ResponseEntity.ok(auth.getUsuario());
     }
 
-    /**
-     * Completar cadastro de usuário com as informações informadas no corpo da requisição.
-     * Retorna um objeto UsuarioResponseDTO com as informações do usuário.
-     * O token de autenticação do usuário deve ser informado no header da requisição.
-     *
-     * @param userAuthenticated O objeto UserAuthenticated com o token de autenticação do usuário.
-     * @param request O corpo da requisição CompletarCadastroDTO com as informações do usuário.
-     * @return Um objeto ResponseEntity com o corpo UsuarioResponseDTO e o status de resposta HTTP OK.
-     */
+    //POST /auth/completarCadastro
+    @Operation(
+        summary = "Completar cadastro",
+        description = "Completar cadastro de dados obrigatórios do usuário."
+    )
+    @PostResponses
+    @DefaultResponses
     @PostMapping("/completarCadastro")
-    public ResponseEntity<UsuarioResponseDTO> completarCadastro(@AuthenticationPrincipal UserAuthenticated userAuthenticated, @RequestBody @Valid CompletarCadastroDTO request) {
+    public ResponseEntity<UsuarioResponseDTO> completarCadastro(@AuthenticationPrincipal UserAuthenticated userAuthenticated, @Valid @RequestBody CompletarCadastroDTO request) {
         Usuario usuarioCompleto = authService.completarCadastro(request, userAuthenticated.id());
-        UsuarioResponseDTO response = UsuarioMapper.toResponse(usuarioCompleto);
+        String cpfOrCnpj = usuarioUtils.getCpfOrCnpjByPermissao(usuarioCompleto.getPermissao(), usuarioCompleto.getId());
+        UsuarioResponseDTO response = usuarioMapper.toResponse(usuarioCompleto, cpfOrCnpj);
         return ResponseEntity.ok(response);
     }
     
-
-    //TODO: Remover rota depois de cadastrar o primeiro admin em deploy
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    //POST /auth/admin
+    @Operation(
+        summary = "Cadastrar admin",
+        description = "Cadastra um novo administrador."
+    )
+    @PostResponses
+    @DefaultResponses
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/admin")
     public ResponseEntity<UsuarioResponseDTO> createAdmin(@RequestBody @Valid UsuarioRequestDTO request) {
-        Usuario novoUsuario = usuarioService.createUsuario(request, PermissaoEnum.ADMIN);
-        return ResponseEntity.ok(UsuarioMapper.toResponse(novoUsuario));
+        Usuario novoUsuario = usuarioService.createUsuario(request, null, PermissaoEnum.ADMIN);
+        String cpfOrCnpj = usuarioUtils.getCpfOrCnpjByPermissao(novoUsuario.getPermissao(), novoUsuario.getId());
+        return ResponseEntity.ok(usuarioMapper.toResponse(novoUsuario, cpfOrCnpj));
     }
 
-    /**
-     * Retorna as informações do usuário logado.
-     * O token de autenticação do usuário deve ser informado no header da requisição.
-     * @return Um objeto ResponseEntity com o corpo UsuarioResponseDTO e o status de resposta HTTP OK.
-     */
+    //GET /auth/me
+    @Operation(
+        summary = "Visualizar usuário logado",
+        description = "Retorna o usuário logado no sistema."
+    )
+    @GetResponses
+    @DefaultResponses
     @GetMapping("/me")
     public ResponseEntity<UsuarioResponseDTO> getMe(@AuthenticationPrincipal UserAuthenticated userAuthenticated) {
-        if(userAuthenticated == null) {
-            throw new AuthorizationDeniedException("Usuário não autenticado");
-        }
         UUID usuarioIdFromToken = userAuthenticated.id();
         Usuario usuarioLogado = usuarioService.findByIdAndAtivo(usuarioIdFromToken, true);
-        UsuarioResponseDTO response = UsuarioMapper.toResponse(usuarioLogado);
+        String cpfOrCnpj = usuarioUtils.getCpfOrCnpjByPermissao(usuarioLogado.getPermissao(), usuarioIdFromToken);
+        UsuarioResponseDTO response = usuarioMapper.toResponse(usuarioLogado, cpfOrCnpj);
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Realiza logout do usuário logado.
-     * O token de autenticação do usuário deve ser informado no header da requisição.
-     * Após a chamada dessa rota, o token de autenticação do usuário não será mais válido.
-     * @param response O objeto HttpServletResponse que será usado para remover o cookie com o token de autenticação.
-     * @return Um objeto ResponseEntity com o corpo Void e o status de resposta HTTP NO CONTENT.
-     */
+    //POST /auth/logout
+    @Operation(
+        summary = "Realizar logout",
+        description = "Realiza o logout do usuário no sistema."
+    )
     @PreAuthorize("isAuthenticated()")
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(HttpServletResponse response) {
@@ -167,110 +172,64 @@ public class AuthController {
         return ResponseEntity.noContent().build();
    }
 
-    /**
-     * Ativa a conta do usuário com base no código de ativação informado.
-     * 
-     * @param request o objeto AccountActivationRequest com os dados da ativação da conta
-     * @return uma resposta com o status de sucesso ou erro
-     * 
-     */
+    //POST /auth/activate
+    @Operation(
+        summary = "Ativar conta",
+        description = "Ativa a conta do usuário no sistema."
+    )
+    @PostResponses
     @PostMapping("/activate")
     public ResponseEntity<SystemResponse> activateAccount(@RequestBody @Valid AccountActivationRequest request) {
-        try {
-            usuarioService.activateAccount(request.aceitarTermos(), request.cpf(), request.codigo());
-            return ResponseEntity.ok(new SystemResponse(
-                "Conta ativada com sucesso! Você já pode fazer login.",
-                201
-            ));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(new SystemResponse(
-                "Código de ativação inválido ou expirado.",
-                400
-            ));
-        } catch (jakarta.persistence.EntityNotFoundException e) {
-            return ResponseEntity.status(404).body(new SystemResponse(
-                "Email não encontrado. Verifique se o email está correto.",
-                404
-            ));
-        }
+        usuarioService.activateAccount(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(new SystemResponse(
+            "Conta ativada com sucesso!",
+            200
+        ));
     }
 
-    /**
-     * Reenvia o código de ativação para o email ou CPF informado.
-     * 
-     * @param request o objeto ResendCodeRequest com os dados do email ou CPF.
-     * @return uma resposta com o status de sucesso ou erro.
-     * 
-     */
+    //POST /auth/resend-code
+    @Operation(
+        summary = "Reenviar código de recuperação",
+        description = "Reenvia o código de recuperação de senha para o email encontrado."
+    )
+    @PostResponses
     @PostMapping("/resend-code")
     public ResponseEntity<SystemResponse> resendCode(@RequestBody @Valid ResendCodeRequest request) {
-        try {
-            usuarioService.resendActivationCode(request.email(), request.cpf());
-            return ResponseEntity.ok(new SystemResponse(
-                "Código de ativação reenviado! Verifique sua caixa de entrada e spam.",
-                200
-            ));
-        } catch (jakarta.persistence.EntityNotFoundException e) {
-            return ResponseEntity.status(404).body(new SystemResponse(
-                "Email ou CPF não encontrado. Verifique se o email ou CPF está correto.",
-                404
-            ));
-        }
+        usuarioService.resendActivationCode(request.email(), request.cpf(), request.cnpj());
+        return ResponseEntity.ok(new SystemResponse(
+            "Se o email, CPF ou CNPJ estiver cadastrado, você receberá um novo código de recuperação. Verifique sua caixa de entrada e spam.",
+            200
+        ));
+       
     }
 
-    /**
-     * Reenvia o código de recuperação de senha para o email ou CPF informado.
-     * Se o email ou CPF estiver cadastrado, o usuário receberá um código de recuperação para redefinir sua senha.
-     * A resposta será um objeto ApiResponse com o status de sucesso ou erro.
-     * Se o email ou CPF não estiver cadastrado, a resposta será um objeto ApiResponse com uma mensagem genérica para não expor se o email existe.
-     * 
-     * @param request o objeto ForgotPasswordRequest com os dados do email ou CPF.
-     * @return uma resposta com o status de sucesso ou erro.
-     * 
-     */
+    //POST /auth/forgot-password
+    @Operation(
+        summary = "Enviar email de redefinição de senha",
+        description = "Envia o código de redefinição de senha para o email encontrado."
+    )
+    @PostResponses
     @PostMapping("/forgot-password")
     public ResponseEntity<SystemResponse> forgotPassword(@RequestBody @Valid ForgotPasswordRequest request) {
-        try {
-            usuarioService.forgotPassword(request.email(), request.cpf());
-            return ResponseEntity.ok(new SystemResponse(
-                "Se o email ou CPF estiver cadastrado, você receberá um código de recuperação. Verifique sua caixa de entrada e spam.",
-                200
-            ));
-        } catch (jakarta.persistence.EntityNotFoundException e) {
-            // Retorna mensagem genérica para não expor se o email existe
-            return ResponseEntity.ok(new SystemResponse(
-                "Se o email ou CPF estiver cadastrado, você receberá um código de recuperação. Verifique sua caixa de entrada e spam.",
-                200
-            ));
-        }
+        usuarioService.forgotPassword(request.email(), request.cpf(), request.cnpj());
+        return ResponseEntity.ok(new SystemResponse(
+            "Se o email, CPF ou CNPJ estiver cadastrado, você receberá um código de recuperação. Verifique sua caixa de entrada e spam.",
+            200
+        ));
     }
 
-
-    /**
-     * Reenvia o código de recuperação de senha para o email ou CPF informado.
-     * Se o email ou CPF estiver cadastrado, o usuário receberá um código de recuperação para redefinir sua senha.
-     * A resposta será um objeto ApiResponse com o status de sucesso ou erro.
-     * Se o email ou CPF não estiver cadastrado, a resposta será um objeto ApiResponse com uma mensagem genérica para não expor se o email existe.
-     * 
-     * @param request o objeto ResetPasswordRequest com os dados do email ou CPF e do código de recuperação.
-     * @return uma resposta com o status de sucesso ou erro.
-     * 
-     */
+    //POST /auth/reset-password
+    @Operation(
+        summary = "Redefinir senha",
+        description = "Redefine a senha do usuário no sistema."
+    )
+    @PostResponses
     @PostMapping("/reset-password")
     public ResponseEntity<SystemResponse> resetPassword(@RequestBody @Valid ResetPasswordRequest request) {
-        try {
-            usuarioService.resetPassword(request.email(), request.cpf(), request.codigo(), request.novaSenha());
-            return ResponseEntity.ok(new SystemResponse(
-                "Senha alterada com sucesso! Você já pode fazer login com a nova senha.",
-                201
-            ));
-        } 
-        catch (jakarta.persistence.EntityNotFoundException e) {
-            return ResponseEntity.status(404).body(new SystemResponse(
-                "Email ou CPF não encontrado. Verifique se o email ou CPF está correto.",
-                404
-            ));
-        }
+        usuarioService.resetPassword(request.email(), request.cpf(), request.cnpj(), request.codigo(), request.novaSenha());
+        return ResponseEntity.ok(new SystemResponse(
+            "Senha alterada com sucesso! Você já pode fazer login com a nova senha.",
+            201
+        ));
     }
-
 }
