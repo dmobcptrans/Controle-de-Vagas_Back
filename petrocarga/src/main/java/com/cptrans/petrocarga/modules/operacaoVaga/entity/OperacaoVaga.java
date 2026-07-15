@@ -19,13 +19,18 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "operacao_vaga", uniqueConstraints = {
     @UniqueConstraint(columnNames = {"vaga_id", "dia_semana"})
 })
+@NoArgsConstructor
+@Getter
+@EqualsAndHashCode
 public class OperacaoVaga {
-
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id")
@@ -46,9 +51,6 @@ public class OperacaoVaga {
     @Column(name = "hora_fim")
     private LocalTime horaFim;
 
-    public OperacaoVaga() {
-    }
-
     public OperacaoVaga(Vaga vaga, DiaSemanaEnum diaSemana, LocalTime horaInicio, LocalTime horaFim) {
         this.vaga = vaga;
         this.diaSemana = diaSemana;
@@ -56,60 +58,19 @@ public class OperacaoVaga {
         this.horaFim = horaFim;
     }
 
-    // Getters e Setters
-
-    public UUID getId() {
-        return id;
-    }
-
-    public void setId(UUID id) {
-        this.id = id;
-    }
-
-    public Vaga getVaga() {
-        return vaga;
-    }
-
     public void setVaga(Vaga vaga) {
         this.vaga = vaga;
-    }
-
-    public DiaSemanaEnum getDiaSemana() {
-        return diaSemana;
     }
 
     public void setDiaSemana(DiaSemanaEnum diaSemana) {
         this.diaSemana = diaSemana;
     }
 
-    public LocalTime getHoraInicio() {
-        return horaInicio;
-    }
-
     public void setHoraInicio(LocalTime horaInicio) {
         this.horaInicio = horaInicio;
-    }
-
-    public LocalTime getHoraFim() {
-        return horaFim;
     }
 
     public void setHoraFim(LocalTime horaFim) {
         this.horaFim = horaFim;
     }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        OperacaoVaga that = (OperacaoVaga) o;
-        return id != null && id.equals(that.id);
-    }
-
-    @Override
-    public int hashCode() {
-        // Garante que o hashCode seja consistente para entidades antes e depois da persistência
-        return getClass().hashCode();
-    }
-    
 }
