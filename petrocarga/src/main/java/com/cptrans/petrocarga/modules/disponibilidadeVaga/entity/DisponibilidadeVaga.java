@@ -3,8 +3,8 @@ package com.cptrans.petrocarga.modules.disponibilidadeVaga.entity;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
-import com.cptrans.petrocarga.modules.usuario.entity.Usuario;
 import com.cptrans.petrocarga.modules.vaga.entity.Vaga;
+import com.cptrans.petrocarga.shared.utils.DateUtils;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -15,11 +15,16 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "disponibilidade_vaga")
+@NoArgsConstructor
+@Getter
+@EqualsAndHashCode
 public class DisponibilidadeVaga {
-
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id")
@@ -36,63 +41,24 @@ public class DisponibilidadeVaga {
     private OffsetDateTime fim;
 
     @Column(name = "criado_em", columnDefinition = "TIMESTAMP WITH TIME ZONE")
-    private OffsetDateTime criadoEm;
+    private final OffsetDateTime criadoEm = DateUtils.agora();
 
-    @ManyToOne
-    @JoinColumn(name = "criado_por", nullable = false)
-    private Usuario criadoPor;
-
-    // Constructors
-    public DisponibilidadeVaga() {
-        this.criadoEm = OffsetDateTime.now();
-    }
-
-    // Getters and Setters
-    public UUID getId() {
-        return id;
-    }
-
-    public void setId(UUID id) {
-        this.id = id;
-    }
-
-    public Vaga getVaga() {
-        return vaga;
-    }
+    @Column(name = "criado_por_id", nullable = false)
+    private UUID criadoPorId;
 
     public void setVaga(Vaga vaga) {
         this.vaga = vaga;
-    }
-
-    public OffsetDateTime getInicio() {
-        return inicio;
     }
 
     public void setInicio(OffsetDateTime inicio) {
         this.inicio = inicio;
     }
 
-    public OffsetDateTime getFim() {
-        return fim;
-    }
-
     public void setFim(OffsetDateTime fim) {
         this.fim = fim;
     }
 
-    public OffsetDateTime getCriadoEm() {
-        return criadoEm;
-    }
-
-    public void setCriadoEm(OffsetDateTime criadoEm) {
-        this.criadoEm = criadoEm;
-    }
-
-    public Usuario getCriadoPor() {
-        return criadoPor;
-    }
-
-    public void setCriadoPor(Usuario criadoPor) {
-        this.criadoPor = criadoPor;
+    public void setCriadoPorId(UUID criadoPorId) {
+        this.criadoPorId = criadoPorId;
     }
 }

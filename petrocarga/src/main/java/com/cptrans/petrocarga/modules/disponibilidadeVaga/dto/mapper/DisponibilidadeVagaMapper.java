@@ -8,7 +8,6 @@ import com.cptrans.petrocarga.modules.disponibilidadeVaga.dto.response.Disponibi
 import com.cptrans.petrocarga.modules.disponibilidadeVaga.entity.DisponibilidadeVaga;
 import com.cptrans.petrocarga.modules.enderecoVaga.dto.mapper.EnderecoVagaMapper;
 import com.cptrans.petrocarga.modules.enderecoVaga.entity.EnderecoVaga;
-import com.cptrans.petrocarga.modules.usuario.entity.Usuario;
 import com.cptrans.petrocarga.modules.vaga.entity.Vaga;
 
 @Component
@@ -17,7 +16,6 @@ public class DisponibilidadeVagaMapper {
         if (disponibilidadeVaga == null) return null;
         Vaga vaga = disponibilidadeVaga.getVaga();
         EnderecoVaga enderecoVaga = vaga != null ? vaga.getEndereco() : null;
-        Usuario criadoPor = disponibilidadeVaga.getCriadoPor();
         return new DisponibilidadeVagaResponseDTO(
             disponibilidadeVaga.getId(),
             vaga != null ? vaga.getId() : null,
@@ -27,7 +25,7 @@ public class DisponibilidadeVagaMapper {
             disponibilidadeVaga.getInicio(),
             disponibilidadeVaga.getFim(),
             disponibilidadeVaga.getCriadoEm(),
-            criadoPor != null ? criadoPor.getId() : null
+            disponibilidadeVaga.getCriadoPorId()
         );
     }
 
