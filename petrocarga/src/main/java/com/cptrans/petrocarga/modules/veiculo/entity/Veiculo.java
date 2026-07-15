@@ -1,10 +1,14 @@
 package com.cptrans.petrocarga.modules.veiculo.entity;
 
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import com.cptrans.petrocarga.enums.TipoVeiculoEnum;
+import com.cptrans.petrocarga.modules.motorista.entity.Motorista;
 import com.cptrans.petrocarga.modules.usuario.entity.Usuario;
+import com.cptrans.petrocarga.modules.veiculoEmpresaMotorista.entity.VeiculoEmpresaMotorista;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -16,13 +20,16 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import lombok.Getter;
 
 @Entity
 @Table(name = "veiculo", uniqueConstraints = {
     @UniqueConstraint(columnNames = {"placa", "usuario_id"})
 })
+@Getter
 public class Veiculo {
 
     @Id
@@ -59,111 +66,67 @@ public class Veiculo {
     private String cnpjProprietario;
 
     @Column(name = "ativo", nullable = false, columnDefinition = "BOOLEAN DEFAULT true")
-    private Boolean ativo;
+    private Boolean ativo = true;
 
     @Column(name = "deletado_em", nullable = true)
     private OffsetDateTime deletadoEm;
 
-    // Constructors
-    public Veiculo() {
-        this.ativo = true;
-    }
-
-    // Getters and Setters
-    public UUID getId() {
-        return id;
-    }
-
-    public void setId(UUID id) {
-        this.id = id;
-    }
-
-    public String getPlaca() {
-        return placa;
-    }
+    @OneToMany(mappedBy = "veiculo", fetch = FetchType.LAZY)
+    private List<VeiculoEmpresaMotorista> veiculosEmpresaMotoristas;
 
     public void setPlaca(String placa) {
         this.placa = placa;
-    }
-
-    public String getMarca() {
-        return marca;
     }
 
     public void setMarca(String marca) {
         this.marca = marca;
     }
 
-    public String getModelo() {
-        return modelo;
-    }
-
     public void setModelo(String modelo) {
         this.modelo = modelo;
-    }
-
-    public TipoVeiculoEnum getTipo() {
-        return tipo;
     }
 
     public void setTipo(TipoVeiculoEnum tipo) {
         this.tipo = tipo;
     }
 
-    public Usuario getUsuario() {
-        return usuario;
-    }
-
     public void setUsuario(Usuario usuario) {
         this.usuario = usuario;
-    }
-
-    public String getCpfProprietarioHash() {
-        return cpfProprietarioHash;
     }
 
     public void setCpfProprietarioHash(String cpfProprietarioHash) {
         this.cpfProprietarioHash = cpfProprietarioHash;
     }
 
-     public String getCpfProprietarioCripto() {
-        return cpfProprietarioCripto;
-    }
-
     public void setCpfProprietarioCripto(String cpfProprietarioCripto) {
         this.cpfProprietarioCripto = cpfProprietarioCripto;
-    }
-
-    public String getCpfProprietarioLast5() {
-        return cpfProprietarioLast5;
     }
 
     public void setCpfProprietarioLast5(String cpfProprietarioLast5) {
         this.cpfProprietarioLast5 = cpfProprietarioLast5;
     }
 
-    public String getCnpjProprietario() {
-        return cnpjProprietario;
-    }
-
     public void setCnpjProprietario(String cnpjProprietario) {
         this.cnpjProprietario = cnpjProprietario;
-    }
-
-    public Boolean isAtivo() {
-        return ativo;
     }
 
     public void setAtivo(Boolean ativo) {
         this.ativo = ativo;
     }
 
-    public OffsetDateTime getDeletadoEm() {
-        return deletadoEm;
-    }
-
     public void setDeletadoEm(OffsetDateTime deletadoEm) {
         this.deletadoEm = deletadoEm;
+    }
+
+    public List<Motorista> getMotoristasByVeiculoId(UUID veiculoId){
+        if(this.veiculosEmpresaMotoristas == null || this.veiculosEmpresaMotoristas.isEmpty()) return List.of();
+        List<Motorista> motoristas = new ArrayList<>();
+        for (VeiculoEmpresaMotorista vem : this.veiculosEmpresaMotoristas) {
+            if (vem.getVeiculo().getId().equals(veiculoId)){
+                motoristas.add(vem.getMotorista());
+            }
+        }
+        return motoristas;
     }
 
 }
