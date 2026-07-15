@@ -14,11 +14,16 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "push_token")
+@NoArgsConstructor
+@Getter
+@EqualsAndHashCode
 public class PushToken {
-
     @Id
     @GeneratedValue(strategy=GenerationType.UUID)
     private UUID id;
@@ -37,10 +42,7 @@ public class PushToken {
     private boolean ativo = true;
 
     @Column(name = "criado_em", nullable = false)
-    private final OffsetDateTime CRIADO_EM = DateUtils.agora();
-
-    public PushToken() {
-    }
+    private final OffsetDateTime criadoEm = DateUtils.agora();
 
     public PushToken(UUID usuarioId, String token, PlataformaEnum plataforma) {
         this.usuarioId = usuarioId;
@@ -53,44 +55,19 @@ public class PushToken {
         this.plataforma = plataforma;
     }
 
-    public UUID getId() {
-        return id;
-    }
-
-    public UUID getUsuarioId() {
-        return usuarioId;
-    }
-
     public void setUsuarioId(UUID usuarioId) {
         this.usuarioId = usuarioId;
-    }
-
-    public String getToken() {
-        return token;
     }
 
     public void setToken(String token) {
         this.token = token;
     }
 
-    public PlataformaEnum getPlataforma() {
-        return plataforma;
-    }
-
     public void setPlataforma(PlataformaEnum plataforma) {
         this.plataforma = plataforma;
-    }
-
-    public boolean isAtivo() {
-        return ativo;
     }
 
     public void setAtivo(boolean ativo) {
         this.ativo = ativo;
     }
-
-    public OffsetDateTime getCriadoEm() {
-        return CRIADO_EM;
-    }
-
 }
