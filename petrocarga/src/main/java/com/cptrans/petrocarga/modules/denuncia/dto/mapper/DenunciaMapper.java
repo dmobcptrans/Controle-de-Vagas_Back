@@ -15,9 +15,15 @@ import com.cptrans.petrocarga.modules.vaga.entity.Vaga;
 import com.cptrans.petrocarga.modules.veiculo.entity.Veiculo;
 import com.cptrans.petrocarga.shared.utils.CriptoUtils;
 
+import lombok.RequiredArgsConstructor;
+
 @Component
+@RequiredArgsConstructor
 public class DenunciaMapper {
-    public static DenunciaResponseDTO toResponse(Denuncia denuncia){
+
+    private final CriptoUtils criptoUtils;
+
+    public DenunciaResponseDTO toResponse(Denuncia denuncia){
         if (denuncia == null) return null;
         Vaga vaga = denuncia.getVaga();
         Usuario criadoPor = denuncia.getCriadoPor();
@@ -26,7 +32,7 @@ public class DenunciaMapper {
         Motorista motorista = reserva != null ? reserva.getMotorista() : null;
         Usuario usuarioMotorista = motorista != null ? motorista.getUsuario() : null;
         EnderecoVaga enderecoVaga = vaga != null ? vaga.getEndereco() : null;
-        return CriptoUtils.decrypt(
+        return criptoUtils.decrypt(
             new DenunciaResponseDTO(
             denuncia.getId(),
             criadoPor != null ? criadoPor.getId() : null,
@@ -54,8 +60,8 @@ public class DenunciaMapper {
         ), usuarioMotorista.getPersonalDataKeyVersion());
     }
 
-    public static List<DenunciaResponseDTO> toResponseList(List<Denuncia> denuncias){
+    public List<DenunciaResponseDTO> toResponseList(List<Denuncia> denuncias){
         if (denuncias == null || denuncias.isEmpty()) return List.of();
-        return denuncias.stream().map(DenunciaMapper::toResponse).toList();
+        return denuncias.stream().map(this::toResponse).toList();
     }
 }

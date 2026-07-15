@@ -21,11 +21,16 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "denuncia")
+@NoArgsConstructor
+@Getter
+@EqualsAndHashCode
 public class Denuncia {
-    
     @Id
     @GeneratedValue(strategy=GenerationType.UUID)
     private UUID id;
@@ -68,110 +73,58 @@ public class Denuncia {
 
     @Column(name = "encerrado_em", columnDefinition = "TIMESTAMP WITH TIME ZONE")
     private OffsetDateTime encerradoEm;
-   
 
-    public Denuncia() {
-    }
-
-    public Denuncia(String descricao, Usuario criadoPor, Vaga vaga, Reserva reserva, StatusDenunciaEnum status, TipoDenunciaEnum tipo) {
+    public Denuncia(String descricao, Usuario criadoPor, Reserva reserva, StatusDenunciaEnum status, TipoDenunciaEnum tipo) {
         this.descricao = descricao;
         this.criadoPor = criadoPor;
-        this.vaga = vaga;
+        this.vaga = reserva.getVaga();
         this.reserva = reserva;
         this.status = status;
         this.tipo = tipo;
     }
 
-    public Denuncia(String descricao, Usuario criadoPor, Vaga vaga, Reserva reserva, TipoDenunciaEnum tipo) {
+    public Denuncia(String descricao, Usuario criadoPor, Reserva reserva, TipoDenunciaEnum tipo) {
         this.descricao = descricao;
         this.criadoPor = criadoPor;
-        this.vaga = vaga;
+        this.vaga = reserva.getVaga();
         this.reserva = reserva;
         this.tipo = tipo;
-    }
-
-    public UUID getId() {
-        return id;
-    }
-
-    public String getDescricao() {
-        return descricao;
     }
 
     public void setDescricao(String descricao) {
         this.descricao = descricao;
     }
 
-    public Usuario getCriadoPor() {
-        return criadoPor;
-    }
-
     public void setCriadoPor(Usuario criadoPor) {
         this.criadoPor = criadoPor;
-    }
-
-    public Vaga getVaga() {
-        return vaga;
     }
 
     public void setVaga(Vaga vaga) {
         this.vaga = vaga;
     }
 
-    public Reserva getReserva() {
-        return reserva;
-    }
-
     public void setReserva(Reserva reserva) {
         this.reserva = reserva;
-    }
-
-    public StatusDenunciaEnum getStatus() {
-        return status;
     }
 
     public void setStatus(StatusDenunciaEnum status) {
         this.status = status;
     }
 
-    public TipoDenunciaEnum getTipo() {
-        return tipo;
-    }
-
     public void setTipo(TipoDenunciaEnum tipo) {
         this.tipo = tipo;
-    }
-
-    public String getResposta() {
-        return resposta;
     }
 
     public void setResposta(String resposta) {
         this.resposta = resposta;
     }
   
-    public OffsetDateTime getCriadoEm() {
-        return criadoEm;
-    }
-
-    public Usuario getAtualizadoPor() {
-        return atualizadoPor;
-    }
-
     public void setAtualizadoPor(Usuario atualizadoPor) {
         this.atualizadoPor = atualizadoPor;
     }
 
-    public OffsetDateTime getAtualizadoEm() {
-        return atualizadoEm;
-    }
-
     public void setAtualizadoEm(OffsetDateTime atualizadoEm) {
         this.atualizadoEm = atualizadoEm;
-    }
-
-    public OffsetDateTime getEncerradoEm() {
-        return encerradoEm;
     }
 
     public void setEncerradoEm(OffsetDateTime encerradoEm) {

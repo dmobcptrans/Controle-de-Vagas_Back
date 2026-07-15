@@ -16,23 +16,29 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.cptrans.petrocarga.config.swagger.response.DefaultResponses;
+import com.cptrans.petrocarga.config.swagger.response.GetResponses;
+import com.cptrans.petrocarga.config.swagger.response.PatchResponses;
+import com.cptrans.petrocarga.config.swagger.response.PostResponses;
+import com.cptrans.petrocarga.enums.OrdemEnum;
 import com.cptrans.petrocarga.enums.StatusDenunciaEnum;
 import com.cptrans.petrocarga.enums.TipoDenunciaEnum;
 import com.cptrans.petrocarga.modules.denuncia.dto.mapper.DenunciaMapper;
+import com.cptrans.petrocarga.modules.denuncia.dto.request.DenunciaFiltrosRequestDTO;
 import com.cptrans.petrocarga.modules.denuncia.dto.request.DenunciaRequestDTO;
 import com.cptrans.petrocarga.modules.denuncia.dto.request.FinalizarDenunciaRequestDTO;
 import com.cptrans.petrocarga.modules.denuncia.dto.response.DenunciaResponseDTO;
 import com.cptrans.petrocarga.modules.denuncia.entity.Denuncia;
 import com.cptrans.petrocarga.modules.denuncia.service.DenunciaService;
-import com.cptrans.petrocarga.modules.reserva.entity.Reserva;
-import com.cptrans.petrocarga.modules.reserva.service.ReservaService;
 import com.cptrans.petrocarga.modules.usuario.entity.Usuario;
 import com.cptrans.petrocarga.modules.usuario.service.UsuarioService;
 import com.cptrans.petrocarga.security.UserAuthenticated;
+import com.cptrans.petrocarga.shared.dto.response.PageResponseDTO;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-
 
 
 @RestController
@@ -41,106 +47,148 @@ import lombok.RequiredArgsConstructor;
 public class DenunciaController {
     private final DenunciaService denunciaService;
     private final UsuarioService usuarioService;
-    private final ReservaService reservaService;
+    private final DenunciaMapper denunciaMapper;
     
-    /**
-     * Cria uma denúncia com base nos dados do request.
-     *
-     * @param userAuthenticated Usuário autenticado.
-     * @param denunciaRequest Dados da denúncia a ser criada.
-     * @return Denúncia criada com sucesso.
-     */
+    @Operation(
+        summary = "Criar denúncia",
+        description = "Realiza o cadastro de uma nova denúncia."
+    )
+    @PostResponses
+    @DefaultResponses
     @PostMapping()
-    public ResponseEntity<DenunciaResponseDTO> createDenuncia(@AuthenticationPrincipal UserAuthenticated userAuthenticated, @RequestBody @Valid DenunciaRequestDTO denunciaRequest) {
-        Usuario usuarioLogado = usuarioService.findByIdAndAtivo(userAuthenticated.id(), true);
-        Reserva reserva = reservaService.findById(denunciaRequest.getReservaId());
-        Denuncia denunciaCriada = denunciaService.create(denunciaRequest.toEntity(usuarioLogado, reserva.getVaga(), reserva)); 
-        return ResponseEntity.status(HttpStatus.CREATED).body(DenunciaMapper.toResponse(denunciaCriada));
+    public ResponseEntity<DenunciaResponseDTO> createDenuncia(
+        
+        @Parameter(description = "Usuário autenticado") 
+        @AuthenticationPrincipal UserAuthenticated userAuthenticated,
+
+        @Parameter(description = "Dados da denúncia")
+        @RequestBody @Valid DenunciaRequestDTO denunciaRequest
+
+    ) {
+        Denuncia denunciaCriada = denunciaService.create(userAuthenticated, denunciaRequest); 
+        return ResponseEntity.status(HttpStatus.CREATED).body(denunciaMapper.toResponse(denunciaCriada));
     }
 
-    /**
-     * Retorna todas as denúncias.
-     *
-     * Se vagaId, listaStatus ou listaTipos forem informados, filtra as denúncias com base nesses parâmetros.
-     *
-     * Se nenhum dos parâmetros for mencionado, retorna todas as denúncias.
-     *
-     * @param vagaId ID da vaga a ser filtrada.
-     * @param listaStatus Lista de status a ser filtrada.
-     * @param listaTipos Lista de tipos a ser filtrada.
-     * @return Lista de denúncias filtradas ou todas as denúncias.
-     */
+    @Operation(
+        summary = "Retorna todas as denúncias",
+        description = "Retorna todas as denúncias de forma paginada e com filtros opicionais."
+    )
+    @GetResponses
+    @DefaultResponses
     @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR', 'AGENTE')")
     @GetMapping("all")
-    public ResponseEntity<List<DenunciaResponseDTO>> getAll(@RequestParam(required = false) UUID vagaId, @RequestParam(required = false) List<StatusDenunciaEnum> listaStatus, @RequestParam(required = false) List<TipoDenunciaEnum> listaTipos) {
-        if(vagaId != null || listaStatus != null || listaTipos != null) {
-            return ResponseEntity.ok().body(DenunciaMapper.toResponseList(denunciaService.findAllWithFilters(vagaId, listaStatus, listaTipos)));
-        }
-        return ResponseEntity.ok().body(DenunciaMapper.toResponseList(denunciaService.findAll()));
+    public ResponseEntity<PageResponseDTO> getAll(
+
+        @Parameter(description = "ID da denúncia")
+        @RequestParam(required = false) UUID denunciaId,
+
+        @Parameter(description = "ID da vaga")
+        @RequestParam(required = false) UUID vagaId,
+
+        @Parameter(description = "ID da reserva")
+        @RequestParam(required = false) UUID reservaId,
+
+        @Parameter(description = "ID do usuário criador da denúncia")
+        @RequestParam(required = false) UUID criadoPorId,
+
+        @Parameter(description = "Nome do usuário criador da denúncia")
+        @RequestParam(required = false) String criadoPorNome,
+
+        @Parameter(description = "Telefone do usuário criador da denúncia")
+        @RequestParam(required = false) String criadoPorTelefone,
+
+        @Parameter(description = "Status da denúncia")
+        @RequestParam(required = false) List<StatusDenunciaEnum> listaStatus,
+        
+        @Parameter(description = "Tipo da denúncia")
+        @RequestParam(required = false) List<TipoDenunciaEnum> listaTipos,
+
+        @Parameter(description = "Número da página", example = "0")
+        @RequestParam(defaultValue = "0") int pagina,
+
+        @Parameter(description = "Quantidade de registros por página", example = "10")
+        @RequestParam(defaultValue = "10") int tamanhoPagina,
+
+        @Parameter(description = "Ordem da listagem", example = "DESC")
+        @RequestParam(defaultValue = "DESC") OrdemEnum ordem
+    ) {
+        DenunciaFiltrosRequestDTO filtros = new DenunciaFiltrosRequestDTO(denunciaId, vagaId, reservaId, criadoPorId, criadoPorNome, criadoPorTelefone, listaStatus, listaTipos);
+        return ResponseEntity.ok().body(denunciaService.findAllWithFilters(filtros, pagina, tamanhoPagina, ordem));
     }
 
 
-    /**
-     * Retorna uma denúncia com base no seu ID.
-     *
-     * @param userAuthenticated Usuário autenticado.
-     * @param denunciaId ID da denúncia a ser retornada.
-     * @return Denúncia com base no seu ID.
-     */
+    @Operation(
+        summary = "Retorna uma denúncia",
+        description = "Retorna uma denúncia com base no seu ID."
+    )
+    @GetResponses
+    @DefaultResponses
     @GetMapping("{denunciaId}")
-    public ResponseEntity<DenunciaResponseDTO> getDenuncia(@AuthenticationPrincipal UserAuthenticated userAuthenticated, @PathVariable UUID denunciaId) {
+    public ResponseEntity<DenunciaResponseDTO> getDenuncia(
+        
+        @Parameter(description = "Usuário autenticado")
+        @AuthenticationPrincipal UserAuthenticated userAuthenticated, 
+        
+        @Parameter(description = "ID da denúncia")
+        @PathVariable UUID denunciaId
+    ) {
         Denuncia denuncia = denunciaService.findByIdAutenticado(userAuthenticated, denunciaId);
-        return ResponseEntity.ok().body(DenunciaMapper.toResponse(denuncia));
+        return ResponseEntity.ok().body(denunciaMapper.toResponse(denuncia));
     }
 
-    /**
-     * Retorna todas as denúncias criadas por um usuário com base no seu ID.
-     *
-     * Se status for informado, filtra as denúncias com base nesse status.
-     *
-     * Se status for nulo, retorna todas as denúncias criadas pelo usuário.
-     *
-     * @param usuarioId ID do usuário.
-     * @param status Status a ser filtrado.
-     * @return Lista de denúncias filtradas ou todas as denúncias criadas pelo usuário.
-     */
+    @Operation(
+        summary = "Retorna todas as denúncias de um usuário",
+        description = "Retorna todas as denúncias de um usuário de forma paginada com base no seu ID e filtros opcionais."
+    )
+    @GetResponses
+    @DefaultResponses
     @PreAuthorize("#usuarioId == authentication.principal.id or hasAnyRole('ADMIN', 'GESTOR', 'AGENTE')")
     @GetMapping("byUsuario/{usuarioId}")
-    public ResponseEntity<List<DenunciaResponseDTO>> getDenunciasByUsuario(@PathVariable UUID usuarioId, @RequestParam(required = false) StatusDenunciaEnum status) {
-        if (status != null) {
-            return ResponseEntity.ok().body(DenunciaMapper.toResponseList(denunciaService.findAllByUsuarioIdAndStatus(usuarioId, status)));
-           
-        }
-        return ResponseEntity.ok().body(DenunciaMapper.toResponseList(denunciaService.findAllByUsuarioId(usuarioId)));
+    public ResponseEntity<PageResponseDTO> getDenunciasByUsuario(
+        
+        @Parameter(description = "ID do usuário")
+        @PathVariable UUID usuarioId, 
+
+        @Parameter(description = "Lista de status da denúncia")
+        @RequestParam(required = false) List<StatusDenunciaEnum> listaStatus,
+
+        @Parameter(description = "Número da página", example = "0")
+        @RequestParam(defaultValue = "0") int pagina,
+
+        @Parameter(description = "Quantidade de registros por página", example = "10")
+        @RequestParam(defaultValue = "10") int tamanhoPagina,
+
+        @Parameter(description = "Ordem da listagem", example = "DESC")
+        @RequestParam(defaultValue = "DESC") OrdemEnum ordem
+        
+    ) {
+        return ResponseEntity.ok().body(denunciaService.findAllByUsuarioIdAndStatusIn(usuarioId, listaStatus, pagina, tamanhoPagina, ordem));
     }
 
-    /**
-     * Inicia a análise de uma denúncia.
-     * 
-     * @param userAuthenticated Usuário autenticado.
-     * @param denunciaId ID da denúncia a ser iniciada a análise.
-     * @return Denúncia com base no seu ID e status de análise iniciada.
-     */
+    @Operation(
+        summary = "Iniciar a análise de uma denúncia",
+        description = "Inicia a análise de uma denúncia com base no seu ID."
+    )
+    @PatchResponses
+    @DefaultResponses
     @PreAuthorize("hasAnyRole('ADMIN','GESTOR', 'AGENTE')")
     @PatchMapping("iniciarAnalise/{denunciaId}")
     public ResponseEntity<DenunciaResponseDTO> iniciarAnalise(@AuthenticationPrincipal UserAuthenticated userAuthenticated, @PathVariable UUID denunciaId) {
         Usuario usuarioLogado = usuarioService.findByIdAndAtivo(userAuthenticated.id(), true);
-        return ResponseEntity.ok().body(DenunciaMapper.toResponse(denunciaService.iniciarAnalise(usuarioLogado, denunciaId)));
+        return ResponseEntity.ok().body(denunciaMapper.toResponse(denunciaService.iniciarAnalise(usuarioLogado, denunciaId)));
     }
 
-    /**
-     * Finaliza a análise de uma denúncia.
-     *
-     * @param userAuthenticated Usuário autenticado.
-     * @param denunciaId ID da denúncia a ser finalizada a análise.
-     * @param respostaRequest Dados da resposta da denúncia.
-     * @return Denúncia com base no seu ID e status de análise finalizada.
-     */
+    @Operation(
+        summary = "Finalizar a análise de uma denúncia",
+        description = "Finaliza a análise de uma denúncia com base no seu ID."
+    )
+    @PatchResponses
+    @DefaultResponses
     @PreAuthorize("hasAnyRole('ADMIN','GESTOR', 'AGENTE')")
     @PatchMapping("finalizarAnalise/{denunciaId}")
     public ResponseEntity<DenunciaResponseDTO> finalizarAnalise(@AuthenticationPrincipal UserAuthenticated userAuthenticated, @PathVariable UUID denunciaId, @RequestBody @Valid FinalizarDenunciaRequestDTO respostaRequest) {
         Usuario usuarioLogado = usuarioService.findByIdAndAtivo(userAuthenticated.id(), true);
-        return ResponseEntity.ok().body(DenunciaMapper.toResponse((denunciaService.finalizarAnalise(usuarioLogado, denunciaId, respostaRequest))));
+        return ResponseEntity.ok().body(denunciaMapper.toResponse((denunciaService.finalizarAnalise(usuarioLogado, denunciaId, respostaRequest))));
     }
     
 }
