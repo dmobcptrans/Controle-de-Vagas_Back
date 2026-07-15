@@ -15,33 +15,37 @@ import com.cptrans.petrocarga.modules.usuario.entity.Usuario;
 import com.cptrans.petrocarga.modules.vaga.entity.Vaga;
 import com.cptrans.petrocarga.modules.veiculo.utils.VeiculoUtils;
 
-@Component
-public class ReservaRapidaMapper {
+import lombok.RequiredArgsConstructor;
 
-    public static ReservaRapida toEntity(ReservaRapidaRequestDTO request, Vaga vaga) {
-        ReservaRapida reservaRapida = new ReservaRapida();
-        reservaRapida.setVaga(vaga);
-        reservaRapida.setTipoVeiculo(request.getTipoVeiculo());
-        reservaRapida.setPlaca(request.getPlaca() != null ? VeiculoUtils.normalizarEValidar(request.getPlaca()) : null);
-        reservaRapida.setInicio(request.getInicio());
-        reservaRapida.setFim(request.getFim());
-        reservaRapida.setPosicaoPerpendicular(request.getPosicaoPerpendicular());
-        reservaRapida.setCidadeOrigem(request.getCidadeOrigem());
-        reservaRapida.setEntradaCidade(request.getEntradaCidade());
-        return reservaRapida;
+@Component
+@RequiredArgsConstructor
+public class ReservaRapidaMapper {
+    private final UsuarioMapper usuarioMapper;
+
+    public ReservaRapida toEntity(ReservaRapidaRequestDTO request, Vaga vaga) {
+        return new ReservaRapida(
+            vaga,
+            request.getTipoVeiculo(),
+            request.getPlaca() != null ? VeiculoUtils.normalizarEValidar(request.getPlaca()) : null,
+            request.getInicio(),
+            request.getFim(),
+            request.getPosicaoPerpendicular(),
+            request.getCidadeOrigem(),
+            request.getEntradaCidade()
+        );
     }
 
-    public static ReservaRapidaResponseDTO toResponse(ReservaRapida reservaRapida) {
+    public ReservaRapidaResponseDTO toResponse(ReservaRapida reservaRapida) {
         if (reservaRapida == null) return null;
         return new ReservaRapidaResponseDTO(reservaRapida);
     }  
 
-    public static List<ReservaRapidaResponseDTO> toResponseList(List<ReservaRapida> reservaRapidas) {
+    public List<ReservaRapidaResponseDTO> toResponseList(List<ReservaRapida> reservaRapidas) {
         if (reservaRapidas == null || reservaRapidas.isEmpty()) return null;
-        return reservaRapidas.stream().map(ReservaRapidaMapper::toResponse).toList();
+        return reservaRapidas.stream().map(this::toResponse).toList();
     }
 
-    public static ReservaDTO toReservaDTO(ReservaRapida reserva) {
+    public ReservaDTO toReservaDTO(ReservaRapida reserva, String cpfOrCnpjCriador) {
         if (reserva == null) return null;
         Vaga vaga = reserva.getVaga();
         EnderecoVaga enderecoVaga = vaga != null ? vaga.getEndereco() : null;
@@ -69,7 +73,7 @@ public class ReservaRapidaMapper {
             null,
             null,
             null,
-            UsuarioMapper.toResponse(criadoPor),
+            usuarioMapper.toResponse(criadoPor, cpfOrCnpjCriador),
             reserva.getCriadoEm(),
             reserva.getPosicaoPerpendicular()
         );

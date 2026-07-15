@@ -20,28 +20,25 @@ import lombok.RequiredArgsConstructor;
 public class ReservaRapidaUtils {
     private final ReservaUtils reservaUtils;
     private final ReservaRapidaRepository reservaRapidaRepository;
+    private final ReservaRapidaMapper reservaRapidaMapper;
 
     public void validarQuantidadeReservasPorPlaca(ReservaDTO novaReserva, List<ReservaDTO> reservasSobrepostas){
-        System.out.println("entrou no validarQuantidadeReservasPorPlaca");
         Integer quantidadeReservasRapidasPorPlaca = reservaRapidaRepository.countByPlacaIgnoringCase(novaReserva.getPlacaVeiculo());
         if (quantidadeReservasRapidasPorPlaca >= ReservaUtils.LIMITE_DE_RESERVAS_POR_PLACA){
             throw new ReservaExceptions.LimiteDeReservasPorPlacaException(ReservaUtils.LIMITE_DE_RESERVAS_POR_PLACA);
         }
-        System.out.println("reservasSobrepostas: " + reservasSobrepostas.isEmpty() + " - " + reservasSobrepostas.size());
-        if (reservasSobrepostas != null && !reservasSobrepostas.isEmpty()  ){
-            for (ReservaDTO reserva : reservasSobrepostas){
-                System.out.println("reserva.getPlacaVeiculo(): " + reserva.getPlacaVeiculo());
-                System.out.println("novaReserva.getPlacaVeiculo(): " + novaReserva.getPlacaVeiculo());
-                if (reserva.getPlacaVeiculo().equals(novaReserva.getPlacaVeiculo()) ) {
-                    throw new ReservaExceptions.PlacaComConflitoDeHorarioException();
-                }
-            } 
+        
+        if (
+            reservasSobrepostas != null && 
+            !reservasSobrepostas.isEmpty()  &&
+            reservasSobrepostas.stream().anyMatch((r) -> r.getPlacaVeiculo().equals(novaReserva.getPlacaVeiculo()))
+        ){
+            throw new ReservaExceptions.PlacaComConflitoDeHorarioException();
         }
     }
 
-
     public void validarEspacoDisponivelNaVaga(ReservaRapida novaReservaRapida, Vaga vagaReserva, List<ReservaDTO> reservasSobrepostas) {
-        ReservaDTO novaReservaDTO = ReservaRapidaMapper.toReservaDTO(novaReservaRapida);
+        ReservaDTO novaReservaDTO = reservaRapidaMapper.toReservaDTO(novaReservaRapida, novaReservaRapida.getAgente().getCpfCripto());
 
         reservaUtils.validarLimiteReservasPorPlaca(novaReservaDTO, reservasSobrepostas, ReservaUtils.METODO_POST);
 
