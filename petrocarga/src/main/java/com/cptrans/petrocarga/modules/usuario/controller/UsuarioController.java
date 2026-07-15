@@ -1,9 +1,8 @@
 package com.cptrans.petrocarga.modules.usuario.controller;
 
-import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -11,12 +10,16 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.cptrans.petrocarga.enums.OrdemEnum;
 import com.cptrans.petrocarga.modules.usuario.dto.mapper.UsuarioMapper;
 import com.cptrans.petrocarga.modules.usuario.dto.response.UsuarioResponseDTO;
 import com.cptrans.petrocarga.modules.usuario.entity.Usuario;
 import com.cptrans.petrocarga.modules.usuario.service.UsuarioService;
+import com.cptrans.petrocarga.modules.usuario.utils.UsuarioUtils;
+import com.cptrans.petrocarga.shared.dto.response.PageResponseDTO;
 import com.cptrans.petrocarga.shared.dto.response.SystemResponse;
 
 import lombok.RequiredArgsConstructor;
@@ -27,6 +30,8 @@ import lombok.RequiredArgsConstructor;
 public class UsuarioController {
 
     private final UsuarioService usuarioService;
+    private final UsuarioUtils usuarioUtils;
+    private final UsuarioMapper usuarioMapper;
 
     /**
      * Retorna todos os usuários cadastrados no sistema.
@@ -38,11 +43,18 @@ public class UsuarioController {
      */
     @PreAuthorize("hasAnyRole('ADMIN','GESTOR')")
     @GetMapping
-    public ResponseEntity<List<UsuarioResponseDTO>> getAllUsuarios() {
-        List<UsuarioResponseDTO> usuarios = usuarioService.findAll().stream()
-                .map(UsuarioMapper::toResponse)
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(usuarios);
+    public ResponseEntity<PageResponseDTO> getAllUsuarios(
+            @RequestParam(defaultValue = "0") int pagina,
+            @RequestParam(defaultValue = "10") int tamanhoPagina,
+            @RequestParam(defaultValue = "ASC") OrdemEnum ordem
+    ) {
+       Page<UsuarioResponseDTO> usuarios = usuarioService.findAll(pagina, tamanhoPagina, ordem)
+                    .map((u) -> {
+                        String cpfOrCnpj = usuarioUtils.getCpfOrCnpjByPermissao(u.getPermissao(), u.getId());
+                        return usuarioMapper.toResponse(u, cpfOrCnpj);
+                    });
+               
+        return ResponseEntity.ok(new PageResponseDTO(usuarios));
     }
 
     /**
@@ -54,8 +66,9 @@ public class UsuarioController {
     @PreAuthorize(" #id == authentication.principal.id or hasAnyRole('ADMIN', 'GESTOR')")
     @GetMapping("/{id}")
     public ResponseEntity<UsuarioResponseDTO> getUsuarioById(@PathVariable UUID id) {
-        Usuario usuario = usuarioService.findById(id);
-        return ResponseEntity.ok(UsuarioMapper.toResponse(usuario));
+        Usuario usuario = usuarioService.findByIdAndAtivoTrue(id);
+        String cpfOrCnpj = usuarioUtils.getCpfOrCnpjByPermissao(usuario.getPermissao(), usuario.getId());
+        return ResponseEntity.ok(usuarioMapper.toResponse(usuario, cpfOrCnpj));
     }
 
     /**

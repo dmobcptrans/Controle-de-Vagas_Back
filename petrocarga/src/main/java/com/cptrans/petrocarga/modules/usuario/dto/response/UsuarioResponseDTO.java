@@ -18,18 +18,15 @@ import lombok.NoArgsConstructor;
 public class UsuarioResponseDTO {
     private UUID id;
     private String nome;
-    private String cpf;
     private String telefone;
     private String email;
+    private String cpf;
+    private String cnpj;
     private PermissaoEnum permissao;
     private OffsetDateTime criadoEm;
     private Boolean ativo;
     private OffsetDateTime desativadoEm;
     private List<VeiculoResponseDTO> veiculos;
-
-    public void setCpf(String cpf) {
-        this.cpf = cpf;
-    }
 
     public void setEmail(String email) {
         this.email = email;

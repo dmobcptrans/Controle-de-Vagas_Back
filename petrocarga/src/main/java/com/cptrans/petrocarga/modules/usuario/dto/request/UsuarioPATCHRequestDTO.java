@@ -29,7 +29,7 @@ public class UsuarioPATCHRequestDTO {
     @CPF(message = "Informe um CPF válido.")
     private String cpf;
 
-    @Size(min = 6, max = 100, message = "matricula deve conter no mínimo 6 caracteres.")
+    @Size(min = 4, max = 4, message = "matricula deve conter exatamente 4 caracteres.")
     private String matricula;
 
     @CNPJ(message = "Informe um CNPJ válido.")

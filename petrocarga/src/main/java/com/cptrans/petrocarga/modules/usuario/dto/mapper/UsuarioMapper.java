@@ -4,35 +4,38 @@ package com.cptrans.petrocarga.modules.usuario.dto.mapper;
 
 import org.springframework.stereotype.Component;
 
-import com.cptrans.petrocarga.modules.usuario.dto.request.UsuarioRequestDTO;
 import com.cptrans.petrocarga.modules.usuario.dto.response.UsuarioResponseDTO;
 import com.cptrans.petrocarga.modules.usuario.entity.Usuario;
 import com.cptrans.petrocarga.modules.veiculo.dto.mapper.VeiculoMapper;
 import com.cptrans.petrocarga.shared.utils.CriptoUtils;
 
+import lombok.RequiredArgsConstructor;
+
 
 @Component
+@RequiredArgsConstructor
 public class UsuarioMapper {
-    public static Usuario toEntity(UsuarioRequestDTO request) {
-        Usuario usuario = new Usuario();
-        usuario.setNome(request.getNome().trim());
-        return usuario;
-    }    
+    private final CriptoUtils criptoUtils;
+    private final VeiculoMapper veiculoMapper;
 
-    public static UsuarioResponseDTO toResponse(Usuario usuario) {
+    public UsuarioResponseDTO toResponse(Usuario usuario, String cpfOrCnpj) {
         if (usuario == null) return null;
-        return CriptoUtils.decrypt(
+        cpfOrCnpj = cpfOrCnpj != null && cpfOrCnpj.length() > 14 ? criptoUtils.decrypt(cpfOrCnpj, usuario.getPersonalDataKeyVersion()) : cpfOrCnpj;
+        String cpf = cpfOrCnpj != null && cpfOrCnpj.length() == 11 ? cpfOrCnpj : null;
+        String cnpj = cpfOrCnpj != null && cpfOrCnpj.length() == 14 ? cpfOrCnpj : null;
+        return criptoUtils.decrypt(
             new UsuarioResponseDTO(
                 usuario.getId(),
                 usuario.getNome(),
-                usuario.getCpfCripto(),
                 usuario.getTelefoneCripto(),
                 usuario.getEmailCripto(),
+                cpf,
+                cnpj,
                 usuario.getPermissao(),
                 usuario.getCriadoEm(),
-                usuario.isAtivo(),
+                usuario.getAtivo(),
                 usuario.getDesativadoEm(),
-                VeiculoMapper.toResponseList(usuario.getVeiculosAtivos())
+                veiculoMapper.toResponseList(usuario.getVeiculosAtivos())
             ), usuario.getPersonalDataKeyVersion());    
     }
 }
