@@ -136,7 +136,7 @@ public class VagaController {
             @RequestParam(defaultValue="endereco.logradouro") String ordenarPor, 
             @RequestParam(required = false) StatusVagaEnum status,
             
-            @Parameter(description = "Filtrar vagas pelo nome da rua (logradouro). Busca parcial e case-insensitive.", example = "Rua do Imperador")
+            @Parameter(description = "Filtrar vagas pelo nome da rua (logradouro). Busca parcial e case-insensitive.")
             @RequestParam(required = false) String logradouro) {
         
     	Page<VagaResponseDTO> vagasPaginadas = vagaService.findAllPaginadas(numeroPagina, tamanhoPagina, ordenarPor, status, logradouro).map(VagaMapper::toResponse);
