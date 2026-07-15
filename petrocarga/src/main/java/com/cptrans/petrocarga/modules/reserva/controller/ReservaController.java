@@ -30,6 +30,8 @@ import com.cptrans.petrocarga.modules.reserva.dto.response.ReservaResponseDTO;
 import com.cptrans.petrocarga.modules.reserva.entity.Reserva;
 import com.cptrans.petrocarga.modules.reserva.service.ReservaService;
 import com.cptrans.petrocarga.modules.reserva.utils.ReservaUtils;
+import com.cptrans.petrocarga.modules.usuario.entity.Usuario;
+import com.cptrans.petrocarga.modules.usuario.utils.UsuarioUtils;
 import com.cptrans.petrocarga.modules.vaga.entity.Vaga;
 import com.cptrans.petrocarga.modules.vaga.service.VagaService;
 import com.cptrans.petrocarga.security.UserAuthenticated;
@@ -45,6 +47,8 @@ public class ReservaController {
 
     private final ReservaService reservaService;
     private final VagaService vagaService;
+    private final UsuarioUtils usuarioUtils;
+    private final ReservaMapper reservaMapper;
 
     /**
      * Retorna uma lista de reservas com base na lista de status e vaga ID informado.
@@ -134,7 +138,7 @@ public class ReservaController {
         // Busca a reserva e mantém as verificações de permissão no service
         Reserva reserva = reservaService.findById(id);
         // Converte para DTO detalhado que expõe nomes/placa para exibição amigável
-        ReservaDetailedResponseDTO dto = ReservaMapper.toDetailedResponse(reserva);
+        ReservaDetailedResponseDTO dto = reservaMapper.toDetailedResponse(reserva);
         return ResponseEntity.ok(dto);
     }
 
@@ -148,9 +152,13 @@ public class ReservaController {
      */
     @PreAuthorize("#usuarioId == authentication.principal.id or hasAnyRole('ADMIN', 'GESTOR')")
     @GetMapping("/usuario/{usuarioId}")
-    public ResponseEntity<PageResponseDTO> getReservasByUsuarioId(@PathVariable UUID usuarioId, @RequestParam(required = false) List<StatusReservaEnum> status, @RequestParam(defaultValue = "0") Integer numeroPagina, @RequestParam(defaultValue = "10") Integer tamanhoPagina) {
-        Page<ReservaResponseDTO> reservas = reservaService.findByUsuarioId(usuarioId, status, numeroPagina, tamanhoPagina)
-                .map(ReservaMapper::toResponse);
+    public ResponseEntity<PageResponseDTO> getReservasByUsuarioIdOrMotoristaId(@PathVariable UUID usuarioId, @RequestParam(required = false) List<StatusReservaEnum> status, @RequestParam(defaultValue = "0") Integer numeroPagina, @RequestParam(defaultValue = "10") Integer tamanhoPagina) {
+        Page<ReservaResponseDTO> reservas = reservaService.findByCriadoPorIdOrMotoristaId(usuarioId, status, numeroPagina, tamanhoPagina)
+                .map((r) -> {
+                    Usuario criadoPor = r.getCriadoPor();
+                    String cpfOrCnpjCriador = usuarioUtils.getCpfOrCnpjByPermissao(criadoPor.getPermissao(), criadoPor.getId());
+                    return reservaMapper.toResponse(r, cpfOrCnpjCriador);
+                });
                 
         return ResponseEntity.ok(new PageResponseDTO(reservas));
     }
@@ -166,7 +174,9 @@ public class ReservaController {
     @PostMapping()
     public ResponseEntity<ReservaResponseDTO> createReserva(@RequestBody @Valid ReservaRequestDTO request) {
         Reserva novaReserva = reservaService.createReserva(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(ReservaMapper.toResponse(novaReserva));
+        Usuario criadoPor = novaReserva.getCriadoPor();
+        String cpfOrCnpjCriador = usuarioUtils.getCpfOrCnpjByPermissao(criadoPor.getPermissao(), criadoPor.getId());
+        return ResponseEntity.status(HttpStatus.CREATED).body(reservaMapper.toResponse(novaReserva, cpfOrCnpjCriador));
     }
 
     /**
@@ -195,7 +205,9 @@ public class ReservaController {
     @PostMapping("/{id}/checkin")
     public ResponseEntity<ReservaResponseDTO> realizarCheckIn(@PathVariable UUID id) {
         Reserva reserva = reservaService.realizarCheckIn(id);
-        return ResponseEntity.ok(ReservaMapper.toResponse(reserva));
+        Usuario criadoPor = reserva.getCriadoPor();
+        String cpfOrCnpjCriador = usuarioUtils.getCpfOrCnpjByPermissao(criadoPor.getPermissao(), criadoPor.getId());
+        return ResponseEntity.ok(reservaMapper.toResponse(reserva, cpfOrCnpjCriador));
     }
 
     /**
@@ -210,10 +222,11 @@ public class ReservaController {
      */
     @PreAuthorize("#usuarioId == authentication.principal.id or hasAnyRole('ADMIN', 'GESTOR')")
     @PatchMapping("/{id}/{usuarioId}")
-    public ResponseEntity<ReservaResponseDTO> updateReserva(@PathVariable UUID id, @PathVariable UUID usuarioId, @RequestBody @Valid ReservaPATCHRequestDTO reservaRequestDTO) {
-        Reserva reserva = reservaService.findById(id);
-        Reserva reservaAtualizada = reservaService.atualizarReserva(reserva, usuarioId, reservaRequestDTO);
-        return ResponseEntity.status(HttpStatus.CREATED).body(ReservaMapper.toResponse(reservaAtualizada));
+    public ResponseEntity<ReservaResponseDTO> updateReserva(@AuthenticationPrincipal UserAuthenticated userAuthenticated, @PathVariable UUID id, @PathVariable UUID usuarioId, @RequestBody @Valid ReservaPATCHRequestDTO reservaRequestDTO) {
+        Reserva reservaAtualizada = reservaService.atualizarReserva(userAuthenticated, id, usuarioId, reservaRequestDTO);
+        Usuario criadoPor = reservaAtualizada.getCriadoPor();
+        String cpfOrCnpjCriador = usuarioUtils.getCpfOrCnpjByPermissao(criadoPor.getPermissao(), criadoPor.getId());
+        return ResponseEntity.status(HttpStatus.CREATED).body(reservaMapper.toResponse(reservaAtualizada, cpfOrCnpjCriador));
     }
 
     /**
@@ -226,7 +239,9 @@ public class ReservaController {
     @PatchMapping("checkout/{id}")
     public ResponseEntity<ReservaResponseDTO> realizarCheckout(@AuthenticationPrincipal UserAuthenticated userAuthenticated, @PathVariable UUID id ) {
         Reserva reservaAtualizada = reservaService.realizarCheckout(id);
-        return ResponseEntity.status(HttpStatus.CREATED).body(ReservaMapper.toResponse(reservaAtualizada));
+        Usuario criadoPor = reservaAtualizada.getCriadoPor();
+        String cpfOrCnpjCriador = usuarioUtils.getCpfOrCnpjByPermissao(criadoPor.getPermissao(), criadoPor.getId());
+        return ResponseEntity.status(HttpStatus.CREATED).body(reservaMapper.toResponse(reservaAtualizada, cpfOrCnpjCriador));
     }
 
     /**

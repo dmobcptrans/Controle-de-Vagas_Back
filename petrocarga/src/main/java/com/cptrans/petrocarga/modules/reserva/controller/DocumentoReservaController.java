@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -25,22 +24,21 @@ import com.cptrans.petrocarga.modules.reserva.service.ReservaService;
 import com.cptrans.petrocarga.security.UserAuthenticated;
 
 import jakarta.persistence.EntityNotFoundException;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/documentos/reservas")
+@RequiredArgsConstructor
 public class DocumentoReservaController {
-
-    @Autowired
-    private DocumentoReservaService documentoReservaService;
-
-    @Autowired
-    private ReservaService reservaService;
+    private final DocumentoReservaService documentoReservaService;
+    private final ReservaService reservaService;
+    private final ReservaMapper reservaMapper;
 
     @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR', 'AGENTE', 'MOTORISTA', 'EMPRESA')")
     @GetMapping("/{id}")
     public ResponseEntity<ReservaDetailedResponseDTO> getDocumentoReservaById(@PathVariable UUID id) {
         Reserva reserva = documentoReservaService.findReservaWithDetails(id);
-        ReservaDetailedResponseDTO dto = ReservaMapper.toDetailedResponse(reserva);
+        ReservaDetailedResponseDTO dto = reservaMapper.toDetailedResponse(reserva);
         return ResponseEntity.ok(dto);
     }
 
@@ -74,5 +72,4 @@ public class DocumentoReservaController {
                         "attachment; filename=comprovante-reserva.pdf")
                 .body(pdf);
     }
-
 }

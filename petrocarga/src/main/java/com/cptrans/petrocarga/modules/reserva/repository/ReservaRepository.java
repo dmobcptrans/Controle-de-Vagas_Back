@@ -3,6 +3,7 @@ package com.cptrans.petrocarga.modules.reserva.repository;
 import java.time.OffsetDateTime;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
@@ -17,25 +18,32 @@ import com.cptrans.petrocarga.enums.StatusReservaEnum;
 import com.cptrans.petrocarga.modules.dashboard.projections.StayDurationAggProjection;
 import com.cptrans.petrocarga.modules.dashboard.projections.VehicleRouteEventProjection;
 import com.cptrans.petrocarga.modules.reserva.entity.Reserva;
-import com.cptrans.petrocarga.modules.usuario.entity.Usuario;
 
 @Repository
 public interface ReservaRepository extends JpaRepository<Reserva, UUID>, JpaSpecificationExecutor<Reserva> {
+       public Optional<Reserva> findByIdAndStatusIn(UUID id, List<StatusReservaEnum> status);
        public List<Reserva> findByVagaId(UUID vaga);
        public List<Reserva> findByVagaIdAndStatusIn(UUID vagaId, List<StatusReservaEnum> status);
        public List<Reserva> findByVagaIdAndStatus(UUID vaga, StatusReservaEnum status);
-       public List<Reserva> findByCriadoPor(Usuario criadoPor);
-       public Page<Reserva> findByCriadoPor(Usuario criadoPor, Pageable pageable);
-       public List<Reserva> findByCriadoPorAndStatusIn(Usuario criadoPor, List<StatusReservaEnum> status);
-       public Page<Reserva> findByCriadoPorAndStatusIn(Usuario criadoPor, List<StatusReservaEnum> status, Pageable pageable);
+       public List<Reserva> findByCriadoPorId(UUID criadoPorId);
+       public Page<Reserva> findByCriadoPorId(UUID criadoPorId, Pageable pageable);
+       public Page<Reserva> findByCriadoPorIdOrMotoristaId(UUID criadoPorId, UUID motoristaId, Pageable pageable);
+       public List<Reserva> findByCriadoPorIdAndStatusIn(UUID criadoPorId, List<StatusReservaEnum> status);
+       public Page<Reserva> findByStatusInAndCriadoPorIdOrMotoristaId(List<StatusReservaEnum> status, UUID criadoPorId, UUID motoristaId,  Pageable pageable);
        public List<Reserva> findByStatusIn(List<StatusReservaEnum> status);
        public List<Reserva> findByVagaIdAndStatusAndInicio(UUID vaga, StatusReservaEnum status, OffsetDateTime data);
-       public List<Reserva> findByVeiculoPlacaIgnoringCaseAndStatusIn(String placa, List<StatusReservaEnum> status);
        public Integer countByVeiculoPlacaIgnoringCaseAndStatusIn(String placa,List<StatusReservaEnum> status);
        public List<Reserva> findByFimGreaterThanAndInicioLessThanAndStatusIn(OffsetDateTime novoInicio, OffsetDateTime novoFim, List<StatusReservaEnum> status);
        public List<Reserva> findByFimGreaterThanAndInicioLessThanAndMotoristaUsuarioIdAndStatusIn(OffsetDateTime novoInicio, OffsetDateTime novoFim, UUID usuarioId, List<StatusReservaEnum> status);
        public Boolean existsByVeiculoIdAndStatusIn(UUID veiculoId, List<StatusReservaEnum> status);
-
+       public Boolean existsByCriadoPorIdAndMotoristaIdAndStatusIn(UUID criadoPorId, UUID motoristaId, List<StatusReservaEnum> status);
+       
+       @Query("SELECT r FROM Reserva r WHERE UPPER(r.veiculo.placa) ILIKE %:placa% AND r.status IN :status")
+       public List<Reserva> findByVeiculoPlacaIgnoringCaseAndStatusIn(String placa, List<StatusReservaEnum> status);
+       
+       @Query("SELECT r FROM Reserva r where r.id = :id and (r.criadoPor.id = :usuarioId or r.motorista.id = :usuarioId)")
+       public Optional<Reserva> findByIdAndUsuarioId(UUID id, UUID usuarioId);
+       
        @Query("SELECT r FROM Reserva r " +
               "JOIN FETCH r.vaga " +
               "JOIN FETCH r.motorista " +
@@ -274,12 +282,12 @@ public interface ReservaRepository extends JpaRepository<Reserva, UUID>, JpaSpec
        FROM reserva r
        LEFT JOIN motorista m ON r.motorista_id = m.id
        WHERE
-              (r.criado_por = :usuarioId OR m.usuario_id = :usuarioId)
+              (r.criado_por = :usuarioId OR m.id = :usuarioId)
               AND r.status IN ('RESERVADA', 'ATIVA')
        );
               """,
               nativeQuery = true)
-       Boolean existsByCriadoPorIdOrMotoristaUsuarioId (@Param("usuarioId") UUID usuarioId);
+       Boolean existsAtivaByCriadoPorIdOrMotoristaId (@Param("usuarioId") UUID usuarioId);
 
        @Query(
               value = """

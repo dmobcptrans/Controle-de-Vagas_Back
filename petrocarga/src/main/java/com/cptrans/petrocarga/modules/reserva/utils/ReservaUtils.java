@@ -14,9 +14,7 @@ import com.cptrans.petrocarga.enums.AreaVagaEnum;
 import com.cptrans.petrocarga.enums.PermissaoEnum;
 import com.cptrans.petrocarga.enums.StatusReservaEnum;
 import com.cptrans.petrocarga.enums.TipoVagaEnum;
-import com.cptrans.petrocarga.modules.empresa.entity.Empresa;
-import com.cptrans.petrocarga.modules.empresa.exceptions.EmpresaExceptions;
-import com.cptrans.petrocarga.modules.empresa.repository.EmpresaRepository;
+import com.cptrans.petrocarga.modules.auth.utils.AuthUtils;
 import com.cptrans.petrocarga.modules.motorista.entity.Motorista;
 import com.cptrans.petrocarga.modules.reserva.dto.mapper.ReservaMapper;
 import com.cptrans.petrocarga.modules.reserva.dto.response.ReservaDTO;
@@ -27,9 +25,11 @@ import com.cptrans.petrocarga.modules.reservaRapida.dto.mapper.ReservaRapidaMapp
 import com.cptrans.petrocarga.modules.reservaRapida.entity.ReservaRapida;
 import com.cptrans.petrocarga.modules.reservaRapida.repository.ReservaRapidaRepository;
 import com.cptrans.petrocarga.modules.usuario.entity.Usuario;
+import com.cptrans.petrocarga.modules.usuario.utils.UsuarioUtils;
 import com.cptrans.petrocarga.modules.vaga.entity.Vaga;
 import com.cptrans.petrocarga.modules.vaga.exceptions.VagaExceptions;
 import com.cptrans.petrocarga.modules.veiculo.entity.Veiculo;
+import com.cptrans.petrocarga.security.UserAuthenticated;
 import com.cptrans.petrocarga.shared.exceptions.DateExceptions;
 import com.cptrans.petrocarga.shared.utils.DateUtils;
 
@@ -38,9 +38,11 @@ import lombok.RequiredArgsConstructor;
 @Component
 @RequiredArgsConstructor
 public class ReservaUtils {
-    private final EmpresaRepository empresaRepository;
     private final ReservaRepository reservaRepository;
     private final ReservaRapidaRepository reservaRapidaRepository;
+    private final UsuarioUtils usuarioUtils;
+    private final ReservaMapper reservaMapper;
+    private final ReservaRapidaMapper reservaRapidaMapper;
 
     public static final String METODO_POST = "POST";
     public static final String METODO_PATCH = "PATCH";
@@ -52,12 +54,15 @@ public class ReservaUtils {
         validarTempoMaximoReserva(inicio, fim, areaVaga);
     }
 
-    public void validarEspacoDisponivelNaVaga(Reserva novaReserva, Usuario usuarioLogado, String metodoChamador) {
+    public void validarEspacoDisponivelNaVaga(Reserva novaReserva, String metodoChamador) {
+        UserAuthenticated userAuthenticated = AuthUtils.getUsuarioAutenticado();
         Vaga vagaReserva = novaReserva.getVaga();
         Veiculo veiculoDaReserva = novaReserva.getVeiculo();
         Motorista motoristaDaReserva = novaReserva.getMotorista();
         Integer tamanhoDisponivelVaga = vagaReserva.getComprimento() - veiculoDaReserva.getTipo().getComprimento();
-        ReservaDTO novaReservaDTO = ReservaMapper.toReservaDTO(novaReserva);
+        Usuario criadoPor = novaReserva.getCriadoPor();
+        String cpfOrCnpjCriador = usuarioUtils.getCpfOrCnpjByPermissao(criadoPor.getPermissao(), criadoPor.getId());
+        ReservaDTO novaReservaDTO = reservaMapper.toReservaDTO(novaReserva, cpfOrCnpjCriador);
         List<ReservaDTO> reservasSobrepostas = getReservasAtivasSobrepostas(novaReserva.getInicio(), novaReserva.getFim());
         
         validarLimiteReservasPorPlaca(novaReservaDTO, reservasSobrepostas, metodoChamador);
@@ -75,7 +80,7 @@ public class ReservaUtils {
 
         if (!reservasSobrepostas.isEmpty()){
             for (ReservaDTO reserva : reservasSobrepostas){ 
-                if (metodoChamador.equals(METODO_PATCH) && motoristaDaReserva.getUsuario().getId().equals(usuarioLogado.getId())){
+                if (metodoChamador.equals(METODO_PATCH) && motoristaDaReserva.getUsuario().getId().equals(userAuthenticated.id())){
                     if (tamanhoDisponivelVaga < 0) throw new ReservaExceptions.EspacoInsuficienteNoPeriodoException();
                     return;
                 }  
@@ -98,33 +103,34 @@ public class ReservaUtils {
         }
     }
 
-    public void validarPermissoesReserva(UUID usuarioLogadoId, PermissaoEnum permissaoUsuarioLogado, Motorista motoristaDaReserva, Veiculo veiculoDaReserva) {
-        if (permissaoUsuarioLogado.equals(PermissaoEnum.MOTORISTA)){
-            if (!veiculoDaReserva.getUsuario().getId().equals(usuarioLogadoId)){
+    public void validarPermissoesReserva(Motorista motoristaDaReserva, Veiculo veiculoDaReserva) {
+        UserAuthenticated userAuthenticated = AuthUtils.getUsuarioAutenticado();
+        List<String> roles = AuthUtils.getRoles(userAuthenticated);
+        if (roles.contains(PermissaoEnum.MOTORISTA.getRole())){
+            if (!veiculoDaReserva.getUsuario().getId().equals(userAuthenticated.id())){
                 if (motoristaDaReserva.getEmpresa() != null && motoristaDaReserva.getVeiculosEmpresa() != null && !motoristaDaReserva.getVeiculosEmpresa().isEmpty()){
-                    List<Veiculo> veiculosEmpresa = motoristaDaReserva.getVeiculosEmpresa().stream().map(veiculoEmpresaMotorista -> veiculoEmpresaMotorista.getVeiculo()).toList();
-                    if (veiculosEmpresa.contains(veiculoDaReserva) && motoristaDaReserva.getEmpresa().getUsuario().getId().equals(veiculoDaReserva.getUsuario().getId())){
-                        return;
-                    }
+                    boolean pertence = motoristaDaReserva.getVeiculosEmpresa().stream()
+                        .anyMatch(vem -> vem.getVeiculo().equals(veiculoDaReserva));
+                    if (pertence) return;
                 }   
                 throw new ReservaExceptions.VeiculoNaoPertenceException();
             }
 
-            if (!motoristaDaReserva.getUsuario().getId().equals(usuarioLogadoId)){
+            if (!motoristaDaReserva.getUsuario().getId().equals(userAuthenticated.id())){
                 throw new ReservaExceptions.MotoristaInvalidoException();
             }
         }
         
-        if (permissaoUsuarioLogado.equals(PermissaoEnum.EMPRESA)){
-            if (!veiculoDaReserva.getUsuario().getId().equals(usuarioLogadoId)){
+        if (roles.contains(PermissaoEnum.EMPRESA.getRole())){
+            if (!veiculoDaReserva.getUsuario().getId().equals(userAuthenticated.id())){
                 throw new ReservaExceptions.VeiculoNaoPertenceException();
             }
-            Empresa empresa = empresaRepository.findByUsuarioId(usuarioLogadoId).orElseThrow(() -> new EmpresaExceptions.EmpresaNotFoundException());
-            if (motoristaDaReserva.getEmpresa() == null || !motoristaDaReserva.getEmpresa().getId().equals(empresa.getId())){
+            if (motoristaDaReserva.getEmpresa() == null || !motoristaDaReserva.getEmpresa().getId().equals(userAuthenticated.id())){
                 throw new ReservaExceptions.MotoristaNaoPertenceEmpresaException();
             }
         }
     }
+
 
     public void validarMotoristaReserva(UUID motoristaUsuarioId, UUID motoristaId, List<ReservaDTO> reservasSobrepostas, String metodoChamador) {
         List<ReservaDTO> reservasAtivasSobrepostasPorMotorista = reservasSobrepostas.stream().filter(reserva -> reserva.getCriadoPor().getId().equals(motoristaUsuarioId) || (reserva.getMotoristaId() != null && reserva.getMotoristaId().equals(motoristaId))).toList();
@@ -133,26 +139,31 @@ public class ReservaUtils {
         }
     }
 
-    public static List<ReservaDTO> juntarReservas(List<Reserva> reservas, List<ReservaRapida> reservasRapidas) {
+    public List<ReservaDTO> juntarReservas(List<Reserva> reservas, List<ReservaRapida> reservasRapidas) {
         List<ReservaDTO> listaFinalReservas = new ArrayList<>(); 
 
         if (reservasRapidas != null && !reservasRapidas.isEmpty()) {
             reservasRapidas.forEach((rr) -> {
-                listaFinalReservas.add(ReservaRapidaMapper.toReservaDTO(rr));
+                listaFinalReservas.add(reservaRapidaMapper.toReservaDTO(rr, rr.getAgente().getCpfCripto()));
             });
         }
     
         if (reservas != null && !reservas.isEmpty()) {
             reservas.forEach((r) -> {
-                listaFinalReservas.add(ReservaMapper.toReservaDTO(r));
+                Usuario criadoPor = r.getCriadoPor();
+                String cpfOrCnpjCriador = usuarioUtils.getCpfOrCnpjByPermissao(criadoPor.getPermissao(), criadoPor.getId());
+                listaFinalReservas.add(reservaMapper.toReservaDTO(r, cpfOrCnpjCriador));
             });
         }
     
         return listaFinalReservas;
     }
 
-    public Boolean existsByUsuarioId(UUID usuarioId) {
-        return reservaRepository.existsByCriadoPorIdOrMotoristaUsuarioId(usuarioId);
+    public Boolean existsAtivaByUsuarioId(UUID usuarioId) {
+        return reservaRepository.existsAtivaByCriadoPorIdOrMotoristaId(usuarioId);
+    }
+    public Boolean existsAtivaByEmpresaIdAndMotoristaId(UUID empresaId, UUID motoristaId) {
+        return reservaRepository.existsByCriadoPorIdAndMotoristaIdAndStatusIn(empresaId, motoristaId, List.of(StatusReservaEnum.RESERVADA, StatusReservaEnum.ATIVA));
     }
 
     public static void validarFiltrosData(LocalDate data, Integer mes, Integer ano) {

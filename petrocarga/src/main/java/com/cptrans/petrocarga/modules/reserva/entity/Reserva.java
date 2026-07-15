@@ -22,13 +22,16 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "reserva")
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Getter
+@EqualsAndHashCode
 public class Reserva {
-
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id")
@@ -94,125 +97,59 @@ public class Reserva {
 
     }
 
-    // Getters and Setters
-    public UUID getId() {
-        return id;
-    }
-
-    public void setId(UUID id) {
-        this.id = id;
-    }
-
-    public Vaga getVaga() {
-        return vaga;
-    }
-
     public void setVaga(Vaga vaga) {
         this.vaga = vaga;
-    }
-
-    public Motorista getMotorista() {
-        return motorista;
     }
 
     public void setMotorista(Motorista motorista) {
         this.motorista = motorista;
     }
 
-    public Veiculo getVeiculo() {
-        return veiculo;
-    }
-
     public void setVeiculo(Veiculo veiculo) {
         this.veiculo = veiculo;
-    }
-
-    public Usuario getCriadoPor() {
-        return criadoPor;
     }
 
     public void setCriadoPor(Usuario criadoPor) {
         this.criadoPor = criadoPor;
     }
 
-    public String getCidadeOrigem() {
-        return cidadeOrigem;
-    }
-
     public void setCidadeOrigem(String cidadeOrigem) {
         this.cidadeOrigem = cidadeOrigem;
-    }
-
-    public String getEntradaCidade() {
-        return entradaCidade;
     }
 
     public void setEntradaCidade(String entradaCidade) {
         this.entradaCidade = entradaCidade;
     }
 
-    public OffsetDateTime getCriadoEm() {
-        return criadoEm;
-    }
-
     public void setCriadoEm(OffsetDateTime criadoEm) {
         this.criadoEm = criadoEm;
-    }
-
-    public OffsetDateTime getInicio() {
-        return inicio;
     }
 
     public void setInicio(OffsetDateTime inicio) {
         this.inicio = inicio;
     }
 
-    public OffsetDateTime getFim() {
-        return fim;
-    }
-
     public void setFim(OffsetDateTime fim) {
         this.fim = fim;
-    }
-
-    public StatusReservaEnum getStatus() {
-        return status;
     }
 
     public void setStatus(StatusReservaEnum status) {
         this.status = status;
     }
 
-    public Boolean isCheckedIn() {
-        return checkedIn;
-    }
-
     public void setCheckedIn(Boolean checkedIn) {
         this.checkedIn = checkedIn;
-    }
-
-    public OffsetDateTime getCheckInEm() {
-        return checkInEm;
     }
 
     public void setCheckInEm(OffsetDateTime checkInEm) {
         this.checkInEm = checkInEm;
     }
 
-    public OffsetDateTime getCheckOutEm() {
-        return checkOutEm;
-    }
-
     public void setCheckOutEm(OffsetDateTime checkOutEm) {
         this.checkOutEm = checkOutEm;
-    }
-
-    public Integer getPosicaoPerpendicular() {
-        return posicaoPerpendicular;
     }
 
     public void setPosicaoPerpendicular(Integer posicaoPerpendicular) {
         this.posicaoPerpendicular = posicaoPerpendicular;
     }
-
 }
