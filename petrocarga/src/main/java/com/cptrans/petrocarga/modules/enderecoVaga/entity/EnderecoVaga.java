@@ -10,9 +10,15 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Size;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "endereco_vaga")
+@NoArgsConstructor
+@Getter
+@EqualsAndHashCode
 public class EnderecoVaga {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -31,53 +37,21 @@ public class EnderecoVaga {
     @Size(min = 1, max = 6)
     private String codigoPmp;
 
-    public EnderecoVaga() {}
-
     public EnderecoVaga(String logradouro, String bairro, String codigoPmp) {
         this.logradouro = logradouro;
         this.bairro = bairro;
         this.codigoPmp = codigoPmp;
     }
 
-    public UUID getId() {
-        return id;
-    }
-
-    public void setId(UUID id) {
-        this.id = id;
-    }
-
-    public String getLogradouro() {
-        return logradouro;
-    }
-
     public void setLogradouro(String logradouro) {
         this.logradouro = logradouro;
-    }
-
-    public String getBairro() {
-        return bairro;
     }
 
     public void setBairro(String bairro) {
         this.bairro = bairro;
     }
 
-    public String getCodigoPmp() {
-        return codigoPmp;
-    }
-
     public void setCodigoPmp(String codigoPmp) {
         this.codigoPmp = codigoPmp;
-    }
-
-    @Override
-    public String toString() {
-        return "EnderecoVaga{" +
-                "id=" + id +
-                ", logradouro='" + logradouro + '\'' +
-                ", bairro='" + bairro + '\'' +
-                ", codigoPmp='" + codigoPmp + '\'' +
-                '}';
     }
 }
