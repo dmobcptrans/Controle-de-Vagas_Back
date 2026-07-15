@@ -1,9 +1,9 @@
 package com.cptrans.petrocarga.modules.empresa.service;
 
-import java.util.List;
 
 import com.cptrans.petrocarga.enums.OrdemEnum;
 import com.cptrans.petrocarga.enums.PermissaoEnum;
+import com.cptrans.petrocarga.modules.cripto.HashService;
 import com.cptrans.petrocarga.modules.empresa.dto.mapper.EmpresaMapper;
 import com.cptrans.petrocarga.modules.empresa.dto.request.EmpresaFiltrosRequestDTO;
 import com.cptrans.petrocarga.modules.empresa.dto.request.EmpresaRequestDTO;
@@ -13,10 +13,11 @@ import com.cptrans.petrocarga.modules.empresa.exceptions.EmpresaExceptions;
 import com.cptrans.petrocarga.modules.empresa.repository.EmpresaRepository;
 import com.cptrans.petrocarga.modules.empresa.specification.EmpresaSpecification;
 import com.cptrans.petrocarga.modules.usuario.dto.request.UsuarioPATCHRequestDTO;
+import com.cptrans.petrocarga.modules.usuario.dto.request.UsuarioRequestDTO;
 import com.cptrans.petrocarga.modules.usuario.entity.Usuario;
+import com.cptrans.petrocarga.modules.usuario.exceptions.UsuarioExceptions;
 import com.cptrans.petrocarga.modules.usuario.service.UsuarioService;
 import com.cptrans.petrocarga.shared.dto.response.PageResponseDTO;
-import com.cptrans.petrocarga.shared.exceptions.GlobalHandlerException;
 import com.cptrans.petrocarga.shared.utils.DateUtils;
 
 import jakarta.transaction.Transactional;
@@ -35,31 +36,26 @@ public class EmpresaService {
 
     private final EmpresaRepository empresaRepository;
     private final UsuarioService usuarioService;
-    private final Sort SORT_ASC = Sort.by("razaoSocial").ascending();
-    private final Sort SORT_DESC = Sort.by("razaoSocial").descending();
-
-    public List<Empresa> findAll() {
-        return empresaRepository.findAll();
-    }
+    private final HashService hashService;
+    private final EmpresaMapper empresaMapper;
+    private final Sort SORT_ASC = Sort.by("usuario.nome").ascending();
+    private final Sort SORT_DESC = Sort.by("usuario.nome").descending();
 
     public PageResponseDTO listarEmpresas(EmpresaFiltrosRequestDTO filtros, int pagina, int tamanhoPagina, OrdemEnum ordem) {
+        if (filtros != null && filtros.getTelefone() != null ) filtros.setTelefone(hashService.hash(filtros.getTelefone().trim()));
         Pageable pageable = PageRequest.of(pagina, tamanhoPagina, ordem.equals(OrdemEnum.ASC) ? SORT_ASC : SORT_DESC);
         Page<Empresa> page = empresaRepository.findAll(EmpresaSpecification.filtrar(filtros), pageable);
         if (page.isEmpty()) return new PageResponseDTO(page);
-        Page<EmpresaResponseDTO> pageResponse = page.map(EmpresaMapper::toResponse);
+        Page<EmpresaResponseDTO> pageResponse = page.map(empresaMapper::toResponse);
         return new PageResponseDTO(pageResponse);
     }
 
-    public Empresa findById(UUID id) {
-        return empresaRepository.findById(id).orElseThrow(() -> new EmpresaExceptions.EmpresaNotFoundException());
-    }
-
-    public Empresa findByUsuarioId(UUID usuarioId) {
-        return empresaRepository.findByUsuarioIdAndUsuarioAtivoTrue(usuarioId).orElseThrow(() -> new EmpresaExceptions.EmpresaNotFoundException());
+    public Empresa findByIdAndAtivoTrue(UUID id) {
+        return empresaRepository.findByIdAndUsuarioAtivoTrue(id).orElseThrow(() -> new EmpresaExceptions.EmpresaNotFoundException());
     }
 
     public void desativarEmpresa(UUID usuarioId) {
-        Empresa empresa = findByUsuarioId(usuarioId);
+        Empresa empresa = findByIdAndAtivoTrue(usuarioId);
         empresa.getUsuario().setAtivo(false);
         empresa.getUsuario().setDesativadoEm(DateUtils.agora());
         empresaRepository.save(empresa);
@@ -67,25 +63,25 @@ public class EmpresaService {
 
     @Transactional
     public EmpresaResponseDTO create(EmpresaRequestDTO request) {
-        if (request.getAceitouTermos().equals(Boolean.FALSE)) throw new GlobalHandlerException.TermosNotAcceptedException();
+        if (request.getAceitouTermos() != null && !request.getAceitouTermos()) throw new UsuarioExceptions.TermosNotAcceptedException();
 
-        if (empresaRepository.existsByCnpj(request.getCnpj())) throw new EmpresaExceptions.CnpjAlreadyExistsException();
+        String cnpj = request.getCnpj().trim();
+        if (empresaRepository.existsByCnpj(cnpj)) throw new EmpresaExceptions.CnpjAlreadyExistsException();
 
-        Usuario usuarioSalvo = usuarioService.createUsuario(request.getUsuario(), PermissaoEnum.EMPRESA); 
+        Usuario usuarioSalvo = usuarioService.createUsuario(new UsuarioRequestDTO(request.getNome(), request.getTelefone(), request.getEmail(), request.getSenha(), request.getAceitouTermos()), null, PermissaoEnum.EMPRESA);
         
         Empresa novaEmpresa = new Empresa();
 
         novaEmpresa.setUsuario(usuarioSalvo);
-        novaEmpresa.setCnpj(request.getCnpj());
-        novaEmpresa.setRazaoSocial(request.getRazaoSocial());
+        novaEmpresa.setCnpj(cnpj);
 
         Empresa empresaSalva = empresaRepository.save(novaEmpresa);
-        return EmpresaMapper.toResponse(empresaSalva);
+        return empresaMapper.toResponse(empresaSalva);
     }
 
     @Transactional
     public EmpresaResponseDTO update(UUID usuarioId, UsuarioPATCHRequestDTO request) {
-        Empresa empresa = findByUsuarioId(usuarioId);
+        Empresa empresa = findByIdAndAtivoTrue(usuarioId);
         Usuario usuarioAtualizado = usuarioService.patchUpdate(usuarioId, PermissaoEnum.EMPRESA, request);
         empresa.setUsuario(usuarioAtualizado);
 
@@ -96,11 +92,7 @@ public class EmpresaService {
             empresa.setCnpj(request.getCnpj());
         }
 
-        if (request.getRazaoSocial() != null && !request.getRazaoSocial().equals(empresa.getRazaoSocial())) {
-            empresa.setRazaoSocial(request.getRazaoSocial());
-        }
-
         Empresa empresaSalva = empresaRepository.save(empresa);
-        return EmpresaMapper.toResponse(empresaSalva);
+        return empresaMapper.toResponse(empresaSalva);
     }
 }

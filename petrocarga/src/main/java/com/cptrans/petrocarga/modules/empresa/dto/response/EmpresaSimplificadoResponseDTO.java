@@ -13,9 +13,7 @@ import lombok.NoArgsConstructor;
 @Getter
 public class EmpresaSimplificadoResponseDTO {
     private UUID id;
-    private UUID usuarioid;
     private String nome;
     private String cnpj;
-    private String razaoSocial;
     private Boolean ativo;
 }
