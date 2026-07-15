@@ -116,4 +116,14 @@ public class JwtService {
     public UUID getIdDoToken(String token) {
         return UUID.fromString(getClaims(token).get("id").toString());
     }
+
+    /**
+     * Retorna o nome do usuário contido no token JWT informado.
+     * 
+     * @param token o token JWT a ter o nome do usuário recuperado
+     * @return o nome do usuário contido no token JWT informado
+    */
+    public String getNomeDoToken(String token) {
+        return getClaims(token).get("nome").toString();
+    }
 }
