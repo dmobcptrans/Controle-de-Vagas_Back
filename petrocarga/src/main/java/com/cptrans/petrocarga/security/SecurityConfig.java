@@ -1,8 +1,5 @@
 package com.cptrans.petrocarga.security;
 
-import java.util.List;
-
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -14,9 +11,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 
 @Configuration
@@ -29,8 +23,9 @@ public class SecurityConfig {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
 
-    @Value("${app.cors.allowed-origins:http://localhost:3000,https://controle-de-vagas-front.vercel.app}")
-    private List<String> allowedOrigins;
+    //deve ficar comentado para não dar conflito com o CORS config do nginx
+    // @Value("${app.cors.allowed-origins:http://localhost:3000,https://controle-de-vagas-front.vercel.app}")
+    // private List<String> allowedOrigins;
 
     /**
      * Cria a cadeia de filtros de segurança para autenticar as requisições HTTP.
@@ -44,7 +39,8 @@ public class SecurityConfig {
         http
             .csrf(csrf -> csrf.disable())
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .cors(withDefaults -> withDefaults.configurationSource(corsConfigurationSource()))
+            //deve ficar comentado para não dar conflito com o CORS config do nginx
+            // .cors(withDefaults -> withDefaults.configurationSource(corsConfigurationSource()))
             .authorizeHttpRequests(auth -> auth
                  .requestMatchers(
                     "/auth/login/",
@@ -77,6 +73,7 @@ public class SecurityConfig {
         return http.build();
     }
 
+    //deve ficar comentado para não dar conflito com o CORS config do nginx
     /**
      * Providencia uma fonte de configuração CORS para a aplicação (CorsConfigurationSource).
      * Permite origens especificadas na propriedade "app.cors.allowed-origins" do arquivo de configuração da aplicação.
@@ -84,36 +81,36 @@ public class SecurityConfig {
      * Permite os seguintes headers: Authorization, Content-Type, Accept, Cache-Control, Last-Event-ID.
      * Também permite o envio de cookies e outras credenciais nas requisições CORS, o que é importante para autenticação de sessões.
      */
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration corsConfig = new CorsConfiguration();
+    // @Bean
+    // public CorsConfigurationSource corsConfigurationSource() {
+    //     CorsConfiguration corsConfig = new CorsConfiguration();
 
-        corsConfig.setAllowedOriginPatterns(allowedOrigins);
+    //     corsConfig.setAllowedOriginPatterns(allowedOrigins);
 
-        corsConfig.setAllowedMethods(List.of(
-            "GET",
-            "POST",
-            "PATCH",
-            "DELETE",
-            "OPTIONS"
-        ));
+    //     corsConfig.setAllowedMethods(List.of(
+    //         "GET",
+    //         "POST",
+    //         "PATCH",
+    //         "DELETE",
+    //         "OPTIONS"
+    //     ));
 
-        corsConfig.setAllowedHeaders(List.of(
-            "Authorization",
-            "Content-Type",
-            "Accept",
-            "Cache-Control",
-            "Last-Event-ID",
-            "ngrok-skip-browser-warning"
-        ));
+    //     corsConfig.setAllowedHeaders(List.of(
+    //         "Authorization",
+    //         "Content-Type",
+    //         "Accept",
+    //         "Cache-Control",
+    //         "Last-Event-ID",
+    //         "ngrok-skip-browser-warning"
+    //     ));
 
-        corsConfig.setAllowCredentials(true);
+    //     corsConfig.setAllowCredentials(true);
 
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", corsConfig);
+    //     UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    //     source.registerCorsConfiguration("/**", corsConfig);
 
-        return source;
-    }
+    //     return source;
+    // }
 
     /**
      * Retorna o gerenciador de autenticação da API.
@@ -141,6 +138,4 @@ public class SecurityConfig {
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
-
-
 }

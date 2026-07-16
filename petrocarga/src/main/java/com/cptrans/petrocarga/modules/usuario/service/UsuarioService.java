@@ -90,10 +90,7 @@ public class UsuarioService {
 
     @Transactional
     public Usuario createUsuario(UsuarioRequestDTO request, String cpf, PermissaoEnum permissao) {
-        String emailString = request.getEmail().trim().toLowerCase();
-        String emailHash = hashService.hash(emailString);
-        
-        if (usuarioRepository.existsByEmailHash(emailHash)) throw new UsuarioExceptions.EmailAlreadyExistsException();
+        String email = request.getEmail().trim().toLowerCase();
         
         if (existsByCpf(cpf)) throw new UsuarioExceptions.CpfAlreadyExistsException();
 
@@ -123,7 +120,7 @@ public class UsuarioService {
 
         Usuario saved = usuarioRepository.save(novoUsuario);
 
-        eventPublisher.publish(new UsuarioCriadoEvent(emailString, saved.getVerificationCode(), firstPassword));
+        eventPublisher.publish(new UsuarioCriadoEvent(email, saved.getVerificationCode(), firstPassword));
 
         return saved;
     }
@@ -420,6 +417,9 @@ public class UsuarioService {
         email = email.trim().toLowerCase();
         telefone = telefone.trim();
         String emailHash = hashService.hash(email);
+
+        if (usuarioRepository.existsByEmailHash(emailHash)) throw new UsuarioExceptions.EmailAlreadyExistsException();
+
         String emailCripto = criptoService.encrypt(email);
         String telefoneHash = hashService.hash(telefone);
         String telefoneCripto = criptoService.encrypt(telefone);
