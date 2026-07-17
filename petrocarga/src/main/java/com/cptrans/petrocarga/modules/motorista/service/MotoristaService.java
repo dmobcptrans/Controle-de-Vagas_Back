@@ -38,7 +38,6 @@ import com.cptrans.petrocarga.security.UserAuthenticated;
 import com.cptrans.petrocarga.shared.dto.response.PageResponseDTO;
 import com.cptrans.petrocarga.shared.dto.response.SystemResponse;
 
-import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
@@ -199,7 +198,7 @@ public class MotoristaService {
     }
 
     public Motorista findById(UUID id) {
-        return motoristaRepository.findById(id).orElseThrow(()-> new EntityNotFoundException("Motorista nao encontrado."));
+        return motoristaRepository.findById(id).orElseThrow(()-> new MotoristaExceptions.MotoristaNotFoundException());
     }
 
     public void desativarById(UUID id) {

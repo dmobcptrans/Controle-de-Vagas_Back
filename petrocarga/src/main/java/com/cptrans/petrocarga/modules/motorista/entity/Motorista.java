@@ -115,4 +115,11 @@ public class Motorista {
     public void setCpfLast5(String cpfLast5) {
         this.cpfLast5 = cpfLast5;
     }
+
+    public List<VeiculoEmpresaMotorista> getVeiculoEmpresaMotoristaAtivos(){
+        if (this.veiculosEmpresa == null || this.veiculosEmpresa.isEmpty()) return null;
+        return this.veiculosEmpresa.stream().filter((vem) -> {
+            return vem.getVeiculo().getAtivo() && vem.getEmpresa().getUsuario().getAtivo() && vem.getMotorista().getUsuario().getAtivo();
+        }).toList();
+    }
 }
