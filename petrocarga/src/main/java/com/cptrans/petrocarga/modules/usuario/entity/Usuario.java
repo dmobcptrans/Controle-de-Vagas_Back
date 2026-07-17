@@ -185,7 +185,9 @@ public class Usuario implements UserDetails{
 
     public List<Veiculo> getVeiculosAtivos(){
         if (this.veiculos != null && !this.veiculos.isEmpty()) {
-            return this.veiculos.stream().filter(veiculo -> veiculo.getAtivo()).toList();
+            return this.veiculos.stream().filter((veiculo) -> {
+                return veiculo.getAtivo() && veiculo.getUsuario().getAtivo();
+            }).toList();
         }
         return null;
     }

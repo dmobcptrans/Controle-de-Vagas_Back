@@ -56,4 +56,11 @@ public class Empresa {
     public void setCnpj(String cnpj) {
         this.cnpj = cnpj;
     }
+
+    public List<VeiculoEmpresaMotorista> getVeiculoEmpresaMotoristaAtivos() {
+        if (this.veiculosEmpresaMotoristas == null || this.veiculosEmpresaMotoristas.isEmpty()) return null;
+        return this.veiculosEmpresaMotoristas.stream().filter((vem) -> {
+            return vem.getVeiculo().getAtivo() && vem.getEmpresa().getUsuario().getAtivo() && vem.getMotorista().getUsuario().getAtivo();
+        }).toList();
+    }
 }
