@@ -32,12 +32,12 @@ public class UsuarioMapper {
         
         switch (permissao) {
             case MOTORISTA:
-                Motorista motorista = motoristaRepository.findByIdAndUsuarioAtivoTrue(id).orElseThrow(() -> new MotoristaExceptions.MotoristaNotFoundException());
+                Motorista motorista = motoristaRepository.findById(id).orElseThrow(() -> new MotoristaExceptions.MotoristaNotFoundException());
                 if (motorista.getVeiculoEmpresaMotoristaAtivos() != null && !motorista.getVeiculoEmpresaMotoristaAtivos().isEmpty()) possuiVeiculos = true;
                 if (veiculosAtivos != null && !veiculosAtivos.isEmpty()) possuiVeiculos = true;
                 break;
             case EMPRESA:
-                Empresa empresa = empresaRepository.findByIdAndUsuarioAtivoTrue(id).orElseThrow(() -> new EmpresaExceptions.EmpresaNotFoundException());
+                Empresa empresa = empresaRepository.findById(id).orElseThrow(() -> new EmpresaExceptions.EmpresaNotFoundException());
                 if (empresa.getVeiculoEmpresaMotoristaAtivos() != null && !empresa.getVeiculoEmpresaMotoristaAtivos().isEmpty()) possuiVeiculos = true;
                 if (veiculosAtivos != null && !veiculosAtivos.isEmpty()) possuiVeiculos = true;
                 break;
