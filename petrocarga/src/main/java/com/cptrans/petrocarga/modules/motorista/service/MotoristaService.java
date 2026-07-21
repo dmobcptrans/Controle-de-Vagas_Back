@@ -167,29 +167,23 @@ public class MotoristaService {
 
     @Transactional
     public Motorista updateMotorista(UserAuthenticated usuarioAutenticado, UUID id, UsuarioPATCHRequestDTO motoristaRequest) {
-        Motorista motoristaCadastrado = findByIdAndAtivo(id, true);
+        Motorista motoristaCadastrado = findByIdAndAtivoTrue(id);
         
-        if(motoristaRequest.getDataValidadeCnh() != null) {
-            if(motoristaRequest.getDataValidadeCnh().isBefore(LocalDate.now())) throw new IllegalArgumentException("Cnh vencida");
+        if (motoristaRequest.getDataValidadeCnh() != null) {
+            if (motoristaRequest.getDataValidadeCnh().isBefore(LocalDate.now())) throw new MotoristaExceptions.CnhVencidaException();
             motoristaCadastrado.setDataValidadeCnh(motoristaRequest.getDataValidadeCnh());
         }
+        
         if (motoristaRequest.getNumeroCnh() != null) {
-            Optional<Motorista> motoristaByCnh = motoristaRepository.findByCnhHash(hashService.hash(motoristaRequest.getNumeroCnh()));
-            if(motoristaByCnh.isPresent() && !motoristaByCnh.get().getId().equals(motoristaCadastrado.getId())){
-                throw new IllegalArgumentException("Número da Cnh já cadastrado");
-            }
-            motoristaCadastrado.setCnhHash(hashService.hash(motoristaRequest.getNumeroCnh()));
-            motoristaCadastrado.setCnhCripto(criptoService.encrypt(motoristaRequest.getNumeroCnh()));
-            motoristaCadastrado.setCnhLast4(UsuarioUtils.gerarLastN(motoristaRequest.getNumeroCnh(), 4));
-        }
-        if (motoristaRequest.getTipoCnh() != null) {
-            motoristaCadastrado.setTipoCnh(motoristaRequest.getTipoCnh());
+            String cnh = motoristaRequest.getNumeroCnh().trim();
+            String cnhHash = hashService.hash(cnh);
+            if (motoristaRepository.existsByCnhHashAndIdNot(cnhHash, id)) throw new MotoristaExceptions.CnhAlreadyExistsException();
+            motoristaCadastrado.setCnhHash(cnhHash);
+            motoristaCadastrado.setCnhCripto(criptoService.encrypt(cnh));
+            motoristaCadastrado.setCnhLast4(UsuarioUtils.gerarLastN(cnh, 4));
         }
 
-        // if (motoristaRequest.getEmpresaId() != null) {
-        //     Empresa empresa = empresaService.findByIdAndAtivoTrue(motoristaRequest.getEmpresaId());
-        //     motoristaCadastrado.setEmpresa(empresa);
-        // }
+        if (motoristaRequest.getTipoCnh() != null) motoristaCadastrado.setTipoCnh(motoristaRequest.getTipoCnh());
 
         Usuario usuarioAtualizado = usuarioService.patchUpdate(id, PermissaoEnum.MOTORISTA, motoristaRequest);
         motoristaCadastrado.setUsuario(usuarioAtualizado);
@@ -204,18 +198,6 @@ public class MotoristaService {
     public void desativarById(UUID id) {
         usuarioService.desativarById(id);
     }
-
-    // private Motorista associarMotoristaEmpresa (String motoristaCpfHash, Empresa empresa) {
-    //     if (motoristaCpfHash == null || motoristaCpfHash.trim().isEmpty()) return null;
-    //     Motorista motorista = motoristaRepository.findByUsuarioCpfHashAndUsuarioAtivoTrue(motoristaCpfHash).orElseThrow(() -> new MotoristaExceptions.MotoristaNotFoundException());
-    //     if (motorista.getEmpresa() != null){
-    //         if (!motorista.getEmpresa().getId().equals(empresa.getId())) throw new MotoristaExceptions.MotoristaJaPossuiEmpresaException();
-    //         return motorista;
-    //     }
-    //     motorista.setEmpresa(empresa);
-    //     return motoristaRepository.save(motorista);
-    // }
-
 
     @Transactional
     public Motorista completarCadastro(Usuario usuario, String numeroCnh, String cpf, LocalDate dataValidadeCnh, TipoCnhEnum tipoCnh){
@@ -277,6 +259,6 @@ public class MotoristaService {
         motorista.setCpfLast5(cpfLast5);
         motorista.setUsuario(usuario);
 
-        return motoristaRepository.save(motorista);
+        return motorista;
     }
 }

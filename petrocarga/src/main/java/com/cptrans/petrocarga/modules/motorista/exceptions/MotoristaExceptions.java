@@ -42,6 +42,12 @@ public class MotoristaExceptions {
         }
     }
 
+    public static class CnhVencidaException extends DataIntegrityViolationException{
+        public CnhVencidaException() {
+            super("CNH vencida.");
+        }
+    }
+
     @ExceptionHandler(CnhAlreadyExistsException.class)
     public ResponseEntity<SystemResponse> handleCnhVencidaException(CnhAlreadyExistsException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(new SystemResponse(ex.getMessage(), 409));
@@ -64,6 +70,11 @@ public class MotoristaExceptions {
 
     @ExceptionHandler(MotoristaCadastradadoInativoException.class)
     public ResponseEntity<SystemResponse> handleMotoristaCadastradadoInativoException(MotoristaCadastradadoInativoException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(new SystemResponse(ex.getMessage(), 409));
+    }
+
+    @ExceptionHandler(CnhVencidaException.class)
+    public ResponseEntity<SystemResponse> handleCnhVencidaException(CnhVencidaException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(new SystemResponse(ex.getMessage(), 409));
     }
 }
