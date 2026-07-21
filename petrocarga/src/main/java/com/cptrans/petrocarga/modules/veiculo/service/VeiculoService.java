@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import com.cptrans.petrocarga.enums.OrdemEnum;
 import com.cptrans.petrocarga.enums.PermissaoEnum;
 import com.cptrans.petrocarga.enums.StatusReservaEnum;
+import com.cptrans.petrocarga.modules.auth.exceptions.AuthExceptions;
 import com.cptrans.petrocarga.modules.cripto.CriptoService;
 import com.cptrans.petrocarga.modules.cripto.HashService;
 import com.cptrans.petrocarga.modules.reserva.repository.ReservaRepository;
@@ -30,10 +31,12 @@ import com.cptrans.petrocarga.modules.veiculo.exceptions.VeiculoExceptions;
 import com.cptrans.petrocarga.modules.veiculo.repository.VeiculoRepository;
 import com.cptrans.petrocarga.modules.veiculo.specification.VeiculoSpecification;
 import com.cptrans.petrocarga.modules.veiculo.utils.VeiculoUtils;
+import com.cptrans.petrocarga.modules.veiculoEmpresaMotorista.repository.VeiculoEmpresaMotoristaRepository;
 import com.cptrans.petrocarga.security.UserAuthenticated;
 import com.cptrans.petrocarga.shared.dto.response.PageResponseDTO;
 import com.cptrans.petrocarga.shared.utils.DateUtils;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -45,6 +48,7 @@ public class VeiculoService {
     private final HashService hashService;
     private final CriptoService criptoService;
     private final VeiculoMapper veiculoMapper;
+    private final VeiculoEmpresaMotoristaRepository veiculoEmpresaMotoristaRepository;
 
     private final Sort SORT_ASC = Sort.by("marca").and(Sort.by("modelo").and(Sort.by("placa"))).ascending();
     private final Sort SORT_DESC = Sort.by("marca").and(Sort.by("modelo").and(Sort.by("placa"))).descending();
@@ -76,113 +80,121 @@ public class VeiculoService {
     }
 
     public Veiculo findById(UUID id) {
-        Veiculo veiculo = veiculoRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Veiculo não encontrado."));
+        Veiculo veiculo = veiculoRepository.findById(id).orElseThrow(() -> new VeiculoExceptions.VeiculoNotFoundException());
         UserAuthenticated usuarioLogado = (UserAuthenticated) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         List<String> authorities = usuarioLogado.userDetails().getAuthorities().stream().map(GrantedAuthority::getAuthority).toList();
-        if(authorities.contains(PermissaoEnum.MOTORISTA.getRole()) || authorities.contains(PermissaoEnum.EMPRESA.getRole())) {
-            if(!veiculo.getUsuario().getId().equals(usuarioLogado.id())) {
-                throw new IllegalArgumentException("Usuário não pode ver os veículos de outro usuário.");   
-            }
+        if (
+            (
+                authorities.contains(PermissaoEnum.MOTORISTA.getRole()) || 
+                authorities.contains(PermissaoEnum.EMPRESA.getRole())
+            ) &&
+            (!veiculo.getUsuario().getId().equals(usuarioLogado.id()))
+        ) {
+            throw new AuthExceptions.UsuarioNaoAutorizadoException();
         }
-        return veiculoRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Veiculo nao encontrado."));
+        return veiculo;
     }
 
+    public Veiculo createVeiculo (VeiculoRequestDTO request, UUID usuarioId) {
 
-    public Veiculo createVeiculo (Veiculo novoVeiculo, UUID usuarioId) {
+        if ((request.getCpfProprietario() != null && request.getCnpjProprietario() != null) || (request.getCpfProprietario() == null && request.getCnpjProprietario() == null)) throw new VeiculoExceptions.ConflitoCpjCnpjProprietarioException();
+
         Usuario usuarioVeiculo = usuarioService.findByIdAndAtivoTrue(usuarioId);
-        String placaFormatada = VeiculoUtils.normalizarEValidar(novoVeiculo.getPlaca());
+
+        String placaFormatada = VeiculoUtils.normalizarEValidar(request.getPlaca());
+
         Optional<Veiculo> veiculoByPlaca = veiculoRepository.findByPlacaAndUsuarioId(placaFormatada, usuarioId);
 
-        UserAuthenticated usuarioLogado = (UserAuthenticated) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        List<String> authorities = usuarioLogado.userDetails().getAuthorities().stream().map(GrantedAuthority::getAuthority).toList();
-        
-        if (!usuarioId.equals(usuarioLogado.id()) && !authorities.contains(PermissaoEnum.ADMIN.getRole())) {
-            throw new IllegalArgumentException("Usuário não pode cadastrar veículos de outro usuário.");
-        }
-
-        //se for encontrado um veículo com a mesma placa, porém desativado, reativa o veiculo
+        //se for encontrado um veículo com a mesma placa e mesmo usuário, porém desativado, reativa o veiculo
         if (veiculoByPlaca.isPresent()){
-            if(!veiculoByPlaca.get().getAtivo()){
+            if (!veiculoByPlaca.get().getAtivo()){
                 veiculoByPlaca.get().setAtivo(true);
                 veiculoByPlaca.get().setDeletadoEm(null);
                 return veiculoRepository.save(veiculoByPlaca.get());
             }
-            throw new IllegalArgumentException("Voce já possui um veículo cadastrado com essa placa.");
+            throw new VeiculoExceptions.VeiculoAlreadyExistsException();
         }
-
-        if (novoVeiculo.getCpfProprietarioHash() != null){
-            String cpfString= novoVeiculo.getCpfProprietarioHash();
-            novoVeiculo.setCpfProprietarioHash(hashService.hash(cpfString));
-            novoVeiculo.setCpfProprietarioCripto(criptoService.encrypt(cpfString));
-            novoVeiculo.setCpfProprietarioLast5(UsuarioUtils.gerarLastN(cpfString, 5));
-        }
+        
+        Veiculo novoVeiculo = new Veiculo();
 
         novoVeiculo.setUsuario(usuarioVeiculo);
+
+        novoVeiculo.setMarca(request.getMarca().trim().toUpperCase());
+        novoVeiculo.setModelo(request.getModelo().trim().toUpperCase());
+        novoVeiculo.setPlaca(placaFormatada);
+        novoVeiculo.setTipo(request.getTipo());
+        
+        novoVeiculo.setCnpjProprietario(request.getCnpjProprietario());
+        
+        if (request.getCpfProprietario() != null){
+            String cpf= request.getCpfProprietario().trim();
+            novoVeiculo.setCpfProprietarioHash(hashService.hash(cpf));
+            novoVeiculo.setCpfProprietarioCripto(criptoService.encrypt(cpf));
+            novoVeiculo.setCpfProprietarioLast5(UsuarioUtils.gerarLastN(cpf, 5));
+        }
+
         return veiculoRepository.save(novoVeiculo);
     }
 
-    public Veiculo updateVeiculo(UUID veiculoId, UUID usuarioId, VeiculoRequestDTO novoVeiculo) {
-        Veiculo veiculoRegistrado = findByIdAtivoAndUsuarioIdAtivo(veiculoId, usuarioId);
+    public Veiculo updateVeiculo(UUID veiculoId, UUID usuarioId, VeiculoRequestDTO request) {
+        Veiculo veiculoRegistrado = findAtivoByIdAndUsuarioIdAtivo(veiculoId, usuarioId);
 
-        if(novoVeiculo.getCpfProprietario() != null && novoVeiculo.getCnpjProprietario() != null) {
-            throw new IllegalArgumentException("Veiculo não pode ter CPF e CNPJ.");
-        }
+        if (request.getCpfProprietario() != null && request.getCnpjProprietario() != null) throw new VeiculoExceptions.ConflitoCpjCnpjProprietarioException();
 
-        if (novoVeiculo.getPlaca() != null){
-            String placaFormatada = VeiculoUtils.normalizarEValidar(novoVeiculo.getPlaca());
-            Optional<Veiculo> veiculoByPlaca = veiculoRepository.findByPlacaAndUsuarioId(placaFormatada, usuarioId);
-            if(veiculoByPlaca.isPresent() && !veiculoByPlaca.get().getId().equals(veiculoRegistrado.getId())) {
-                if(!veiculoByPlaca.get().getAtivo()){
+        if (request.getPlaca() != null){
+            String placaFormatada = VeiculoUtils.normalizarEValidar(request.getPlaca());
+            Optional<Veiculo> veiculoByPlaca = veiculoRepository.findByIdNotAndPlacaAndUsuarioId(veiculoRegistrado.getId(), placaFormatada, usuarioId);
+            if (veiculoByPlaca.isPresent()) {
+                if (!veiculoByPlaca.get().getAtivo()){
                     veiculoByPlaca.get().setAtivo(true);
                     veiculoByPlaca.get().setDeletadoEm(null);    
                     veiculoRepository.save(veiculoByPlaca.get());
                 }
-                throw new IllegalArgumentException("Você já possui um veículo cadastrado com essa placa.");
-            }else{
+                throw new VeiculoExceptions.VeiculoJaCadastradoException();
+            } else {
                 veiculoRegistrado.setPlaca(placaFormatada);
             }
         }
-        if (novoVeiculo.getTipo() != null){
-            veiculoRegistrado.setTipo(novoVeiculo.getTipo());
+
+        if (request.getTipo() != null) veiculoRegistrado.setTipo(request.getTipo());
+        if (request.getMarca() != null) veiculoRegistrado.setMarca(request.getMarca().trim().toUpperCase());
+        if (request.getModelo() != null) veiculoRegistrado.setModelo(request.getModelo().trim().toUpperCase());
+        
+        if (request.getCpfProprietario() != null) {
+            String cpf = request.getCpfProprietario().trim();
+            veiculoRegistrado.setCpfProprietarioHash(hashService.hash(cpf));
+            veiculoRegistrado.setCpfProprietarioCripto(criptoService.encrypt(cpf));
+            veiculoRegistrado.setCpfProprietarioLast5(UsuarioUtils.gerarLastN(cpf, 5));
+            veiculoRegistrado.setCnpjProprietario(null);
         }
-        if (novoVeiculo.getMarca() != null) veiculoRegistrado.setMarca(novoVeiculo.getMarca().trim().toUpperCase());
-        if (novoVeiculo.getModelo() != null) veiculoRegistrado.setModelo(novoVeiculo.getModelo().trim().toUpperCase());
-        if (novoVeiculo.getCpfProprietario() != null) {
-            veiculoRegistrado.setCpfProprietarioHash(hashService.hash(novoVeiculo.getCpfProprietario()));
-            veiculoRegistrado.setCpfProprietarioCripto(criptoService.encrypt(novoVeiculo.getCpfProprietario()));
-            veiculoRegistrado.setCpfProprietarioLast5(UsuarioUtils.gerarLastN(novoVeiculo.getCpfProprietario(), 5));
-            if  ( veiculoRegistrado.getCnpjProprietario() != null ) veiculoRegistrado.setCnpjProprietario(null);
-        }
-        if (novoVeiculo.getCnpjProprietario() != null){
-            veiculoRegistrado.setCnpjProprietario(novoVeiculo.getCnpjProprietario());
-            if(veiculoRegistrado.getCpfProprietarioHash() != null){
-                veiculoRegistrado.setCpfProprietarioHash(null);
-                veiculoRegistrado.setCpfProprietarioCripto(null);
-                veiculoRegistrado.setCpfProprietarioLast5(null);
-            }
+
+        if (request.getCnpjProprietario() != null){
+            veiculoRegistrado.setCnpjProprietario(request.getCnpjProprietario().trim());
+            veiculoRegistrado.setCpfProprietarioHash(null);
+            veiculoRegistrado.setCpfProprietarioCripto(null);
+            veiculoRegistrado.setCpfProprietarioLast5(null);
         }
      
         return veiculoRepository.save(veiculoRegistrado);
     }
 
+    @Transactional
     public void deleteById(UUID id) {
-        Veiculo veiculo = veiculoRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Veiculo nao encontrado."));
-        UserAuthenticated usuarioLogado = (UserAuthenticated) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        List<String> authorities = usuarioLogado.userDetails().getAuthorities().stream().map(GrantedAuthority::getAuthority).toList();
-        if(authorities.contains(PermissaoEnum.MOTORISTA.getRole()) || authorities.contains(PermissaoEnum.EMPRESA.getRole())) {
-            if(!veiculo.getUsuario().getId().equals(usuarioLogado.id())) {
-                throw new IllegalArgumentException("Usuário nao pode deletar veiculo de outro usuário.");
-            }
-        }
+        Veiculo veiculo = findById(id);
+        
         if (reservaRepository.existsByVeiculoIdAndStatusIn(veiculo.getId(), List.of(StatusReservaEnum.RESERVADA, StatusReservaEnum.ATIVA))) {
-            throw new IllegalArgumentException("Veículo não pode ser deletado pois possui reservas ativas ou reservadas.");
+            throw new VeiculoExceptions.VeiculoNaoPodeSerDesativadoException();
         }
+
+        veiculoEmpresaMotoristaRepository.deleteAllByVeiculoId(id);
+
         veiculo.setAtivo(false);
         veiculo.setDeletadoEm(DateUtils.agora());
         veiculoRepository.save(veiculo);
+        
     }
 
-    private Veiculo findByIdAtivoAndUsuarioIdAtivo(UUID id, UUID usuarioId) {
+    private Veiculo findAtivoByIdAndUsuarioIdAtivo(UUID id, UUID usuarioId) {
         return veiculoRepository.findByIdAndAtivoTrueAndUsuarioIdAndUsuarioAtivoTrue(id, usuarioId).orElseThrow(() -> new VeiculoExceptions.VeiculoNotFoundException());
     }
 }

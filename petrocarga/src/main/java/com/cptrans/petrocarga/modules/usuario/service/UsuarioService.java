@@ -25,6 +25,7 @@ import com.cptrans.petrocarga.modules.agente.entity.Agente;
 import com.cptrans.petrocarga.modules.agente.repository.AgenteRepository;
 import com.cptrans.petrocarga.modules.auth.dto.request.AccountActivationRequest;
 import com.cptrans.petrocarga.modules.auth.dto.request.CompletarCadastroDTO;
+import com.cptrans.petrocarga.modules.auth.exceptions.AuthExceptions;
 import com.cptrans.petrocarga.modules.cripto.CriptoService;
 import com.cptrans.petrocarga.modules.cripto.HashService;
 import com.cptrans.petrocarga.modules.empresa.entity.Empresa;
@@ -218,9 +219,9 @@ public class UsuarioService {
 
 
     public Usuario patchUpdate(UUID id, PermissaoEnum permissao, UsuarioPATCHRequestDTO patchRequestDTO) {
-        Usuario usuarioExistente = findByIdAndAtivo(id, true);
+        Usuario usuarioExistente = findByIdAndAtivoTrue(id);
 
-        if (!usuarioExistente.getPermissao().equals(permissao)) throw new IllegalArgumentException("Permissão inválida para o usuário.");
+        if (!usuarioExistente.getPermissao().equals(permissao)) throw new AuthExceptions.UsuarioNaoAutorizadoException();
 
         if (patchRequestDTO.getNome() != null) usuarioExistente.setNome(StringUtils.formatarNome(patchRequestDTO.getNome().trim()));
         
