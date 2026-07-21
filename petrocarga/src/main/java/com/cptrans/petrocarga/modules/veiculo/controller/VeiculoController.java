@@ -18,7 +18,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.cptrans.petrocarga.config.swagger.response.DefaultResponses;
+import com.cptrans.petrocarga.config.swagger.response.DeleteResponses;
 import com.cptrans.petrocarga.config.swagger.response.GetResponses;
+import com.cptrans.petrocarga.config.swagger.response.PatchResponses;
 import com.cptrans.petrocarga.config.swagger.response.PostResponses;
 import com.cptrans.petrocarga.enums.OrdemEnum;
 import com.cptrans.petrocarga.enums.TipoVeiculoEnum;
@@ -130,7 +132,7 @@ public class VeiculoController {
             @Parameter(description = "Informações do veículo")
             @Valid @RequestBody VeiculoRequestDTO veiculoRequestDTO
         ) {
-        Veiculo novoVeiculo = veiculoService.createVeiculo(veiculoRequestDTO.toEntity(), usuarioId);
+        Veiculo novoVeiculo = veiculoService.createVeiculo(veiculoRequestDTO, usuarioId);
         return ResponseEntity.status(HttpStatus.CREATED).body(veiculoMapper.toResponse(novoVeiculo));
     }
 
@@ -151,27 +153,34 @@ public class VeiculoController {
         return ResponseEntity.ok(veiculoMapper.toResponse(veiculo));
     }
 
-    /**
-     * Atualiza um veículo com base no id do veículo passado como parâmetro e no id do usuário que está fazendo a requisição.
-     * Só permite que os veículos sejam atualizados pelo próprio dono (Motorista ou Empresa) ou por um usuário autenticado com permissão de ADMIN ou GESTOR.
-     * @param id o id do veículo para atualizar
-     * @param usuarioId o id do usuário que está fazendo a requisição
-     * @param veiculoRequestDTO os dados do veículo a ser atualizado
-     * @return o veículo atualizado com status ok
-     */
+    @Operation(
+        summary = "Atualizar veículo",
+        description = "Atualiza um veículo com base no id do veículo e no id do usuário associado ao veículo"
+    )
+    @PatchResponses
+    @DefaultResponses
     @PreAuthorize("#usuarioId == authentication.principal.id or hasAnyRole('ADMIN', 'GESTOR')")
     @PatchMapping("/{id}/{usuarioId}")
-    public ResponseEntity<VeiculoResponseDTO> updateVeiculo(@PathVariable UUID id, @PathVariable UUID usuarioId, @RequestBody @Valid VeiculoRequestDTO veiculoRequestDTO) {
+    public ResponseEntity<VeiculoResponseDTO> updateVeiculo(
+        @Parameter(description = "ID do veículo")
+        @PathVariable UUID id, 
+        
+        @Parameter(description = "ID do usuário associado ao veículo")
+        @PathVariable UUID usuarioId, 
+        
+        @Parameter(description = "Informações atualizadas do veículo")
+        @RequestBody @Valid VeiculoRequestDTO veiculoRequestDTO
+    ) {
         Veiculo veiculo = veiculoService.updateVeiculo(id, usuarioId, veiculoRequestDTO);
         return ResponseEntity.ok(veiculoMapper.toResponse(veiculo));
     }
 
-    /**
-     * Deleta um veículo com base no id do veículo passado como parâmetro.
-     * Só permite que os veículos sejam deletados pelo próprio dono (Motorista ou Empresa) ou por um usuário autenticado com permissão de ADMIN ou GESTOR.
-     * @param id o id do veículo para deletar
-     * @return uma resposta sem conteúdo com status NO_CONTENT
-     */
+    @Operation(
+        summary = "Desativar veículo",
+        description = "Desativa um veículo com base no id do veículo"
+    )
+    @DeleteResponses
+    @DefaultResponses
     @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR','MOTORISTA', 'EMPRESA')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteVeiculo(@PathVariable UUID id) {

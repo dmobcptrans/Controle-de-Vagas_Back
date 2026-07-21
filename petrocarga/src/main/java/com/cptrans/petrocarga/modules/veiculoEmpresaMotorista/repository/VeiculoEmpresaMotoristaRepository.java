@@ -31,6 +31,14 @@ public interface VeiculoEmpresaMotoristaRepository extends JpaRepository<Veiculo
     @Query("DELETE FROM VeiculoEmpresaMotorista vem WHERE vem.motorista.id = :motoristaId")
     public void deleteAllByMotoristaId(UUID motoristaId);
 
+    @Modifying
+    @Query("DELETE FROM VeiculoEmpresaMotorista vem WHERE vem.veiculo.id = :veiculoId")
+    public void deleteAllByVeiculoId(UUID veiculoId);
+
+    @Modifying
+    @Query("DELETE FROM VeiculoEmpresaMotorista vem WHERE vem.empresa.id = :empresaId")
+    public void deleteAllByEmpresaId(UUID empresaId);
+
     @Query("SELECT vem.veiculo FROM VeiculoEmpresaMotorista vem WHERE vem.empresa.id = :empresaId AND vem.motorista.id = :motoristaId")
     public Page<Veiculo> findVeiculoByEmpresaIdAndMotoristaId(UUID empresaId, UUID motoristaId, Pageable pageable, Specification<VeiculoEmpresaMotorista> specification);
 

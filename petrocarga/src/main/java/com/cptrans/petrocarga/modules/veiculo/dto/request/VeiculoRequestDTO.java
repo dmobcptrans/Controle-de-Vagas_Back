@@ -4,7 +4,6 @@ import org.hibernate.validator.constraints.br.CNPJ;
 import org.hibernate.validator.constraints.br.CPF;
 
 import com.cptrans.petrocarga.enums.TipoVeiculoEnum;
-import com.cptrans.petrocarga.modules.veiculo.entity.Veiculo;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -35,17 +34,6 @@ public class VeiculoRequestDTO {
     @CNPJ(message = "CNPJ inválido.")
     @Size(min = 14, max = 14, message = "CNPJ deve conter exatamente 14 dígitos (apenas números).")
     private String cnpjProprietario;
-
-    public Veiculo toEntity() {
-        Veiculo veiculo = new Veiculo();
-        veiculo.setPlaca(this.placa.trim().toUpperCase());
-        veiculo.setMarca(this.marca.trim().toUpperCase());
-        veiculo.setModelo(this.modelo.trim().toUpperCase());
-        veiculo.setTipo(this.tipo);
-        veiculo.setCpfProprietarioHash(this.cpfProprietario);
-        veiculo.setCnpjProprietario(this.cnpjProprietario);
-        return veiculo;
-    }
 
     // Getters
     public String getPlaca() {
