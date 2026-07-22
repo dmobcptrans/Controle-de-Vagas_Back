@@ -435,7 +435,7 @@ public class UsuarioService {
         novoUsuario.setTelefoneCripto(telefoneCripto);
         novoUsuario.setTelefoneLast4(telefoneLast4);
         novoUsuario.setPersonalDataKeyVersion(criptoService.getActiveKeyVersion());
-        novoUsuario.setSenha(passwordEncoder.encode(senha != null ? senha : null));
+        novoUsuario.setSenha(senha != null ? passwordEncoder.encode(senha) : null);
         novoUsuario.setAtivo(false);
         novoUsuario.setVerificationCode(gerarCodigoAleatorio());
         novoUsuario.setVerificationCodeExpiresAt(LocalDateTime.now().plusMinutes(10));
