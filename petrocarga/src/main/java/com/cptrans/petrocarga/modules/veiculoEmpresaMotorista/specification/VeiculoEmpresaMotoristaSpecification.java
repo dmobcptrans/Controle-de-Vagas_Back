@@ -51,7 +51,7 @@ public class VeiculoEmpresaMotoristaSpecification {
             }
 
             if (filtros.getEmpresaRazaoSocial() != null) {
-                predicates.add(cb.like(Utils.createUnaccentExpression(cb, cb.upper(root.get("empresa").get("usuario").get("nome"))), "%" + StringUtils.normalize(filtros.getEmpresaRazaoSocial().trim().toUpperCase()) + "%"));
+                predicates.add(cb.like(Utils.createUnaccentExpression(cb, cb.upper(root.get("empresa").get("usuario").get("nome"))), "%" + StringUtils.removerAcentos(filtros.getEmpresaRazaoSocial().trim().toUpperCase()) + "%"));
             }
 
             if (filtros.getMotoristaId() != null) {
@@ -59,7 +59,7 @@ public class VeiculoEmpresaMotoristaSpecification {
             }
 
             if (filtros.getMotoristaNome() != null) {
-                predicates.add(cb.like(Utils.createUnaccentExpression(cb, cb.upper(root.get("motorista").get("usuario").get("nome"))), "%" + StringUtils.normalize(filtros.getMotoristaNome().trim().toUpperCase()) + "%"));
+                predicates.add(cb.like(Utils.createUnaccentExpression(cb, cb.upper(root.get("motorista").get("usuario").get("nome"))), "%" + StringUtils.removerAcentos(filtros.getMotoristaNome().trim().toUpperCase()) + "%"));
             }
 
             if (filtros.getMotoristaCpf() != null) {
