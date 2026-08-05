@@ -7,7 +7,6 @@ import java.util.UUID;
 
 import javax.crypto.SecretKey;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -17,8 +16,10 @@ import com.cptrans.petrocarga.modules.usuario.entity.Usuario;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import lombok.RequiredArgsConstructor;
 
 @Service
+@RequiredArgsConstructor
 public class JwtService {
 
     @Value("${jwt.secret}")
@@ -27,8 +28,8 @@ public class JwtService {
     @Value("${jwt.expiration}")
     private Long expirationMs;
 
-    @Autowired
-    private CriptoService criptoService;
+    private final CriptoService criptoService;
+    
     /**
      * Retorna a chave secreta a ser usada para assinar os tokens JWT.
      * A chave é gerada a partir do segredo armazenado no arquivo application.yml.
@@ -53,8 +54,10 @@ public class JwtService {
         Map<String, Object> claims = new HashMap<>();
         claims.put("id", usuario.getId().toString());
         claims.put("nome", usuario.getNome());
-        claims.put("email", criptoService.decrypt(usuario.getEmailCripto(), usuario.getPersonalDataKeyVersion()));
+        claims.put("email", criptoService.decrypt(usuario.getEmailCripto(), usuario.getCriptoVersion()));
         claims.put("permissao", usuario.getPermissao().name());
+        claims.put("criptoVersion", usuario.getCriptoVersion());
+        claims.put("hashVersion", usuario.getHashVersion());
 
         Date agora = new Date();
         Date expiracao = new Date(agora.getTime() + expirationMs);
@@ -125,5 +128,13 @@ public class JwtService {
     */
     public String getNomeDoToken(String token) {
         return getClaims(token).get("nome").toString();
+    }
+
+    public Integer getCriptoVersionDoToken(String token) {
+        return (Integer) getClaims(token).get("criptoVersion");
+    }
+
+    public Integer getHashVersionDoToken(String token) {
+        return (Integer) getClaims(token).get("hashVersion");
     }
 }
