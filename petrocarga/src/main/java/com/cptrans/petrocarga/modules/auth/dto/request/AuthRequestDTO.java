@@ -3,10 +3,8 @@ package com.cptrans.petrocarga.modules.auth.dto.request;
 import org.hibernate.validator.constraints.br.CNPJ;
 import org.hibernate.validator.constraints.br.CPF;
 
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -17,21 +15,16 @@ import lombok.NoArgsConstructor;
 @Getter
 public class AuthRequestDTO {
     
-    @Valid
     @Email(message = "Informe um email válido.")
     public String email;
 
-    @Valid
     @CPF(message = "Informe um CPF válido.")
     public String cpf;
 
-    @Valid
     @CNPJ(message = "Informe um CNPJ válido.")
     public String cnpj;
 
-    @Valid
     @NotNull(message = "O campo 'senha' é obrigatório.")
-    @Size(min = 6, max = 100, message = "Senha deve conter no mínimo 6 caracteres.")
     public String senha;
 
 }

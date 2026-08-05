@@ -43,8 +43,29 @@ public class AuthUtils {
         }
     }
 
+    public static UUID getIdUsuarioAutenticado(){
+        return getUsuarioAutenticado().id();
+    }
+
     public static List<String> getRoles(UserAuthenticated userAuthenticated) {
         if (userAuthenticated == null) throw new AuthExceptions.UsuarioNaoAutenticadoException();
         return userAuthenticated.userDetails().getAuthorities().stream().map(GrantedAuthority::getAuthority).toList();
+    }
+
+    public static Boolean containsAuthority(List<String> authorities) {
+        UserAuthenticated userAuthenticated = getUsuarioAutenticado();
+        if (userAuthenticated == null) return false;
+        List<String> userAuthorities = getRoles(userAuthenticated);
+        if (userAuthorities.stream().anyMatch(authorities::contains)) return true;
+        return false;
+    }
+
+
+    public static Boolean containsId(List<UUID> idsToCompare) {
+        UserAuthenticated userAuthenticated = getUsuarioAutenticado();
+        if (userAuthenticated == null) return false;
+        UUID userId = userAuthenticated.id();
+        if (idsToCompare.stream().anyMatch(userId::equals)) return true;
+        return false;
     }
 }

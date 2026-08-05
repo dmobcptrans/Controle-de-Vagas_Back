@@ -29,6 +29,12 @@ public class AuthExceptions {
         }
     }
 
+    public static class GoogleTokenInvalidoException extends AuthenticationException {
+        public GoogleTokenInvalidoException() {
+        super("Google token inválido.");
+        }
+    }
+
     @ExceptionHandler(UsuarioNaoAutenticadoException.class)
     public ResponseEntity<SystemResponse> handleUsuarioNaoAutenticadoException(UsuarioNaoAutenticadoException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new SystemResponse(ex.getMessage(), 401));
@@ -41,6 +47,11 @@ public class AuthExceptions {
 
     @ExceptionHandler(CredenciaisInvalidasException.class)
     public ResponseEntity<SystemResponse> handleCredenciaisInvalidasException(CredenciaisInvalidasException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new SystemResponse(ex.getMessage(), 401));
+    }
+
+    @ExceptionHandler(GoogleTokenInvalidoException.class)
+    public ResponseEntity<SystemResponse> handleGoogleTokenInvalidoException(GoogleTokenInvalidoException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new SystemResponse(ex.getMessage(), 401));
     }
 }

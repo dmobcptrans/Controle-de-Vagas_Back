@@ -38,12 +38,15 @@ import com.cptrans.petrocarga.security.UserAuthenticated;
 import com.cptrans.petrocarga.shared.dto.response.SystemResponse;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 
 @RestController
+@Tag(name = "Auth", description = "Endpoints para gerenciamento de autenticação")
 @RequestMapping("/auth")
 @RequiredArgsConstructor
 public class AuthController {
@@ -67,9 +70,12 @@ public class AuthController {
     @PostResponses
     @PostMapping("/login")
     public ResponseEntity<UsuarioResponseDTO> login(
-            @RequestBody @Valid AuthRequestDTO request,
-            HttpServletResponse response
-        ) {
+        @Parameter(description = "Dados de autenticação")
+        @Valid @RequestBody AuthRequestDTO request,
+
+        @Parameter(description = "Objeto de resposta HTTP para adicionar cookies")
+        HttpServletResponse response
+    ) {
         AuthResponseDTO auth = authService.login(request);
         ResponseCookie cookie = ResponseCookie.from("auth-token", auth.getToken())
             .httpOnly(true)
@@ -91,7 +97,13 @@ public class AuthController {
     )
     @PostResponses
     @PostMapping("/loginWithGoogle")
-    public ResponseEntity<UsuarioResponseDTO> loginWithGoogle(@RequestBody(required = true) @Valid GoogleAuthRequestDTO googleRequest, HttpServletResponse response) {
+    public ResponseEntity<UsuarioResponseDTO> loginWithGoogle(
+        @Parameter(description = "Dados de autenticação com Google")
+        @Valid @RequestBody GoogleAuthRequestDTO googleRequest, 
+        
+        @Parameter(description = "Objeto de resposta HTTP para adicionar cookies")
+        HttpServletResponse response
+    ) {
         AuthResponseDTO auth = authService.loginWithGoogle(googleRequest.token());
         ResponseCookie cookie = ResponseCookie.from("auth-token", auth.getToken())
             .httpOnly(true)
@@ -114,9 +126,15 @@ public class AuthController {
     @PostResponses
     @DefaultResponses
     @PostMapping("/completarCadastro")
-    public ResponseEntity<UsuarioResponseDTO> completarCadastro(@AuthenticationPrincipal UserAuthenticated userAuthenticated, @Valid @RequestBody CompletarCadastroDTO request) {
+    public ResponseEntity<UsuarioResponseDTO> completarCadastro(
+        @Parameter(description = "Objeto de autenticação do usuário")
+        @AuthenticationPrincipal UserAuthenticated userAuthenticated,
+        
+        @Parameter(description = "Dados para completar o cadastro")
+        @Valid @RequestBody CompletarCadastroDTO request
+    ) {
         Usuario usuarioCompleto = authService.completarCadastro(request, userAuthenticated.id());
-        String cpfOrCnpj = usuarioUtils.getCpfOrCnpjByPermissao(usuarioCompleto.getPermissao(), usuarioCompleto.getId());
+        String cpfOrCnpj = usuarioUtils.getCpfOrCnpjByPermissaoAndId(usuarioCompleto.getPermissao(), usuarioCompleto.getId());
         UsuarioResponseDTO response = usuarioMapper.toResponse(usuarioCompleto, cpfOrCnpj);
         return ResponseEntity.ok(response);
     }
@@ -130,9 +148,12 @@ public class AuthController {
     @DefaultResponses
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/admin")
-    public ResponseEntity<UsuarioResponseDTO> createAdmin(@RequestBody @Valid UsuarioRequestDTO request) {
+    public ResponseEntity<UsuarioResponseDTO> createAdmin(
+        @Parameter(description = "Dados do novo administrador")
+        @Valid @RequestBody UsuarioRequestDTO request
+    ) {
         Usuario novoUsuario = usuarioService.createUsuario(request, null, PermissaoEnum.ADMIN);
-        String cpfOrCnpj = usuarioUtils.getCpfOrCnpjByPermissao(novoUsuario.getPermissao(), novoUsuario.getId());
+        String cpfOrCnpj = usuarioUtils.getCpfOrCnpjByPermissaoAndId(novoUsuario.getPermissao(), novoUsuario.getId());
         return ResponseEntity.ok(usuarioMapper.toResponse(novoUsuario, cpfOrCnpj));
     }
 
@@ -144,10 +165,14 @@ public class AuthController {
     @GetResponses
     @DefaultResponses
     @GetMapping("/me")
-    public ResponseEntity<UsuarioResponseDTO> getMe(@AuthenticationPrincipal UserAuthenticated userAuthenticated) {
+    public ResponseEntity<UsuarioResponseDTO> getMe(
+        @Parameter(description = "Objeto de autenticação do usuário")
+        @AuthenticationPrincipal UserAuthenticated userAuthenticated
+    ) {
         UUID usuarioIdFromToken = userAuthenticated.id();
         Usuario usuarioLogado = usuarioService.findByIdAndAtivo(usuarioIdFromToken, true);
-        String cpfOrCnpj = usuarioUtils.getCpfOrCnpjByPermissao(usuarioLogado.getPermissao(), usuarioIdFromToken);
+        usuarioService.atualizarCriptografiaDosDadosSeNecessario(usuarioLogado);
+        String cpfOrCnpj = usuarioUtils.getCpfOrCnpjByPermissaoAndId(usuarioLogado.getPermissao(), usuarioIdFromToken);
         UsuarioResponseDTO response = usuarioMapper.toResponse(usuarioLogado, cpfOrCnpj);
         return ResponseEntity.ok(response);
     }
@@ -159,7 +184,10 @@ public class AuthController {
     )
     @PreAuthorize("isAuthenticated()")
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout(HttpServletResponse response) {
+    public ResponseEntity<Void> logout(
+        @Parameter(description = "Resposta HTTP")
+        HttpServletResponse response
+    ) {
         ResponseCookie cookie = ResponseCookie.from("auth-token", "")
                 .httpOnly(true)
                 .secure(secure)
@@ -179,7 +207,10 @@ public class AuthController {
     )
     @PostResponses
     @PostMapping("/activate")
-    public ResponseEntity<SystemResponse> activateAccount(@RequestBody @Valid AccountActivationRequest request) {
+    public ResponseEntity<SystemResponse> activateAccount(
+        @Parameter(description = "Dados para ativação da conta")
+        @Valid @RequestBody AccountActivationRequest request
+    ) {
         usuarioService.activateAccount(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(new SystemResponse(
             "Conta ativada com sucesso!",
@@ -194,7 +225,10 @@ public class AuthController {
     )
     @PostResponses
     @PostMapping("/resend-code")
-    public ResponseEntity<SystemResponse> resendCode(@RequestBody @Valid ResendCodeRequest request) {
+    public ResponseEntity<SystemResponse> resendCode(
+        @Parameter(description = "Dados para reenvio do código")
+        @Valid @RequestBody ResendCodeRequest request
+    ) {
         usuarioService.resendActivationCode(request.email(), request.cpf(), request.cnpj());
         return ResponseEntity.ok(new SystemResponse(
             "Se o email, CPF ou CNPJ estiver cadastrado, você receberá um novo código de recuperação. Verifique sua caixa de entrada e spam.",
@@ -210,7 +244,10 @@ public class AuthController {
     )
     @PostResponses
     @PostMapping("/forgot-password")
-    public ResponseEntity<SystemResponse> forgotPassword(@RequestBody @Valid ForgotPasswordRequest request) {
+    public ResponseEntity<SystemResponse> forgotPassword(
+        @Parameter(description = "Dados para envio do código de recuperação")
+        @Valid @RequestBody ForgotPasswordRequest request
+    ) {
         usuarioService.forgotPassword(request.email(), request.cpf(), request.cnpj());
         return ResponseEntity.ok(new SystemResponse(
             "Se o email, CPF ou CNPJ estiver cadastrado, você receberá um código de recuperação. Verifique sua caixa de entrada e spam.",
@@ -225,7 +262,10 @@ public class AuthController {
     )
     @PostResponses
     @PostMapping("/reset-password")
-    public ResponseEntity<SystemResponse> resetPassword(@RequestBody @Valid ResetPasswordRequest request) {
+    public ResponseEntity<SystemResponse> resetPassword(
+        @Parameter(description = "Dados para redefinição de senha")
+        @Valid @RequestBody ResetPasswordRequest request
+    ) {
         usuarioService.resetPassword(request.email(), request.cpf(), request.cnpj(), request.codigo(), request.novaSenha());
         return ResponseEntity.ok(new SystemResponse(
             "Senha alterada com sucesso! Você já pode fazer login com a nova senha.",
