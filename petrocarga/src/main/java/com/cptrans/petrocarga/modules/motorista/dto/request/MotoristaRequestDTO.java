@@ -11,7 +11,7 @@ import com.cptrans.petrocarga.modules.usuario.dto.request.UsuarioRequestDTO;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.Pattern;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -31,7 +31,10 @@ public class MotoristaRequestDTO {
     private TipoCnhEnum tipoCnh;
 
     @NotNull(message = "O campo 'numeroCnh' é obrigatório.")
-    @Size(min = 9, max = 11, message = "Número da CNH deve ter entre 9 e 11 caracteres.")
+    @Pattern(
+        regexp = "^\\d{9,11}$",
+        message = "Número da CNH deve conter apenas números e ter entre 9 e 11 dígitos"
+    )
     private String numeroCnh;
 
     @NotNull(message = "O campo 'dataValidadeCnh' é obrigatório.")

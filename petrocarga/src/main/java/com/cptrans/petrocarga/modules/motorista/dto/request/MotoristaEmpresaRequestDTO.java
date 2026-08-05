@@ -9,6 +9,7 @@ import com.cptrans.petrocarga.enums.TipoCnhEnum;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -22,7 +23,10 @@ public class MotoristaEmpresaRequestDTO {
     private String nome;
 
     @NotNull(message="O campo 'telefone' é obrigatório.")
-    @Size(min = 10, max = 11, message = "Telefone deve conter entre 10 e 11 caracteres.")
+    @Pattern(
+        regexp = "^\\d{10,11}$",
+        message = "O telefone deve conter apenas números e ter entre 10 e 11 dígitos"
+    )
     private String telefone;
 
     @NotNull(message="O campo 'email' é obrigatório.")
@@ -34,7 +38,10 @@ public class MotoristaEmpresaRequestDTO {
     private String cpf;
 
     @NotNull(message="O campo 'numeroCnh' é obrigatório.")
-    @Size(min = 9, max = 11, message = "Número da CNH deve ter entre 9 e 11 caracteres.")
+    @Pattern(
+        regexp = "^\\d{9,11}$",
+        message = "Número da CNH deve conter apenas números e ter entre 9 e 11 dígitos"
+    )
     private String numeroCnh;
 
     @NotNull(message="O campo 'tipoCnh' é obrigatório.")
