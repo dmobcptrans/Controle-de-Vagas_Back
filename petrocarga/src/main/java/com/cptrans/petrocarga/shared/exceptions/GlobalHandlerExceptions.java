@@ -32,6 +32,23 @@ public class GlobalHandlerExceptions {
         }
     }
 
+    public static class GoogleIdNaoConfiguradoException extends InternalError{
+        public GoogleIdNaoConfiguradoException() {
+            super("Google ID não está configurado");
+        }
+    }
+
+    public static class MuitasConexoesSimultaneasException extends InternalError{
+        public MuitasConexoesSimultaneasException() {
+            super("Muitas conexões simultaneas");
+        }
+    }
+
+    public static class ServidorSobrecarregadoException extends InternalError{
+        public ServidorSobrecarregadoException() {
+            super("Servidor sobrecarregado");
+        }
+    }
 
     /**
     * Trata ClientAbortException, que ocorre quando o cliente desconecta durante uma requisição, especialmente em conexões SSE (Server-Sent Events).
@@ -166,11 +183,11 @@ public class GlobalHandlerExceptions {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new SystemResponse(causeMessage != null ? causeMessage : ex.getMessage(), 400));
     }
 
-/**
- * Trata BadCredentialsException (401) - quando as credenciais fornecidas são inválidas.
- * Exibe uma mensagem de erro com a causa mais detalhada.
- * @return Resposta com status 401 e um mapa contendo a mensagem de erro e causa
- */
+    /**
+     * Trata BadCredentialsException (401) - quando as credenciais fornecidas são inválidas.
+     * Exibe uma mensagem de erro com a causa mais detalhada.
+     * @return Resposta com status 401 e um mapa contendo a mensagem de erro e causa
+     */
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<SystemResponse> handleBadCredentials(BadCredentialsException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new SystemResponse("Credenciais inválidas.", 401));
@@ -204,5 +221,20 @@ public class GlobalHandlerExceptions {
     @ExceptionHandler(DadosInvalidosException.class)
     public ResponseEntity<SystemResponse> handleDadosInvalidos(DadosInvalidosException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new SystemResponse(ex.getMessage(), 400));
+    }
+
+    @ExceptionHandler(GoogleIdNaoConfiguradoException.class)
+    public ResponseEntity<SystemResponse> handleGoogleIdNaoConfigurado(GoogleIdNaoConfiguradoException ex) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new SystemResponse(ex.getMessage(), 500));
+    }
+
+    @ExceptionHandler(MuitasConexoesSimultaneasException.class)
+    public ResponseEntity<SystemResponse> handleMuitasConexoesSimultaneas(MuitasConexoesSimultaneasException ex) {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(new SystemResponse(ex.getMessage(), 429));
+    }
+
+    @ExceptionHandler(ServidorSobrecarregadoException.class)
+    public ResponseEntity<SystemResponse> handleServidorSobrecarregado(ServidorSobrecarregadoException ex) {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(new SystemResponse(ex.getMessage(), 429));
     }
 }

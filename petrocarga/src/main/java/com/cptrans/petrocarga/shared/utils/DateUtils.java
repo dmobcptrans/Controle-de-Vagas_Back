@@ -24,14 +24,25 @@ public class DateUtils {
         return data.atZoneSameInstant(ZoneOffset.of(FUSO_BRASILIA.toString())).toLocalDate();
     }
 
-    public static void validarMesEAno(Integer mes, Integer ano) {
-        if(mes != null && (mes < 1 || mes > 12)) {
-            throw new DateExceptions.MesInvalidoException();
-        }
+    public static void validarFiltroDeMesEAno(Integer mes, Integer ano) {
+        if ((ano != null || mes != null) && (ano == null || mes == null)) throw new DateExceptions.MesOuAnoNullException();
 
-        if (ano != null && (ano < 2026 || ano > 2100)) {
-            throw new DateExceptions.AnoInvalidoException();
-        }
+        if (mes < 1 || mes > 12) throw new DateExceptions.MesInvalidoException();
+
+        if (ano < 2026 || ano > 2100) throw new DateExceptions.AnoInvalidoException();
+    }
+
+    public static void validarFiltrosData(LocalDate data, Integer mes, Integer ano) {
+        boolean nenhumFiltroInformado = data == null && mes == null && ano == null;
+
+        if (nenhumFiltroInformado) return;
+
+        boolean informouData = data != null;
+        boolean informouMesOuAno = mes != null || ano != null;
+
+        if ((informouData && informouMesOuAno)) throw new DateExceptions.FiltroDataInvalidoException();
+        
+        if (informouMesOuAno) validarFiltroDeMesEAno(mes, ano);
     }
 
     public static OffsetDateTime fusoHorarioBrasilia(OffsetDateTime data) {
