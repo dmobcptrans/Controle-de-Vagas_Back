@@ -1,173 +1,130 @@
 package com.cptrans.petrocarga.modules.vaga.service;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 
-import com.cptrans.petrocarga.enums.DiaSemanaEnum;
+import com.cptrans.petrocarga.enums.OrdemEnum;
 import com.cptrans.petrocarga.enums.StatusVagaEnum;
 import com.cptrans.petrocarga.enums.TipoVagaEnum;
 import com.cptrans.petrocarga.modules.enderecoVaga.entity.EnderecoVaga;
 import com.cptrans.petrocarga.modules.enderecoVaga.service.EnderecoVagaService;
-import com.cptrans.petrocarga.modules.operacaoVaga.entity.OperacaoVaga;
 import com.cptrans.petrocarga.modules.operacaoVaga.service.OperacaoVagaService;
+import com.cptrans.petrocarga.modules.vaga.dto.mapper.VagaMapper;
+import com.cptrans.petrocarga.modules.vaga.dto.request.VagaFiltrosRequestDTO;
+import com.cptrans.petrocarga.modules.vaga.dto.request.VagaPatchDTO;
+import com.cptrans.petrocarga.modules.vaga.dto.request.VagaRequestDTO;
+import com.cptrans.petrocarga.modules.vaga.dto.response.VagaResponseDTO;
 import com.cptrans.petrocarga.modules.vaga.entity.Vaga;
 import com.cptrans.petrocarga.modules.vaga.exceptions.VagaExceptions;
 import com.cptrans.petrocarga.modules.vaga.repository.VagaRepository;
+import com.cptrans.petrocarga.modules.vaga.specification.VagaSpecification;
+import com.cptrans.petrocarga.shared.dto.response.PageResponseDTO;
+import com.cptrans.petrocarga.shared.utils.DateUtils;
 
-import jakarta.transaction.Transactional; 
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor; 
 
 @Service
+@RequiredArgsConstructor
 public class VagaService {
-    @Autowired
-    private VagaRepository vagaRepository;
-    @Autowired
-    private EnderecoVagaService enderecoVagaService;
-    @Autowired
-    private OperacaoVagaService operacaoVagaService;
+    private final VagaRepository vagaRepository;
+    private final EnderecoVagaService enderecoVagaService;
+    private final OperacaoVagaService operacaoVagaService;
+    private final VagaMapper vagaMapper;
 
-    public Vaga save(Vaga vaga) {
-        return vagaRepository.save(vaga);
-    }
+    private final Sort SORT_ASC = Sort.by("endereco.logradouro").ascending();
+    private final Sort SORT_DESC = Sort.by("endereco.logradouro").descending();
 
     public List<Vaga> findAll() {
         return vagaRepository.findAll();
     }
 
     public List<Vaga> findAllByStatus(StatusVagaEnum status) {
+        if (status != null && status.equals(StatusVagaEnum.DISPONIVEL)){
+            return vagaRepository.buscarDisponiveis();
+        }
         return vagaRepository.findByStatus(status);
     }
     
-    public Page<Vaga> findAllPaginadas(Integer numeroPagina, Integer tamanhoPagina, String ordenarPor, StatusVagaEnum status, String logradouro) {
-        Pageable pageable = PageRequest.of(numeroPagina, tamanhoPagina, Sort.by(ordenarPor).ascending());
-
-        Page<Vaga> vagasPage;
-        boolean hasLogradouro = StringUtils.hasText(logradouro); 
-
-        if (status != null && hasLogradouro) {
-            vagasPage = vagaRepository.findByStatusAndEnderecoLogradouroContainingIgnoreCase(status, logradouro, pageable);
-        } else if (status != null) {
-            vagasPage = vagaRepository.findByStatus(status, pageable);
-        } else if (hasLogradouro) {
-            vagasPage = vagaRepository.findByEnderecoLogradouroContainingIgnoreCase(logradouro, pageable);
-        } else {
-            vagasPage = vagaRepository.findAll(pageable);
-        }
-
-        return vagasPage;
+    public PageResponseDTO findAllPaginadas(VagaFiltrosRequestDTO filtros, Integer numeroPagina, Integer tamanhoPagina, OrdemEnum ordem) {
+        Pageable pageable = PageRequest.of(numeroPagina, tamanhoPagina, !ordem.equals(OrdemEnum.ASC) ? SORT_DESC : SORT_ASC);
+        Page<VagaResponseDTO> vagasPage = vagaRepository.findAll(VagaSpecification.filtrar(filtros),pageable).map(vagaMapper::toResponse);
+        return new PageResponseDTO(vagasPage);
     }
 
     public Vaga findById(UUID id) {
         return vagaRepository.findById(id).orElseThrow(() -> new VagaExceptions.VagaNotFoundException());
     }
+
+    public List<Vaga> findByIdIn(List<UUID> listaIds) {
+        return vagaRepository.findByIdIn(listaIds);
+    }
     
     public void deleteById(UUID id) {
-        Vaga vaga = vagaRepository.findById(id)
-            .orElseThrow(() -> new VagaExceptions.VagaNotFoundException());
-        
+        Vaga vaga = findById(id);
         vagaRepository.deleteById(vaga.getId());
     }
 
     @Transactional
-    public Vaga updateById(UUID id, Vaga novaVaga) {
-        Vaga vagaExistente = vagaRepository.findById(id)
-            .orElseThrow(() -> new VagaExceptions.VagaNotFoundException());
+    public Vaga updateById(UUID id, VagaPatchDTO request) {
+        Vaga vagaExistente = findById(id);
 
-        if(novaVaga.getEndereco() != null){
-            EnderecoVaga novoEndereco = enderecoVagaService.cadastrarEnderecoVaga(novaVaga.getEndereco());
+        if (request.getEndereco() != null){
+            EnderecoVaga novoEndereco = enderecoVagaService.cadastrarEnderecoVaga(request.getEndereco());
             vagaExistente.setEndereco(novoEndereco);
         }
 
-        if (novaVaga.getTipoVaga() != null) {
-            if(novaVaga.getTipoVaga().equals(TipoVagaEnum.PERPENDICULAR)) {
-                if ((novaVaga.getQuantidade() == null || novaVaga.getQuantidade() <= 0)) {
-                    throw new VagaExceptions.QuantidadeObrigatoriaException();
+        if (request.getTipoVaga() != null) {
+            if (request.getTipoVaga().equals(TipoVagaEnum.PERPENDICULAR)) {
+                if ((request.getQuantidade() == null || request.getQuantidade() <= 0)) {
+                    throw new VagaExceptions.QuantidadePosicoesInvalidaException();
                 }
             } else {
-                novaVaga.setQuantidade(null);
+                request.setQuantidade(null);
                 vagaExistente.setQuantidade(null);
             }
-            vagaExistente.setTipoVaga(novaVaga.getTipoVaga());
+            vagaExistente.setTipoVaga(request.getTipoVaga());
         }
         
-        if (novaVaga.getQuantidade() != null && novaVaga.getQuantidade() > 0 && vagaExistente.getTipoVaga().equals(TipoVagaEnum.PERPENDICULAR)) {
-            vagaExistente.setQuantidade(novaVaga.getQuantidade());
+        if (request.getQuantidade() != null && request.getQuantidade() > 0 && vagaExistente.getTipoVaga().equals(TipoVagaEnum.PERPENDICULAR)) {
+            vagaExistente.setQuantidade(request.getQuantidade());
         }
 
-        if (novaVaga.getArea() != null) vagaExistente.setArea(novaVaga.getArea());
-        if (novaVaga.getNumeroEndereco() != null) vagaExistente.setNumeroEndereco(novaVaga.getNumeroEndereco());
-        if (novaVaga.getReferenciaEndereco() != null) vagaExistente.setReferenciaEndereco(novaVaga.getReferenciaEndereco());
-        if (novaVaga.getLatitudeInicio() != null) vagaExistente.setLatitudeInicio(novaVaga.getLatitudeInicio());
-        if (novaVaga.getLongitudeInicio() != null) vagaExistente.setLongitudeInicio(novaVaga.getLongitudeInicio());
-        if (novaVaga.getLatitudeFim() != null) vagaExistente.setLatitudeFim(novaVaga.getLatitudeFim());
-        if (novaVaga.getLongitudeFim() != null) vagaExistente.setLongitudeFim(novaVaga.getLongitudeFim());
-        if (novaVaga.getComprimento() != null) vagaExistente.setComprimento(novaVaga.getComprimento());
-        if (novaVaga.getStatus() != null) vagaExistente.setStatus(novaVaga.getStatus());
+        if (request.getArea() != null) vagaExistente.setArea(request.getArea());
+        if (request.getNumeroEndereco() != null) vagaExistente.setNumeroEndereco(request.getNumeroEndereco());
+        if (request.getReferenciaEndereco() != null) vagaExistente.setReferenciaEndereco(request.getReferenciaEndereco());
+        if (request.getLatitudeInicio() != null) vagaExistente.setLatitudeInicio(request.getLatitudeInicio());
+        if (request.getLongitudeInicio() != null) vagaExistente.setLongitudeInicio(request.getLongitudeInicio());
+        if (request.getLatitudeFim() != null) vagaExistente.setLatitudeFim(request.getLatitudeFim());
+        if (request.getLongitudeFim() != null) vagaExistente.setLongitudeFim(request.getLongitudeFim());
+        if (request.getComprimento() != null) vagaExistente.setComprimento(request.getComprimento());
+        if (request.getStatus() != null) vagaExistente.setStatus(request.getStatus());
 
-        if (novaVaga.getOperacoesVaga() != null) {
-            Map<DiaSemanaEnum, OperacaoVaga> mapaExistentes = vagaExistente.getOperacoesVaga()
-                .stream()
-                .collect(Collectors.toMap(OperacaoVaga::getDiaSemana, o -> o));
-
-            Map<DiaSemanaEnum, OperacaoVaga> mapaNovas = novaVaga.getOperacoesVaga()
-                .stream()
-                .collect(Collectors.toMap(OperacaoVaga::getDiaSemana, o -> o, (o1, o2) -> o1)); // caso venha duplicado, mantém o primeiro
-
-            for (OperacaoVaga novaOperacao : mapaNovas.values()) {
-                OperacaoVaga existente = mapaExistentes.get(novaOperacao.getDiaSemana());
-                if (existente != null) {
-                    existente.setHoraInicio(novaOperacao.getHoraInicio());
-                    existente.setHoraFim(novaOperacao.getHoraFim());
-                } else {
-                    novaOperacao.setVaga(vagaExistente);
-                    vagaExistente.getOperacoesVaga().add(novaOperacao);
-                }
-            }
-            vagaExistente.getOperacoesVaga().removeIf(
-                operacao -> !mapaNovas.containsKey(operacao.getDiaSemana())
-            );
+        if (request.getOperacoesVaga() != null) {
+            operacaoVagaService.atualizarOperacoesVaga(request.getOperacoesVaga(), vagaExistente);
         }
 
         return vagaRepository.save(vagaExistente);
     }
 
     @Transactional()
-    public Vaga createVaga(Vaga novaVaga){
+    public Vaga createVaga(VagaRequestDTO request){
 
-        if(novaVaga.getComprimento() == null) {
-            throw new IllegalArgumentException("O campo 'comprimento' é obrigatório e não pode ser nulo ou vazio.");
-        }
+        if (!request.getTipoVaga().equals(TipoVagaEnum.PERPENDICULAR)) request.setQuantidade(null);
 
-        if (!novaVaga.getTipoVaga().equals(TipoVagaEnum.PERPENDICULAR)) {
-            novaVaga.setQuantidade(null);
-        }
+        if (
+            (request.getTipoVaga().equals(TipoVagaEnum.PERPENDICULAR)) &&
+            (request.getQuantidade() == null || request.getQuantidade() <= 0)
+        ) throw new VagaExceptions.QuantidadePosicoesInvalidaException();
 
-        if (novaVaga.getTipoVaga().equals(TipoVagaEnum.PERPENDICULAR) &&
-                (novaVaga.getQuantidade() == null || novaVaga.getQuantidade() <= 0)) {
-            throw new IllegalArgumentException("O campo 'quantidade' é obrigatório para vagas do tipo PERPENDICULAR e deve ser um número inteiro positivo.");
-        }
+        EnderecoVaga enderecoCadastrado = enderecoVagaService.cadastrarEnderecoVaga(request.getEndereco());
 
-
-        EnderecoVaga enderecoVaga = enderecoVagaService.cadastrarEnderecoVaga(novaVaga.getEndereco());
-        novaVaga.setEndereco(enderecoVaga);
-
-        novaVaga.setStatus(StatusVagaEnum.INDISPONIVEL);
-
-        Vaga vagaCadastrada = vagaRepository.save(novaVaga);
-
-        if(vagaCadastrada.getOperacoesVaga() == null || vagaCadastrada.getOperacoesVaga().isEmpty()) {
-            vagaCadastrada.setOperacoesVaga(
-                    operacaoVagaService.setOperacoesVagaDefault(vagaCadastrada)
-            );
-        }
+        Vaga vagaCadastrada = vagaRepository.save(vagaMapper.toEntity(request, enderecoCadastrado));
 
         return vagaCadastrada;
     }
@@ -179,6 +136,11 @@ public class VagaService {
             Double west,
             StatusVagaEnum status
     ) {
+        if (status != null && status.equals(StatusVagaEnum.DISPONIVEL)){
+            return vagaRepository.buscarDisponiveisPorArea(
+                    south, north, west, east, DateUtils.agora()
+            );
+        }
         return vagaRepository.buscarPorArea(
                 south, north, west, east, status
         );

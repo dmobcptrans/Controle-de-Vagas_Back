@@ -3,8 +3,6 @@ package com.cptrans.petrocarga.modules.vaga.controller;
 import java.util.List;
 import java.util.UUID;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -18,168 +16,177 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.cptrans.petrocarga.config.swagger.response.DefaultResponses;
+import com.cptrans.petrocarga.config.swagger.response.DeleteResponses;
+import com.cptrans.petrocarga.config.swagger.response.GetResponses;
+import com.cptrans.petrocarga.config.swagger.response.PatchResponses;
+import com.cptrans.petrocarga.config.swagger.response.PostResponses;
+import com.cptrans.petrocarga.enums.AreaVagaEnum;
+import com.cptrans.petrocarga.enums.OrdemEnum;
 import com.cptrans.petrocarga.enums.StatusVagaEnum;
+import com.cptrans.petrocarga.enums.TipoVagaEnum;
 import com.cptrans.petrocarga.modules.vaga.dto.mapper.VagaMapper;
+import com.cptrans.petrocarga.modules.vaga.dto.request.VagaFiltrosRequestDTO;
 import com.cptrans.petrocarga.modules.vaga.dto.request.VagaPatchDTO;
 import com.cptrans.petrocarga.modules.vaga.dto.request.VagaRequestDTO;
+import com.cptrans.petrocarga.modules.vaga.dto.response.VagaCoordenadaResponseDTO;
 import com.cptrans.petrocarga.modules.vaga.dto.response.VagaResponseDTO;
+import com.cptrans.petrocarga.modules.vaga.dto.response.VagaSimplificadoResponseDTO;
 import com.cptrans.petrocarga.modules.vaga.entity.Vaga;
+import com.cptrans.petrocarga.modules.vaga.exceptions.VagaExceptions;
 import com.cptrans.petrocarga.modules.vaga.service.VagaService;
 import com.cptrans.petrocarga.shared.dto.response.PageResponseDTO;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import jakarta.validation.Valid; 
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor; 
 
 @RestController
+@Tag(name = "Vagas", description = "Endpoints para gerenciamento de vagas")
 @RequestMapping("/vagas")
+@RequiredArgsConstructor
 public class VagaController {
     
-    @Autowired
-    private VagaService vagaService;
+    private final VagaService vagaService;
+    private final VagaMapper vagaMapper;
 
-    /**
-     * Retorna uma lista de todas as vagas registradas.
-     * Só permite acesso por usuários autenticados com permissão de ADMIN, GESTOR, AGENTE, MOTORISTA ou EMPRESA.
-     * 
-     * @param status Opcional, se nulo, retorna todas as vagas. Caso contrário, retorna apenas as vagas com o status especificado.
-     * 
-     * @return Uma lista de vagas.
-     */
-    @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR','AGENTE','MOTORISTA','EMPRESA')")
-    @GetMapping("/all")
+    //GET /vagas/all
     @Operation(
         summary = "Listar todas as vagas.",
-        description = "Retorna uma lista de todas as vagas registradas.",
-        responses = {
-            @ApiResponse(responseCode = "200", description = "Lista de vagas retornada com sucesso",
-                        content = @Content(mediaType = "application/json",
-                        array = @ArraySchema(schema = @Schema(implementation = VagaResponseDTO.class)))),
-            @ApiResponse(responseCode = "500", description = "Erro interno no servidor")
-        }
+        description = "Retorna uma lista de todas as vagas registradas."
     )
-    public ResponseEntity<List<VagaResponseDTO>> findAll(@RequestParam(required = false) StatusVagaEnum status) { 
-        if(status != null) {
-            List<VagaResponseDTO> vagas = VagaMapper.toResponseList(vagaService.findAllByStatus(status));
+    @GetResponses
+    @DefaultResponses
+    @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR','AGENTE','MOTORISTA','EMPRESA')")
+    @GetMapping("/all")
+    public ResponseEntity<List<VagaResponseDTO>> findAll(
+        @Parameter(description = "Status da vaga")
+        @RequestParam(required = false) StatusVagaEnum status
+    ) { 
+        if (status != null) {
+            List<VagaResponseDTO> vagas = vagaMapper.toResponseList(vagaService.findAllByStatus(status));
             return ResponseEntity.ok(vagas);
         }
-        List<VagaResponseDTO> vagas = VagaMapper.toResponseList(vagaService.findAll());
+        List<VagaResponseDTO> vagas = vagaMapper.toResponseList(vagaService.findAll());
         return ResponseEntity.ok(vagas);
     }
 
+    // GET /vagas/mapa
+    @Operation(
+        summary = "Buscar vagas por área do mapa.",
+        description = "Retorna vagas dentro da área visível do mapa com base nos limites geográficos (bounding box)."
+    )
+    @GetResponses
+    @DefaultResponses
     @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR','AGENTE','MOTORISTA','EMPRESA')")
     @GetMapping("/mapa")
-    @Operation(
-            summary = "Buscar vagas por área do mapa.",
-            description = "Retorna vagas dentro da área visível do mapa com base nos limites geográficos (bounding box).",
-            responses = {
-                    @ApiResponse(responseCode = "200", description = "Lista de vagas retornada com sucesso",
-                            content = @Content(mediaType = "application/json",
-                                    array = @ArraySchema(schema = @Schema(implementation = VagaResponseDTO.class)))),
-                    @ApiResponse(responseCode = "400", description = "Parâmetros inválidos"),
-                    @ApiResponse(responseCode = "500", description = "Erro interno no servidor")
-            }
-    )
-    public ResponseEntity<List<VagaResponseDTO>> buscarPorMapa(
-            @RequestParam Double north,
-            @RequestParam Double south,
-            @RequestParam Double east,
-            @RequestParam Double west,
-            @RequestParam(required = false) StatusVagaEnum status
+    public ResponseEntity<List<VagaCoordenadaResponseDTO>> buscarPorMapa(
+        @Parameter(description = "Norte")
+        @RequestParam Double north,
+
+        @Parameter(description = "Sul")
+        @RequestParam Double south,
+
+        @Parameter(description = "Leste")
+        @RequestParam Double east,
+
+        @Parameter(description = "Oeste")
+        @RequestParam Double west,
+
+        @Parameter(description = "Status da vaga")
+        @RequestParam(required = false) StatusVagaEnum status
     ) {
+        List<VagaCoordenadaResponseDTO> vagas;
 
-        List<VagaResponseDTO> vagas;
-
-        if (north < south || east < west) {
-            throw new IllegalArgumentException("Parâmetros de bounding box inválidos.");
-        }
+        if (north < south || east < west) throw new VagaExceptions.BoundingBoxInvalidoException();
 
         StatusVagaEnum statusBusca = status != null ? status : StatusVagaEnum.DISPONIVEL;
 
-        vagas = VagaMapper.toResponseList(vagaService.buscarPorMapa(north, south, east, west, statusBusca));
+        vagas = vagaMapper.toCoordenadaResponseList(vagaService.buscarPorMapa(north, south, east, west, statusBusca));
       
         return ResponseEntity.ok(vagas);
     }
 
-    /**
-     * Retorna uma lista paginada de todas as vagas disponíveis com paginação e com filtros opcionais por status e nome da rua (logradouro).
-     * 
-     * Só permite acesso por usuários autenticados com permissão de ADMIN, GESTOR, AGENTE, MOTORISTA ou EMPRESA.
-     * 
-     * @param numeroPagina número da página a ser consultada (por padrão, começa em 0)
-     * @param tamanhoPagina tamanho da página a ser consultada (por padrão, começa em 10)
-     * @param ordenarPor campo para ordenar a lista de vagas (por padrão, utiliza "endereco.logradouro")
-     * @param status status da vaga para filtrar as vagas (opcional)
-     * @param logradouro nome da rua (logradouro) para filtrar as vagas (opcional)
-     * 
-     * @return Uma lista de vagas paginadas.
-     */
-    @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR','AGENTE','MOTORISTA','EMPRESA')")
+    // GET /vagas
     @GetMapping()
     @Operation(
         summary = "Listar todas as vagas com paginação",
-        description = "Retorna uma lista paginada de todas as vagas disponíveis, com filtros opcionais por status e nome da rua (logradouro).",
-        responses = {
-            @ApiResponse(responseCode = "200", description = "Lista de vagas retornada com sucesso",
-                            content = @Content(mediaType = "application/json",
-                            array = @ArraySchema(schema = @Schema(implementation = VagaResponseDTO.class)))),
-            @ApiResponse(responseCode = "500", description = "Erro interno no servidor")
-        }
+        description = "Retorna uma lista paginada de todas as vagas disponíveis, com filtros opcionais."
     )
-    public ResponseEntity<PageResponseDTO> findAllPaginadas(
-            @RequestParam(defaultValue="0") Integer numeroPagina, 
-            @RequestParam(defaultValue="10") Integer tamanhoPagina, 
-            @RequestParam(defaultValue="endereco.logradouro") String ordenarPor, 
-            @RequestParam(required = false) StatusVagaEnum status,
-            
-            @Parameter(description = "Filtrar vagas pelo nome da rua (logradouro). Busca parcial e case-insensitive.")
-            @RequestParam(required = false) String logradouro) {
-        
-    	Page<VagaResponseDTO> vagasPaginadas = vagaService.findAllPaginadas(numeroPagina, tamanhoPagina, ordenarPor, status, logradouro).map(VagaMapper::toResponse);
-        
-        return ResponseEntity.ok(new PageResponseDTO(vagasPaginadas));
-    }
-    
-    /**
-     * Busca uma vaga pelo ID.
-     * 
-     * Só permite que a vaga seja acessada por um usuário autenticado com permissão de ADMIN, GESTOR, AGENTE, MOTORISTA ou EMPRESA.
-     * 
-     * @param id UUID da vaga a ser buscada.
-     * @return Os detalhes da vaga encontrada ou um erro caso a vaga não seja encontrada.
-     */
+    @GetResponses
+    @DefaultResponses
     @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR','AGENTE','MOTORISTA','EMPRESA')")
+    public ResponseEntity<PageResponseDTO> findAllPaginadas(
+        @Parameter(description = "Código PMP")
+        @RequestParam(required = false) String codigoPmp,
+
+        @Parameter(description = "Logradouro")
+        @RequestParam(required = false) String logradouro,
+
+        @Parameter(description = "Bairro")
+        @RequestParam(required = false) String bairro,
+
+        @Parameter(description = "Área")
+        @RequestParam(required = false) AreaVagaEnum area,
+
+        @Parameter(description = "Tipo da Vaga")
+        @RequestParam(required = false) TipoVagaEnum tipo,
+
+        @Parameter(description = "Status da vaga")
+        @RequestParam(required = false) StatusVagaEnum status,
+        
+        @Parameter(description = "Página", example = "0")
+        @RequestParam(defaultValue = "0") Integer numeroPagina, 
+
+        @Parameter(description = "Quantidade de registros por página", example = "10")
+        @RequestParam(defaultValue = "10") Integer tamanhoPagina, 
+
+        @Parameter(description = "Ordem", example = "ASC")
+        @RequestParam(defaultValue = "ASC") OrdemEnum ordem
+
+    ) {
+        VagaFiltrosRequestDTO filtros = new VagaFiltrosRequestDTO(codigoPmp, logradouro, bairro, area, tipo, status);
+    	PageResponseDTO vagasPaginadas = vagaService.findAllPaginadas(filtros, numeroPagina, tamanhoPagina, ordem);
+        return ResponseEntity.ok(vagasPaginadas);
+    }
+
+    // GET /vagas/{id}
     @GetMapping("/{id}")
     @Operation(
         summary = "Buscar uma vaga pelo ID",
-        description = "Retorna os detalhes de uma vaga específica identificada pelo seu UUID.",
-        responses = {
-            @ApiResponse(responseCode = "200", description = "Vaga encontrada com sucesso",
-                        content = @Content(mediaType = "application/json",
-                        schema = @Schema(implementation = VagaResponseDTO.class))),
-            @ApiResponse(responseCode = "404", description = "Vaga não encontrada"),
-            @ApiResponse(responseCode = "500", description = "Erro interno no servidor")
-        }
+        description = "Retorna os detalhes de uma vaga específica identificada pelo seu UUID."
     )
-    public ResponseEntity<VagaResponseDTO> findById(@Valid @PathVariable UUID id) {
-        Vaga vaga = vagaService.findById(id);
-        return ResponseEntity.ok(VagaMapper.toResponse(vaga));
+    @GetResponses
+    @DefaultResponses
+    @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR','AGENTE','MOTORISTA','EMPRESA')")
+    public ResponseEntity<VagaResponseDTO> findById(
+        @Parameter(description = "ID da vaga")
+        @Valid @PathVariable UUID id
+    ) {
+        return ResponseEntity.ok(vagaMapper.toResponse(vagaService.findById(id)));
     }
 
-    /**
-     * Cria uma nova vaga com base nos dados fornecidos no corpo da requisição.
-     * Só permite que a vaga seja criada por um usuário autenticado com permissão de ADMIN ou GESTOR.
-     * 
-     * @param vagaRequest dados necessários para criação de uma vaga
-     * @return Os detalhes da vaga criada com sucesso ou um erro caso a vaga não seja criada.
-     * 
-     */
-    @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR')")
-    @PostMapping()
+    // GET /vagas/resumo/{id}
+    @GetMapping("/resumo/{id}")
+    @Operation(
+        summary = "Buscar uma vaga pelo ID de forma resumida",
+        description = "Retorna o resumo de uma vaga específica identificada pelo seu UUID."
+    )
+    @GetResponses
+    @DefaultResponses
+    @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR','AGENTE','MOTORISTA','EMPRESA')")
+    public ResponseEntity<VagaSimplificadoResponseDTO> findSimplificadoById(
+        @Parameter(description = "ID da vaga")
+        @Valid @PathVariable UUID id
+    ) {
+        return ResponseEntity.ok(vagaMapper.toResponseSimplificado(vagaService.findById(id)));
+    }
+
+    // POST /vagas
     @Operation(
         summary = "Cadastrar uma nova vaga",
         description = "Cria uma nova vaga com base nos dados fornecidos no corpo da requisição.",
@@ -187,85 +194,60 @@ public class VagaController {
             description = "Dados necessários para criação de uma vaga",
             required = true,
             content = @Content(schema = @Schema(implementation = VagaRequestDTO.class))
-        ),
-        responses = {
-            @ApiResponse(responseCode = "201", description = "Vaga criada com sucesso",
-                        content = @Content(mediaType = "application/json",
-                        schema = @Schema(implementation = VagaResponseDTO.class))),
-            @ApiResponse(responseCode = "400", description = "Dados inválidos enviados"),
-            @ApiResponse(responseCode = "500", description = "Erro interno no servidor")
-        }
+        )
     )
-    public ResponseEntity<VagaResponseDTO> createVaga(@Valid @RequestBody VagaRequestDTO vagaRequest) {
-        Vaga vaga = vagaService.createVaga(vagaRequest.toEntity());
-        return ResponseEntity.status(HttpStatus.CREATED).body(VagaMapper.toResponse(vaga));
+    @PostResponses
+    @DefaultResponses
+    @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR')")
+    @PostMapping()
+    public ResponseEntity<VagaResponseDTO> createVaga(
+        @Parameter(description = "Dados necessários para criação de uma vaga")
+        @Valid @RequestBody VagaRequestDTO vagaRequest
+    ) {
+        Vaga vaga = vagaService.createVaga(vagaRequest);
+        return ResponseEntity.status(HttpStatus.CREATED).body(vagaMapper.toResponse(vaga));
     }
     
-
-    /**
-     * Deleta uma vaga específica identificada pelo seu id.
-     * 
-     * Só permite que a vaga seja deletada por um usuário autenticado com permissão de ADMIN.
-     * 
-     * @param id id da vaga a ser deletada
-     * @return resposta sem conteúdo caso a vaga seja deletada com sucesso ou um erro caso a vaga não seja encontrada ou não seja deletada.
-     */
-    @PreAuthorize("hasRole('ADMIN')")
-    @DeleteMapping("/{id}")
+    // DELETE /vagas/{id}
     @Operation(
         summary = "Deletar uma vaga pelo ID",
-        description = "Remove uma vaga específica identificada pelo seu UUID.",
-        parameters = {
-            @Parameter(name = "id", description = "Identificador único da vaga", required = true,
-                    example = "2cb9a7f0-4499-4531-9f67-3e1b6eaf1234")
-        },
-        responses = {
-            @ApiResponse(responseCode = "204", description = "Vaga deletada com sucesso (sem conteúdo)"),
-            @ApiResponse(responseCode = "404", description = "Vaga não encontrada"),
-            @ApiResponse(responseCode = "500", description = "Erro interno no servidor")
-        }
+        description = "Remove uma vaga específica identificada pelo seu UUID."
     )
-    public ResponseEntity<?> deleteById(@Valid @PathVariable UUID id) {
+    @DeleteResponses
+    @DefaultResponses
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteById(
+        @Parameter(description = "ID da vaga")
+        @PathVariable UUID id
+    ) {
         vagaService.deleteById(id);
         return ResponseEntity.noContent().build(); 
     }
     
-    /**
-     * Atualiza parcialmente uma vaga com base nos dados fornecidos no corpo da requisição.
-     * 
-     * Só permite que a vaga seja atualizada por um usuário autenticado com permissão de ADMIN ou GESTOR.
-     * 
-     * @param id id da vaga a ser atualizada
-     * @param vagaRequest dados necessários para atualizar a vaga
-     * @return Os detalhes da vaga atualizada com sucesso ou um erro caso a vaga não seja encontrada ou não seja atualizada.
-     * 
-     */
-    @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR')")
-    @PatchMapping("/{id}")
+    // PATCH /vagas/{id}
     @Operation(
         summary = "Atualizar parcialmente uma vaga",
         description = "Atualiza apenas os campos enviados no corpo da requisição para a vaga especificada pelo ID.",
-        parameters = {
-            @Parameter(name = "id", description = "Identificador único da vaga", required = true,
-                    example = "2cb9a7f0-4499-4531-9f67-3e1b6eaf1234")
-        },
         requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
             description = "Campos a serem atualizados na vaga",
             required = true,
             content = @Content(schema = @Schema(implementation = VagaRequestDTO.class))
-        ),
-        responses = {
-            @ApiResponse(responseCode = "200", description = "Vaga atualizada com sucesso",
-                        content = @Content(mediaType = "application/json",
-                        schema = @Schema(implementation = VagaResponseDTO.class))),
-            @ApiResponse(responseCode = "400", description = "Dados inválidos enviados"),
-            @ApiResponse(responseCode = "404", description = "Vaga não encontrada"),
-            @ApiResponse(responseCode = "500", description = "Erro interno no servidor")
-        }
+        )
     )
-    public ResponseEntity<VagaResponseDTO> updateById(@Valid @PathVariable UUID id, @Valid @RequestBody VagaPatchDTO vagaRequest) {
-        Vaga vagaAtualizada = vagaService.updateById(id, vagaRequest.toEntity());
-        return ResponseEntity.ok(VagaMapper.toResponse(vagaAtualizada));
+    @PatchResponses
+    @DefaultResponses
+    @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR')")
+    @PatchMapping("/{id}")
+    public ResponseEntity<VagaResponseDTO> updateById(
+        @Parameter(description = "ID da vaga")
+        @PathVariable UUID id, 
+        
+        @Parameter(description = "Campos a serem atualizados na vaga")
+        @RequestBody VagaPatchDTO vagaRequest
+    ) {
+        Vaga vagaAtualizada = vagaService.updateById(id, vagaRequest);
+        return ResponseEntity.ok(vagaMapper.toResponse(vagaAtualizada));
     }
 
 }
