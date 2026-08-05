@@ -37,6 +37,7 @@ public interface ReservaRepository extends JpaRepository<Reserva, UUID>, JpaSpec
        public List<Reserva> findByFimGreaterThanAndInicioLessThanAndMotoristaUsuarioIdAndStatusIn(OffsetDateTime novoInicio, OffsetDateTime novoFim, UUID usuarioId, List<StatusReservaEnum> status);
        public Boolean existsByVeiculoIdAndStatusIn(UUID veiculoId, List<StatusReservaEnum> status);
        public Boolean existsByCriadoPorIdAndMotoristaIdAndStatusIn(UUID criadoPorId, UUID motoristaId, List<StatusReservaEnum> status);
+       public Boolean existsByVeiculoUsuarioIdAndMotoristaIdAndStatusIn(UUID veiculoUsuarioId, UUID motoristaId, List<StatusReservaEnum> status);
        
        @Query("SELECT r FROM Reserva r WHERE UPPER(r.veiculo.placa) ILIKE %:placa% AND r.status IN :status")
        public List<Reserva> findByVeiculoPlacaIgnoringCaseAndStatusIn(String placa, List<StatusReservaEnum> status);

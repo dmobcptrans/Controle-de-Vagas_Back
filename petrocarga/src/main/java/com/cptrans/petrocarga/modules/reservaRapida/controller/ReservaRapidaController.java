@@ -15,56 +15,92 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.cptrans.petrocarga.config.swagger.response.DefaultResponses;
+import com.cptrans.petrocarga.config.swagger.response.GetResponses;
+import com.cptrans.petrocarga.config.swagger.response.PostResponses;
+import com.cptrans.petrocarga.enums.OrdemEnum;
 import com.cptrans.petrocarga.enums.StatusReservaEnum;
-import com.cptrans.petrocarga.modules.reserva.utils.ReservaUtils;
 import com.cptrans.petrocarga.modules.reservaRapida.dto.mapper.ReservaRapidaMapper;
 import com.cptrans.petrocarga.modules.reservaRapida.dto.request.ReservaRapidaRequestDTO;
 import com.cptrans.petrocarga.modules.reservaRapida.dto.response.ReservaRapidaResponseDTO;
 import com.cptrans.petrocarga.modules.reservaRapida.entity.ReservaRapida;
 import com.cptrans.petrocarga.modules.reservaRapida.service.ReservaRapidaService;
 import com.cptrans.petrocarga.shared.dto.response.PageResponseDTO;
+import com.cptrans.petrocarga.shared.utils.DateUtils;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 
 
 @RestController
+@Tag(name = "Reservas Rápidas", description = "Endpoints para gerenciamento de reservas rápidas")
 @RequestMapping("/reserva-rapida")
 @RequiredArgsConstructor
 public class ReservaRapidaController {
     private final ReservaRapidaService reservaRapidaService;
     private final ReservaRapidaMapper reservaRapidaMapper;
 
-    /**
-     * Cria uma nova reserva rápida por um AGENTE/ADMIN.
-     * Só permite que as reservas sejam criadas por um usuário com permissão de ADMIN ou AGENTE.
-     * 
-     * @param reservaRapidaRequestDTO os dados da reserva a ser criada
-     * @return a reserva criada com status CREATED
-     */
+    @Operation(
+        summary = "Criar reserva rápida",
+        description = "Endpoint para criar uma reserva rápida"
+    )
+    @PostResponses
+    @DefaultResponses
     @PreAuthorize("hasAnyRole('ADMIN', 'AGENTE')")
     @PostMapping()
-    public ResponseEntity<ReservaRapidaResponseDTO> createReservaRapida(@RequestBody ReservaRapidaRequestDTO request) {
+    public ResponseEntity<ReservaRapidaResponseDTO> createReservaRapida(
+        @Parameter(description = "Dados da reserva rápida")
+        @RequestBody ReservaRapidaRequestDTO request
+    ) {
         ReservaRapida novaReservaRapida = reservaRapidaService.create(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(reservaRapidaMapper.toResponse(novaReservaRapida));
     }
     
-    /**
-     * Retorna todas as reservas rapidas dado um usuarioId, com filtros opcionais de vagaId, placaVeiculo, data e listaStatus.
-     * Só permite que as reservas sejam acessadas pelo própio dono (agente que criou) ou por um usuário autenticado com permissão de ADMIN ou GESTOR.
-     * @param usuarioId o id do usuário para buscar as reservas rápidas
-     * @param vagaID o id da vaga para filtrar as reservas
-     * @param placaVeiculo a placa do veículo para filtrar as reservas
-     * @param data a data da reserva para filtrar as reservas
-     * @param listaStatus a lista de status para filtrar as reservas
-     * @return A lista de reservas rápidas encontradas com status ok
-     */
+    @Operation(
+        summary = "Listar reservas rápidas feitas por um agente",
+        description = "Lista as reservas rápidas feitas por um agente com base no seu ID e filtros opcionais"
+    )
+    @GetResponses
+    @DefaultResponses
     @PreAuthorize("#agenteId == authentication.principal.id or hasAnyRole('ADMIN', 'GESTOR')")
     @GetMapping("/{agenteId}")
-    public ResponseEntity<PageResponseDTO> getReservasRapidasByagenteId(@PathVariable UUID agenteId, @RequestParam(required = false) UUID vagaId, @RequestParam(required = false) String placaVeiculo, @RequestParam(required = false) LocalDate data, @RequestParam(required = false) List<StatusReservaEnum> listaStatus, @RequestParam(required = false) Integer mes, @RequestParam(required = false) Integer ano, @RequestParam(defaultValue = "0") Integer numeroPagina, @RequestParam(defaultValue = "10") Integer tamanhoPagina) {
-        ReservaUtils.validarFiltrosData(data,mes, ano);
+    public ResponseEntity<PageResponseDTO> getReservasRapidasByagenteId(
+        @Parameter(description = "ID do agente")
+        @PathVariable UUID agenteId, 
+        
+        @Parameter(description = "ID da vaga")
+        @RequestParam(required = false) UUID vagaId, 
+        
+        @Parameter(description = "Placa do veículo")
+        @RequestParam(required = false) String placaVeiculo, 
+        
+        @Parameter(description = "Data da reserva")
+        @RequestParam(required = false) LocalDate data, 
+        
+        @Parameter(description = "Status da reserva")
+        @RequestParam(required = false) List<StatusReservaEnum> listaStatus, 
+        
+        @Parameter(description = "Mês da reserva")
+        @RequestParam(required = false) Integer mes, 
+        
+        @Parameter(description = "Ano da reserva")
+        @RequestParam(required = false) Integer ano, 
+        
+        @Parameter(description = "Número da página", example = "0")
+        @RequestParam(defaultValue = "0") Integer numeroPagina, 
+        
+        @Parameter(description = "Quantidade de registros por página", example = "10")
+        @RequestParam(defaultValue = "10") Integer tamanhoPagina,
+
+        @Parameter(description = "Ordem da listagem", example = "DESC")
+        @RequestParam(defaultValue = "DESC") OrdemEnum ordem
+    ) {
+        DateUtils.validarFiltrosData(data,mes, ano);
 
         placaVeiculo = placaVeiculo != null ? placaVeiculo.trim().toUpperCase() : null;
-        PageResponseDTO reservasRapidas = reservaRapidaService.findByAgenteIdWithFilters(agenteId, vagaId, placaVeiculo, data, listaStatus, mes, ano, numeroPagina, tamanhoPagina);
+        PageResponseDTO reservasRapidas = reservaRapidaService.findByAgenteIdWithFilters(agenteId, vagaId, placaVeiculo, data, listaStatus, mes, ano, numeroPagina, tamanhoPagina, ordem);
         return ResponseEntity.ok().body(reservasRapidas);
     }
     

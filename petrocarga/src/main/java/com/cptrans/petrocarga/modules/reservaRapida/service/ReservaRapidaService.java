@@ -1,7 +1,6 @@
 package com.cptrans.petrocarga.modules.reservaRapida.service;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -13,6 +12,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import com.cptrans.petrocarga.enums.OrdemEnum;
 import com.cptrans.petrocarga.enums.StatusReservaEnum;
 import com.cptrans.petrocarga.enums.TipoVagaEnum;
 import com.cptrans.petrocarga.modules.agente.entity.Agente;
@@ -50,12 +50,12 @@ public class ReservaRapidaService {
     private final ReservaSchedulerService reservaSchedulerService;
     private final DisponibilidadeVagaService disponibilidadeVagaService;
     private final ReservaRapidaMapper reservaRapidaMapper;
+
+    private final Sort SORT_ASC = Sort.by("inicio").ascending();
+    private final Sort SORT_DESC = Sort.by("inicio").descending();
     
     public List<ReservaRapida> findAll(List<StatusReservaEnum> status) {
-        if(status == null ) status = new ArrayList<>();
-        if(!status.isEmpty()) {
-            return reservaRapidaRepository.findByStatusIn(status);
-        }
+        if (status != null && !status.isEmpty()) return reservaRapidaRepository.findByStatusIn(status);
         return reservaRapidaRepository.findAll();
     }
 
@@ -73,58 +73,50 @@ public class ReservaRapidaService {
 
     public List<ReservaRapida> findAllByData(LocalDate data, List<StatusReservaEnum> status) {
         List<ReservaRapida> reservasRapidas = findAll(status);
-        if(reservasRapidas.isEmpty()) return reservasRapidas;
-        if(data != null) {
+        if (reservasRapidas.isEmpty()) return reservasRapidas;
+        if (data != null) {
             return reservasRapidas.stream()
-                .filter(reservaRapida -> DateUtils.toLocalDateInBrazil(reservaRapida.getInicio()).equals(data) || DateUtils.toLocalDateInBrazil(reservaRapida.getFim()).equals(data))
-                .toList();
+                .filter(reservaRapida -> 
+                    DateUtils.toLocalDateInBrazil(reservaRapida.getInicio()).equals(data) || 
+                    DateUtils.toLocalDateInBrazil(reservaRapida.getFim()).equals(data)
+                ).toList();
         }
         return reservasRapidas;
         
     }
 
     public List<ReservaRapida> findByVagaIdAndStatusIn(UUID vagaId, List<StatusReservaEnum> status) {
-        if(status == null ) status = new ArrayList<>();
-        if(status.isEmpty()) {
-            return reservaRapidaRepository.findByVagaId(vagaId);
-        }
+        if (status == null || status.isEmpty()) return reservaRapidaRepository.findByVagaId(vagaId);
         return reservaRapidaRepository.findByVagaIdAndStatusIn(vagaId, status);
     }
 
     public List<ReservaRapida> findByVagaIdAndDataAndStatusIn(UUID vagaId, LocalDate data, List<StatusReservaEnum> status) {
         List<ReservaRapida> reservasRapidas = List.of();
         
-        if(status == null ) status = new ArrayList<>();
-
-        if(!status.isEmpty()) {
-            reservasRapidas = reservaRapidaRepository.findByVagaIdAndStatusIn(vagaId, status);
-        }else{
-            reservasRapidas = reservaRapidaRepository.findByVagaId(vagaId);
-        }
+        if (status != null && !status.isEmpty()) reservasRapidas = reservaRapidaRepository.findByVagaIdAndStatusIn(vagaId, status);
+        else reservasRapidas = reservaRapidaRepository.findByVagaId(vagaId);
+        
 
         if (reservasRapidas.isEmpty()) return reservasRapidas;
 
-        if(data!=null && reservasRapidas!=null && !reservasRapidas.isEmpty()) {
+        if (data != null && reservasRapidas != null && !reservasRapidas.isEmpty()) {
             return reservasRapidas.stream()
                 .filter(reservaRapida -> DateUtils.toLocalDateInBrazil(reservaRapida.getInicio()).equals(data) || DateUtils.toLocalDateInBrazil(reservaRapida.getFim()).equals(data))
                 .toList();
-        } else {
-            return reservasRapidas;
-        }
+        } else return reservasRapidas;
     }
 
     public List<ReservaRapida> findByPlacaAtiva(String placa) {  
         return reservaRapidaRepository.findByPlacaIgnoringCaseAndStatus(placa, StatusReservaEnum.ATIVA);
     }
 
-    public Page<ReservaRapida> findByAgente(UUID agenteId, Integer numeroPagina, Integer tamanhoPagina) {
-        Pageable pageable = PageRequest.of(numeroPagina, tamanhoPagina, Sort.by("inicio").descending());
-
+    public Page<ReservaRapida> findByAgente(UUID agenteId, Integer numeroPagina, Integer tamanhoPagina, OrdemEnum ordem) {
+        Pageable pageable = PageRequest.of(numeroPagina, tamanhoPagina, ordem != OrdemEnum.DESC ? SORT_ASC : SORT_DESC);
         return reservaRapidaRepository.findByAgenteId(agenteId, pageable);
     }
     
-    public PageResponseDTO findByAgenteIdWithFilters(UUID agenteId, UUID vagaId, String placaVeiculo, LocalDate data, List<StatusReservaEnum> listaStatus, Integer mes, Integer ano, Integer numeroPagina, Integer tamanhoPagina) {
-        Pageable pageable = PageRequest.of(numeroPagina, tamanhoPagina, Sort.by("inicio").descending());
+    public PageResponseDTO findByAgenteIdWithFilters(UUID agenteId, UUID vagaId, String placaVeiculo, LocalDate data, List<StatusReservaEnum> listaStatus, Integer mes, Integer ano, Integer numeroPagina, Integer tamanhoPagina, OrdemEnum ordem) {
+        Pageable pageable = PageRequest.of(numeroPagina, tamanhoPagina, ordem != OrdemEnum.DESC ? SORT_ASC : SORT_DESC);
         Page<ReservaRapida> page = reservaRapidaRepository.findAll(ReservaRapidaSpecification.filtrar(agenteId, vagaId, placaVeiculo, data, mes, ano, listaStatus), pageable);
         if (page == null || page.isEmpty()) return new PageResponseDTO(page);
         Page<ReservaRapidaResponseDTO> pageResponse = page.map(reservaRapidaMapper::toResponse);
@@ -145,9 +137,8 @@ public class ReservaRapidaService {
         Agente agenteLogado = agenteService.findByIdAndAtivoTrue(userAuthenticated.id());
         novaReservaRapida.setAgente(agenteLogado);
 
-        if (novaReservaRapida.getCidadeOrigem() == null ){
-            novaReservaRapida.setCidadeOrigem("Petrópolis - RJ");
-        }
+        if (novaReservaRapida.getCidadeOrigem() == null ) novaReservaRapida.setCidadeOrigem("Petrópolis - RJ");
+        
         ReservaDTO novaReservaDTO = reservaRapidaMapper.toReservaDTO(novaReservaRapida, novaReservaRapida.getAgente().getCpfCripto());
         List<ReservaDTO> reservasSoprepostasNaVaga = reservaUtils.getReservasAtivasSobrepostas(request.getInicio(), request.getFim());
         ReservaUtils.validarTempoMaximoReserva(novaReservaRapida.getInicio(), novaReservaRapida.getFim(), novaReservaRapida.getVaga().getArea(), novaReservaRapida.getAgente().getUsuario().getPermissao());

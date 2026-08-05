@@ -3,7 +3,6 @@ package com.cptrans.petrocarga.modules.reserva.service;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.file.Paths;
-import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
@@ -11,7 +10,6 @@ import org.thymeleaf.context.Context;
 
 import com.cptrans.petrocarga.modules.reserva.dto.mapper.ReservaMapper;
 import com.cptrans.petrocarga.modules.reserva.entity.Reserva;
-import com.cptrans.petrocarga.modules.reserva.repository.ReservaRepository;
 import com.cptrans.petrocarga.shared.utils.DateUtils;
 import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
 
@@ -21,12 +19,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class DocumentoReservaService {
     private final TemplateEngine templateEngine;
-    private final ReservaRepository reservaRepository;
     private final ReservaMapper reservaMapper;
-
-    public Reserva findReservaWithDetails(UUID id) {
-        return reservaRepository.findByIdWithJoins(id);
-    }
 
     public String gerarHtmlReserva(Reserva reserva) {
         Context context = new Context();
