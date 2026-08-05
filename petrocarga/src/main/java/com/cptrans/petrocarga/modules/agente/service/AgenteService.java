@@ -54,8 +54,11 @@ public class AgenteService {
      *
     */
     public Agente findByIdAndAtivoTrue(UUID id) {
-        return agenteRepository.findByIdAndUsuarioAtivo(id, true)
-                .orElseThrow(() -> new AgenteExceptions.AgenteNotFoundException());
+        return agenteRepository.findByIdAndUsuarioAtivo(id, true).orElseThrow(() -> new AgenteExceptions.AgenteNotFoundException());
+    }
+
+    public Agente findById(UUID id) {
+        return agenteRepository.findById(id).orElseThrow(() -> new AgenteExceptions.AgenteNotFoundException());
     }
 
     /**
@@ -109,8 +112,7 @@ public class AgenteService {
         }
     
         Usuario usuarioAtualizado = usuarioService.patchUpdate(id, PermissaoEnum.AGENTE, novoAgente);
-        agenteCadastrado.setUsuario(usuarioAtualizado);
-
+        
         if (novoAgente.getCpf() != null) {
             String cpf = novoAgente.getCpf().trim();
             String cpfHash = hashService.hash(cpf);
@@ -119,8 +121,8 @@ public class AgenteService {
             agenteCadastrado.setCpfHash(cpfHash);
             agenteCadastrado.setCpfCripto(cpfCripto);
             agenteCadastrado.setCpfLast5(cpfLast5);
-            agenteCadastrado.getUsuario().setPersonalDataKeyVersion(criptoService.getActiveKeyVersion());
         }
+        agenteCadastrado.setUsuario(usuarioAtualizado);
         return agenteRepository.save(agenteCadastrado);
     }
 
@@ -154,5 +156,4 @@ public class AgenteService {
         Page<AgenteResponseDTO> pageResponse = page.map(agenteMapper::toResponse);    
         return new PageResponseDTO(pageResponse);
     }
-
 }

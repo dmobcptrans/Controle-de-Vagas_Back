@@ -5,6 +5,7 @@ import org.hibernate.validator.constraints.br.CPF;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -23,7 +24,10 @@ public class AgenteRequestDTO {
     private String cpf;
 
     @NotNull(message="Telefone obrigatório.")
-    @Size(min = 10, max = 11, message="Telefone deve conter entre 10 e 11 dígitos.")
+    @Pattern(
+        regexp = "^\\d{10,11}$",
+        message = "O telefone deve conter apenas números e ter entre 10 e 11 dígitos"
+    )
     private String telefone;
 
     @NotNull(message="Email obrigatório.")
