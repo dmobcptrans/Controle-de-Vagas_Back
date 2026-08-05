@@ -107,10 +107,13 @@ public class VeiculoController {
     @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR', 'MOTORISTA', 'EMPRESA')")
     @GetMapping("/usuario/{usuarioId}")
     public ResponseEntity<List<VeiculoResponseDTO>> getVeiculosByUsuarioId(
-            @Parameter(description = "ID do usuário associado ao veículo")
-            @PathVariable UUID usuarioId
-        ) {
-        List<VeiculoResponseDTO> veiculos = veiculoService.findAtivosByUsuarioId(usuarioId).stream()
+        @Parameter(description = "ID do usuário associado ao veículo")
+        @PathVariable UUID usuarioId,
+
+        @Parameter(description = "Status do veículo (ativo/inativo)")
+        @RequestParam(defaultValue = "true") Boolean ativo
+    ) {
+        List<VeiculoResponseDTO> veiculos = veiculoService.findByUsuarioIdAndAtivo(usuarioId, ativo).stream()
                 .map(veiculo -> veiculoMapper.toResponse(veiculo))
                 .collect(Collectors.toList());
         return ResponseEntity.ok(veiculos);
@@ -126,12 +129,12 @@ public class VeiculoController {
     @PreAuthorize("#usuarioId == authentication.principal.id or hasRole('ADMIN')")
     @PostMapping({"/{usuarioId}"})
     public ResponseEntity<VeiculoResponseDTO> createVeiculo(
-            @Parameter(description = "ID do usuário que terá o novo veículo")
-            @PathVariable UUID usuarioId,
-        
-            @Parameter(description = "Informações do veículo")
-            @Valid @RequestBody VeiculoRequestDTO veiculoRequestDTO
-        ) {
+        @Parameter(description = "ID do usuário que terá o novo veículo")
+        @PathVariable UUID usuarioId,
+    
+        @Parameter(description = "Informações do veículo")
+        @Valid @RequestBody VeiculoRequestDTO veiculoRequestDTO
+    ) {
         Veiculo novoVeiculo = veiculoService.createVeiculo(veiculoRequestDTO, usuarioId);
         return ResponseEntity.status(HttpStatus.CREATED).body(veiculoMapper.toResponse(novoVeiculo));
     }
@@ -146,9 +149,9 @@ public class VeiculoController {
     @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR', 'MOTORISTA', 'EMPRESA')")
     @GetMapping("/{id}")
     public ResponseEntity<VeiculoResponseDTO> getVeiculoById(
-            @Parameter(description = "ID do veículo")
-            @PathVariable UUID id
-        ) {
+        @Parameter(description = "ID do veículo")
+        @PathVariable UUID id
+    ) {
         Veiculo veiculo = veiculoService.findById(id);
         return ResponseEntity.ok(veiculoMapper.toResponse(veiculo));
     }
@@ -183,7 +186,10 @@ public class VeiculoController {
     @DefaultResponses
     @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR','MOTORISTA', 'EMPRESA')")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteVeiculo(@PathVariable UUID id) {
+    public ResponseEntity<Void> deleteVeiculo(
+        @Parameter(description = "ID do veículo")
+        @PathVariable UUID id
+    ) {
         veiculoService.deleteById(id);
         return ResponseEntity.noContent().build();
     }

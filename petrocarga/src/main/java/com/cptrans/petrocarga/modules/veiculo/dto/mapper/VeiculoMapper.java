@@ -33,7 +33,7 @@ public class VeiculoMapper {
                 veiculo.getCnpjProprietario(),
                 veiculo.getAtivo()
             ), 
-            veiculo.getUsuario().getPersonalDataKeyVersion()
+            veiculo.getUsuario().getCriptoVersion()
         );
     }
 

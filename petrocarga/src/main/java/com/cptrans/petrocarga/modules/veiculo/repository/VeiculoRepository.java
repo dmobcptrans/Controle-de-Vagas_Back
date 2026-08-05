@@ -18,6 +18,7 @@ public interface VeiculoRepository extends JpaRepository<Veiculo, UUID>, JpaSpec
     public Optional<Veiculo> findByIdNotAndPlacaAndUsuarioId(UUID id, String placa, UUID usuarioId);
     public List<Veiculo> findByUsuarioId(UUID usuarioId);
     public List<Veiculo> findByUsuarioIdAndAtivo(UUID usuarioId, Boolean ativo);
+    public List<Veiculo> findByUsuarioIdAndAtivoAndUsuarioAtivoTrue(UUID usuarioId, Boolean ativo);
     public List<Veiculo> findByUsuarioIdAndAtivoTrueAndUsuarioAtivoTrue(UUID usuarioId);
     public Optional<Veiculo> findByIdAndAtivo(UUID id, Boolean ativo);
     public Optional<Veiculo> findByIdAndAtivoTrueAndUsuarioIdAndUsuarioAtivoTrue(UUID id, UUID usuarioId);
