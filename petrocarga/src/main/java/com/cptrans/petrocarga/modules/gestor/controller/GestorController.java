@@ -15,6 +15,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.cptrans.petrocarga.config.swagger.response.DefaultResponses;
+import com.cptrans.petrocarga.config.swagger.response.DeleteResponses;
+import com.cptrans.petrocarga.config.swagger.response.GetResponses;
+import com.cptrans.petrocarga.config.swagger.response.PatchResponses;
+import com.cptrans.petrocarga.config.swagger.response.PostResponses;
 import com.cptrans.petrocarga.enums.OrdemEnum;
 import com.cptrans.petrocarga.modules.gestor.dto.mapper.GestorMapper;
 import com.cptrans.petrocarga.modules.gestor.dto.request.GestorFiltrosDTO;
@@ -25,96 +30,130 @@ import com.cptrans.petrocarga.modules.gestor.service.GestorService;
 import com.cptrans.petrocarga.modules.usuario.dto.request.UsuarioPATCHRequestDTO;
 import com.cptrans.petrocarga.shared.dto.response.PageResponseDTO;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
+@Tag(name = "Gestores", description = "Endpoints para gerenciamento de gestores")
 @RequestMapping("/gestores")
 @RequiredArgsConstructor
 public class GestorController {
     private final GestorService gestorService;
     private final GestorMapper gestorMapper;
 
-    /**
-     * Retorna uma lista de gestores com base nos filtros passados.
-     *
-     * Os filtros são: nome, telefone, email, ativo.
-     * Se nenhum filtro for passado, então retorna uma lista com todos gestores.
-     *
-     * @param nome o nome do gestor
-     * @param telefone o telefone do gestor
-     * @param email o email do gestor
-     * @param ativo se o gestor está ativo
-     * @return uma lista de gestores com base nos filtros passados ou todos gestores se nenhum filtro for passado.
-     */
+    // GET /gestores
+    @Operation(
+        summary = "Listar gestores",
+        description = "Retorna uma lista paginada de gestores, permitindo filtros opcionais."
+    )
+    @GetResponses
+    @DefaultResponses
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping()
     public ResponseEntity<PageResponseDTO> getAllGestores(
-            @RequestParam(required = false) UUID id,
-            @RequestParam(required = false) String nome,
-            @RequestParam(required = false) String telefone,
-            @RequestParam(required = false) String email,
-            @RequestParam(required = false) String cpf,
-            @RequestParam(required = false) Boolean ativo,
-            @RequestParam(defaultValue = "0") int pagina,
-            @RequestParam(defaultValue = "10") int tamanhoPagina,
-            @RequestParam(defaultValue = "ASC") OrdemEnum ordem) {
+        @Parameter(description = "ID do gestor")
+        @RequestParam(required = false) UUID id,
+
+        @Parameter(description = "Nome do gestor")
+        @RequestParam(required = false) String nome,
+
+        @Parameter(description = "Telefone do gestor")
+        @RequestParam(required = false) String telefone,
+
+        @Parameter(description = "Email do gestor")
+        @RequestParam(required = false) String email,
+
+        @Parameter(description = "CPF do gestor")
+        @RequestParam(required = false) String cpf,
+
+        @Parameter(description = "Status do gestor (ativo/inativo)")
+        @RequestParam(required = false) Boolean ativo,
+
+        @Parameter(description = "Número da página", example = "0")
+        @RequestParam(defaultValue = "0") int pagina,
+
+        @Parameter(description = "Quantidade de registros por página", example = "10")
+        @RequestParam(defaultValue = "10") int tamanhoPagina,
+
+        @Parameter(description = "Ordem da página", example = "ASC")
+        @RequestParam(defaultValue = "ASC") OrdemEnum ordem
+    ) {
         GestorFiltrosDTO filtros = new GestorFiltrosDTO(id, nome, telefone, email, cpf, ativo);
         return ResponseEntity.ok(gestorService.findAllWithFiltros(filtros, pagina, tamanhoPagina, ordem));
                    
     }
 
-    /**
-     * Retorna um gestor com base no seu id de usuário.
-     * Só permite que o gestor seja acessado pelo seu próprio dono ou por um usuário com permissão de ADMIN.
-     * @param usuarioId o id do usuário do gestor
-     * @return o gestor com base no seu id de usuário
-     */
-    @PreAuthorize("#usuarioId == authentication.principal.id or hasRole('ADMIN')")
-    @GetMapping("/{usuarioId}")
-    public ResponseEntity<GestorResponseDTO> getGestorById(@PathVariable UUID usuarioId) {
-        Gestor gestor = gestorService.findByUsuarioId(usuarioId);
+    // GET /gestores/{id}
+    @Operation(
+        summary = "Visualizar gestor",
+        description = "Retorna um gestor com base no seu id."
+    )
+    @GetResponses
+    @DefaultResponses
+    @PreAuthorize("#id == authentication.principal.id or hasRole('ADMIN')")
+    @GetMapping("/{id}")
+    public ResponseEntity<GestorResponseDTO> getGestorById(
+        @Parameter(description = "ID do gestor")
+        @PathVariable UUID id
+    ) {
+        Gestor gestor = gestorService.findById(id);
         return ResponseEntity.ok(gestorMapper.toResponse(gestor));
     }
 
-    /**
-     * Cria um novo gestor com base nos dados passados.
-     * Só permite que o gestor seja criado por um usuário com permissão de ADMIN.
-     * @param gestorRequestDTO o objeto com os dados do gestor
-     * @return o objeto criado com base nos dados do gestor
-     */
+    // POST /gestores
+    @Operation(
+        summary = "Cadastrar gestor",
+        description = "Cadastra um novo gestor."
+    )
+    @PostResponses
+    @DefaultResponses
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping()
-    public ResponseEntity<GestorResponseDTO> createGestor(@RequestBody @Valid GestorRequestDTO request) {
+    public ResponseEntity<GestorResponseDTO> createGestor(
+        @Parameter(description = "Dados do gestor")
+        @Valid @RequestBody GestorRequestDTO request
+    ) {
         Gestor gestor = gestorService.createGestor(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(gestorMapper.toResponse(gestor));
     }
 
-    /**
-     * Atualiza um gestor com base nos dados passados.
-     * Só permite que o gestor seja atualizado pelo seu próprio dono ou por um usuário com permissão de ADMIN.
-     * @param usuarioId o id do usuário do gestor
-     * @param gestorRequestDTO o objeto com os dados do gestor
-     * @return o objeto atualizado com base nos dados do gestor
-     */
-    @PreAuthorize("#usuarioId == authentication.principal.id or hasRole('ADMIN')")
-    @PatchMapping("/{usuarioId}")
-    public ResponseEntity<GestorResponseDTO> updateGestor(@PathVariable UUID usuarioId, @RequestBody @Valid UsuarioPATCHRequestDTO gestorRequestDTO) {
-        Gestor gestor = gestorService.updateGestor(usuarioId, gestorRequestDTO);
+    // PATCH /gestores/{id}
+    @Operation(
+        summary = "Atualizar gestor",
+        description = "Atualiza as informações de um gestor existente e ativo."
+    )
+    @PatchResponses
+    @DefaultResponses
+    @PreAuthorize("#id == authentication.principal.id or hasRole('ADMIN')")
+    @PatchMapping("/{id}")
+    public ResponseEntity<GestorResponseDTO> updateGestor(
+        @Parameter(description = "ID do gestor")
+        @PathVariable UUID id, 
+
+        @Parameter(description = "Dados do gestor")
+        @Valid @RequestBody UsuarioPATCHRequestDTO gestorRequestDTO
+    ) {
+        Gestor gestor = gestorService.updateGestor(id, gestorRequestDTO);
         return ResponseEntity.ok(gestorMapper.toResponse(gestor));
     }
 
-    /**
-     * Deleta um gestor com base no seu id de usuário.
-     * Só permite que o gestor seja deletado pelo seu próprio dono ou por um usuário com permissão de ADMIN.
-     * @param usuarioId o id do usuário do gestor
-     * @return uma resposta sem conteúdo caso a exclusão seja realizada com sucesso
-     */
-
-    @PreAuthorize("#usuarioId == authentication.principal.id or hasRole('ADMIN')")
-    @DeleteMapping("/{usuarioId}")
-    public ResponseEntity<Void> desativarbyId(@PathVariable UUID usuarioId) {
-        gestorService.desativarById(usuarioId);
+    // DELETE /gestores/{id}
+    @Operation(
+        summary = "Desativar gestor",
+        description = "Desativa um gestor existente e ativo."
+    )
+    @DeleteResponses
+    @DefaultResponses
+    @PreAuthorize("#id == authentication.principal.id or hasRole('ADMIN')")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> desativarbyId(
+        @Parameter(description = "ID do gestor")
+        @PathVariable UUID id
+    ) {
+        gestorService.desativarById(id);
         return ResponseEntity.noContent().build();
     }
 }
