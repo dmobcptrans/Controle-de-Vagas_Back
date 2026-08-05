@@ -52,7 +52,7 @@ public class UsuarioMapper {
 
     public UsuarioResponseDTO toResponse(Usuario usuario, String cpfOrCnpj) {
         if (usuario == null) return null;
-        cpfOrCnpj = cpfOrCnpj != null && cpfOrCnpj.length() > 14 ? criptoUtils.decrypt(cpfOrCnpj, usuario.getPersonalDataKeyVersion()) : cpfOrCnpj;
+        cpfOrCnpj = cpfOrCnpj != null && cpfOrCnpj.length() > 14 ? criptoUtils.decrypt(cpfOrCnpj, usuario.getCriptoVersion()) : cpfOrCnpj;
         String cpf = cpfOrCnpj != null && cpfOrCnpj.length() == 11 ? cpfOrCnpj : null;
         String cnpj = cpfOrCnpj != null && cpfOrCnpj.length() == 14 ? cpfOrCnpj : null;
         return criptoUtils.decrypt(
@@ -68,6 +68,6 @@ public class UsuarioMapper {
                 usuario.getAtivo(),
                 usuario.getDesativadoEm(),
                 resolvePossuiVeiculoAtivo(usuario.getPermissao(), usuario.getId(), usuario.getVeiculosAtivos())
-            ), usuario.getPersonalDataKeyVersion());    
+            ), usuario.getCriptoVersion());    
     }
 }
