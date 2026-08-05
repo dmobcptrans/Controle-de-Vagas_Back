@@ -21,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ReservaRapidaMapper {
     private final UsuarioMapper usuarioMapper;
+    private final EnderecoVagaMapper enderecoVagaMapper;
 
     public ReservaRapida toEntity(ReservaRapidaRequestDTO request, Vaga vaga) {
         return new ReservaRapida(
@@ -58,7 +59,7 @@ public class ReservaRapidaMapper {
             null,
             vaga != null ? vaga.getNumeroEndereco() : null,
             vaga != null ? vaga.getReferenciaEndereco() : null,
-            EnderecoVagaMapper.toResponse(enderecoVaga),
+            enderecoVagaMapper.toResponse(enderecoVaga),
             reserva.getInicio(),
             reserva.getFim(),
             reserva.getTipoVeiculo().getComprimento(),

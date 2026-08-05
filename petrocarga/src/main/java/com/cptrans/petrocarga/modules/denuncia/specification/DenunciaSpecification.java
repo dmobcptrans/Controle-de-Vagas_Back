@@ -34,7 +34,7 @@ public class DenunciaSpecification {
             }
 
             if (filtros.getCriadoPorNome() != null && !filtros.getCriadoPorNome().trim().isEmpty()){
-                predicates.add(cb.like(Utils.createUnaccentExpression(cb, cb.upper(root.get("criadoPor").get("nome"))), "%" + StringUtils.normalize(filtros.getCriadoPorNome().trim().toUpperCase()) + "%"));
+                predicates.add(cb.like(Utils.createUnaccentExpression(cb, cb.upper(root.get("criadoPor").get("nome"))), "%" + StringUtils.removerAcentos(filtros.getCriadoPorNome().trim().toUpperCase()) + "%"));
             }
 
             if (filtros.getListaStatus() != null && !filtros.getListaStatus().isEmpty()){

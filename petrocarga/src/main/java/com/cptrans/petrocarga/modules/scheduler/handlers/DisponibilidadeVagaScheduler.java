@@ -18,14 +18,13 @@ import com.cptrans.petrocarga.enums.StatusVagaEnum;
 import com.cptrans.petrocarga.modules.disponibilidadeVaga.entity.DisponibilidadeVaga;
 import com.cptrans.petrocarga.modules.scheduler.jobs.disponibilidadeVaga.AlterarDisponibilidadeJob;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class DisponibilidadeVagaScheduler {
 
     private final Scheduler scheduler;
-
-    public DisponibilidadeVagaScheduler(Scheduler scheduler) {
-        this.scheduler = scheduler;
-    }
     
     /**
      * Agenda alteração da disponibilidade de vaga.
@@ -71,8 +70,6 @@ public class DisponibilidadeVagaScheduler {
             QuartzGroups.DISPONIBILIDADE_VAGA
         );
 
-        if (scheduler.checkExists(jobKey)) {
-            scheduler.deleteJob(jobKey);
-        }
+        if (scheduler.checkExists(jobKey)) scheduler.deleteJob(jobKey);
     }
 }

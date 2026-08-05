@@ -24,13 +24,14 @@ import jakarta.persistence.MapsId;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "motorista")
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
 @EqualsAndHashCode
 public class Motorista {
@@ -75,6 +76,28 @@ public class Motorista {
 
     @OneToMany(mappedBy = "motorista", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<VeiculoEmpresaMotorista> veiculosEmpresa;
+
+    public Motorista(
+        Usuario usuario,  
+        TipoCnhEnum tipoCnh, 
+        LocalDate dataValidadeCnh, 
+        String cnhHash, 
+        String cnhCripto, 
+        String cnhLast4, 
+        String cpfHash, 
+        String cpfCripto, 
+        String cpfLast5
+    ) {
+        this.usuario = usuario;
+        this.tipoCnh = tipoCnh;
+        this.dataValidadeCnh = dataValidadeCnh;
+        this.cnhHash = cnhHash;
+        this.cnhCripto = cnhCripto;
+        this.cnhLast4 = cnhLast4;
+        this.cpfHash = cpfHash;
+        this.cpfCripto = cpfCripto;
+        this.cpfLast5 = cpfLast5;
+    }
 
     public void setUsuario(Usuario usuario) {
         this.usuario = usuario;

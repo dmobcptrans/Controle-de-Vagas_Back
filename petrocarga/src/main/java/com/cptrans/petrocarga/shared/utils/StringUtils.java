@@ -27,7 +27,7 @@ public class StringUtils {
         return nomeFormatado.trim();
     }
 
-    public static String normalize(String input) {
+    public static String removerAcentos(String input) {
         if (input == null) return null;
         
         return Normalizer.normalize(input, Form.NFD)

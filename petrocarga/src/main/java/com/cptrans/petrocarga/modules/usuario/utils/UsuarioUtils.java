@@ -49,10 +49,8 @@ public class UsuarioUtils {
         return null;
     }
 
-    public String getCpfOrCnpjByPermissao(PermissaoEnum permissao, UUID usuarioId) {
+    public String getCpfOrCnpjByPermissaoAndId(PermissaoEnum permissao, UUID usuarioId) {
         switch (permissao) {
-            case ADMIN:
-                return null;
             case GESTOR:
                 return gestorRepository.findCpfCriptoById(usuarioId).orElse(null);
             case MOTORISTA:

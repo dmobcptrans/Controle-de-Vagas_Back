@@ -19,6 +19,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.cptrans.petrocarga.config.swagger.response.DefaultResponses;
+import com.cptrans.petrocarga.config.swagger.response.GetResponses;
+import com.cptrans.petrocarga.config.swagger.response.PatchResponses;
+import com.cptrans.petrocarga.config.swagger.response.PostResponses;
 import com.cptrans.petrocarga.enums.StatusReservaEnum;
 import com.cptrans.petrocarga.enums.TipoVeiculoEnum;
 import com.cptrans.petrocarga.modules.reserva.dto.mapper.ReservaMapper;
@@ -29,18 +33,22 @@ import com.cptrans.petrocarga.modules.reserva.dto.response.ReservaDetailedRespon
 import com.cptrans.petrocarga.modules.reserva.dto.response.ReservaResponseDTO;
 import com.cptrans.petrocarga.modules.reserva.entity.Reserva;
 import com.cptrans.petrocarga.modules.reserva.service.ReservaService;
-import com.cptrans.petrocarga.modules.reserva.utils.ReservaUtils;
 import com.cptrans.petrocarga.modules.usuario.entity.Usuario;
 import com.cptrans.petrocarga.modules.usuario.utils.UsuarioUtils;
 import com.cptrans.petrocarga.modules.vaga.entity.Vaga;
 import com.cptrans.petrocarga.modules.vaga.service.VagaService;
 import com.cptrans.petrocarga.security.UserAuthenticated;
 import com.cptrans.petrocarga.shared.dto.response.PageResponseDTO;
+import com.cptrans.petrocarga.shared.utils.DateUtils;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
+@Tag(name = "Reservas", description = "Endpoints para gerenciamento de reservas")
 @RequestMapping("/reservas")
 @RequiredArgsConstructor
 public class ReservaController {
@@ -50,39 +58,68 @@ public class ReservaController {
     private final UsuarioUtils usuarioUtils;
     private final ReservaMapper reservaMapper;
 
-    /**
-     * Retorna uma lista de reservas com base na lista de status e vaga ID informado.
-     * 
-     * @param status lista de status para filtrar as reservas
-     * @param vagaId vaga ID para filtrar as reservas
-     * @return lista de reservas com base na lista de status e vaga ID informado ou todas as reservas caso nenhum filtro seja informado.
-     */
+    // GET /reservas/all
+    @Operation(
+        summary = "Listar todas as reservas",
+        description = "Retorna uma lista de reservas opcionalmente filtradas com base nos parâmetros informados."
+    )
+    @GetResponses
+    @DefaultResponses
     @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR', 'AGENTE')")
     @GetMapping("/all")
-    public ResponseEntity<List<ReservaDTO>> getAllReservas(@RequestParam(required = false) List<StatusReservaEnum> status, @RequestParam(required = false) UUID vagaId, @RequestParam(required = false) String placa, @RequestParam(required = false) LocalDate data, @RequestParam(required = false) UUID usuarioId, @RequestParam(required = false) Integer mes, @RequestParam(required = false) Integer ano) {
-        ReservaUtils.validarFiltrosData(data, mes, ano);
+    public ResponseEntity<List<ReservaDTO>> getAllReservas(
+        @Parameter(description = "Lista de Status da reserva")
+        @RequestParam(required = false) List<StatusReservaEnum> status, 
+        
+        @Parameter(description = "ID da vaga")
+        @RequestParam(required = false) UUID vagaId, 
+        
+        @Parameter(description = "Placa do veículo")
+        @RequestParam(required = false) String placa, 
+        
+        @Parameter(description = "Data da reserva")
+        @RequestParam(required = false) LocalDate data, 
+        
+        @Parameter(description = "ID do usuário")
+        @RequestParam(required = false) UUID usuarioId, 
+        
+        @Parameter(description = "Mês da reserva")
+        @RequestParam(required = false) Integer mes, 
+        
+        @Parameter(description = "Ano da reserva")
+        @RequestParam(required = false) Integer ano
+    ) {
+        DateUtils.validarFiltrosData(data, mes, ano);
 
         List<ReservaDTO> reservas = reservaService.findAll(status, vagaId, placa, data, usuarioId, mes, ano);
         return ResponseEntity.ok(reservas);
       
     }
 
-    /**
-     * Retorna uma lista de reservas com base na lista de status, vaga ID e data informado.
-     * 
-     * Só permite que as reservas sejam acessadas por um usuário com permissão de ADMIN, GESTOR ou AGENTE.
-     * 
-     * @param vagaId vaga ID para filtrar as reservas
-     * @param data data para filtrar as reservas
-     * @param placa placa para filtrar as reservas
-     * @param status lista de status para filtrar as reservas
-     * @return lista de reservas com base na lista de status, vaga ID e data informado ou todas as reservas caso nenhum filtro seja informado.
-     */
+    // GET /reservas/all/{vagaId}
+    @Operation(
+        summary = "Listar todas as reservas de uma vaga",
+        description = "Retorna uma lista de reservas de uma vaga com base no ID da vaga e opcionalmente filtradas com base nos parâmetros informados."
+    )
+    @GetResponses
+    @DefaultResponses
     @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR', 'AGENTE')")
     @GetMapping("/all/{vagaId}")
-    public ResponseEntity<List<ReservaDTO>> getAllReservasWithFiltersByVaga(@PathVariable UUID vagaId,@RequestParam(required = false) LocalDate data, @RequestParam(required = false) String placa,@RequestParam(required = false) List<StatusReservaEnum> status) {
+    public ResponseEntity<List<ReservaDTO>> getAllReservasWithFiltersByVaga(
+        @Parameter(description = "ID da vaga")
+        @PathVariable UUID vagaId,
+        
+        @Parameter(description = "Data da reserva")
+        @RequestParam(required = false) LocalDate data, 
+        
+        @Parameter(description = "Placa do veículo")
+        @RequestParam(required = false) String placa,
+        
+        @Parameter(description = "Lista de Status da reserva")
+        @RequestParam(required = false) List<StatusReservaEnum> status
+    ) {
         Vaga vaga = vagaService.findById(vagaId);
-        if(placa != null) {
+        if (placa != null) {
             placa = placa.trim().toUpperCase();
             List<ReservaDTO> reservas = reservaService.getReservasByVagaIdDataAndPlaca(vaga.getId(), data, placa, status);
             return ResponseEntity.ok(reservas);
@@ -91,174 +128,216 @@ public class ReservaController {
         return ResponseEntity.ok(reservas);
     }
 
-    /**
-     * Retorna uma lista de reservas com base na placa informado.
-     * 
-     * Só permite que as reservas sejam acessadas por um usuário com permissão de ADMIN, GESTOR ou AGENTE.
-     * 
-     * @param placa placa para filtrar as reservas, a placa é obrigatória para acessar esse endpoint
-     * @return lista de reservas com base na placa informado.
-     */
+    // GET /reservas/placa
+    @Operation(
+        summary = "Listar todas as reservas ativas de um veículo",
+        description = "Retorna uma lista de reservas de um veículo com status ('reservada' ou 'ativa') com base na placa informada."
+    )
+    @GetResponses
+    @DefaultResponses
     @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR','AGENTE')")
     @GetMapping("/placa")
-    public ResponseEntity<List<ReservaDTO>> getAllReservasByPlaca(@RequestParam(required = true) String placa) {
+    public ResponseEntity<List<ReservaDTO>> getAllReservasByPlaca(
+        @Parameter(description = "Placa do veículo")
+        @RequestParam(required = true) String placa
+    ) {
         List<ReservaDTO> reservas = reservaService.getReservasAtivasByPlaca(placa);
         return ResponseEntity.ok(reservas);
     }
 
-    /**
-     * Retorna uma lista de intervalos de reservas que estão bloqueadas
-     * em uma determinada vaga e data, com base no tipo de veículo informado.
-     * Só permite que o endpoint seja acessado por um usuário com permissão de ADMIN, AGENTE, MOTORISTA ou EMPRESA.
-     * 
-     * @param vagaId vaga ID para filtrar as reservas
-     * @param data data para filtrar as reservas
-     * @param tipoVeiculo tipo de veiculo para filtrar as reservas
-     * @return lista de intervalos de horários que estão bloqueadas em uma determinada vaga e data, com base no tipo de veiculo informado.
-     */
+    // GET /reservas/bloqueios/{vagaId}
+    @Operation(
+        summary = "Listar todos os intervalos bloqueados de uma vaga",
+        description = "Retorna uma lista de intervalos bloqueados de uma vaga com base no ID da vaga, a data da reserva e o tipo de veículo."
+    )
+    @GetResponses
+    @DefaultResponses
     @PreAuthorize("hasAnyRole('ADMIN','AGENTE','MOTORISTA', 'EMPRESA')")
     @GetMapping("/bloqueios/{vagaId}")
-    public ResponseEntity<List<ReservaService.Intervalo>> getIntervalosBloqueados(@PathVariable UUID vagaId, @RequestParam LocalDate data, @RequestParam TipoVeiculoEnum tipoVeiculo) {
-        Vaga vaga = vagaService.findById(vagaId);
-        List<ReservaService.Intervalo> intervalosBloqueados = reservaService.getIntervalosBloqueados(vaga, data, tipoVeiculo);
+    public ResponseEntity<List<ReservaService.Intervalo>> getIntervalosBloqueados(
+        @Parameter(description = "ID da vaga")
+        @PathVariable UUID vagaId, 
+        
+        @Parameter(description = "Data da reserva")
+        @RequestParam LocalDate data, 
+        
+        @Parameter(description = "Tipo de veículo")
+        @RequestParam TipoVeiculoEnum tipoVeiculo
+    ) {
+        List<ReservaService.Intervalo> intervalosBloqueados = reservaService.getIntervalosBloqueados(vagaId, data, tipoVeiculo);
         return ResponseEntity.ok(intervalosBloqueados);
     }
 
-    /**
-     * Retorna uma reserva com base no seu id.
-     * 
-     * Só permite que a reserva seja acessada por um usuário autenticado com permissão de ADMIN, GESTOR, AGENTE, MOTORISTA ou EMPRESA.
-     * 
-     * @param id o id da reserva para buscar
-     * @return a reserva com base no seu id
-     */
+    // GET /reservas/{id}
+    @Operation(
+        summary = "Buscar reserva por ID",
+        description = "Retorna os dados de uma reserva a partir do ID da reserva."
+    )
+    @GetResponses
+    @DefaultResponses
     @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR', 'AGENTE', 'MOTORISTA', 'EMPRESA')")
     @GetMapping("/{id}")
-    public ResponseEntity<ReservaDetailedResponseDTO> getReservaById(@PathVariable UUID id) {
-        // Busca a reserva e mantém as verificações de permissão no service
+    public ResponseEntity<ReservaDetailedResponseDTO> getReservaById(
+        @Parameter(description = "ID da reserva")
+        @PathVariable UUID id
+    ) {
         Reserva reserva = reservaService.findById(id);
-        // Converte para DTO detalhado que expõe nomes/placa para exibição amigável
         ReservaDetailedResponseDTO dto = reservaMapper.toDetailedResponse(reserva);
         return ResponseEntity.ok(dto);
     }
 
-    /**
-     * Retorna uma lista de reservas de um usuário com base no seu id de usuário.
-     * Só permite que as reservas sejam acessadas pelo própio dono ou por um usuário autenticado com permissão de ADMIN ou GESTOR.
-     * 
-     * @param usuarioId o id do usuário para buscar as reservas
-     * @param status lista de status para filtrar as reservas
-     * @return lista de reservas de um usuário com base no seu id de usuário filtradas ou não.
-     */
+    // GET /reservas/usuario/{usuarioId}
+    @Operation(
+        summary = "Listar todas as reservas de um usuário",
+        description = "Retorna uma lista paginada de reservas de um usuário com base no ID do usuário e nos parâmetros informados."
+    )
+    @GetResponses
+    @DefaultResponses
     @PreAuthorize("#usuarioId == authentication.principal.id or hasAnyRole('ADMIN', 'GESTOR')")
     @GetMapping("/usuario/{usuarioId}")
-    public ResponseEntity<PageResponseDTO> getReservasByUsuarioIdOrMotoristaId(@PathVariable UUID usuarioId, @RequestParam(required = false) List<StatusReservaEnum> status, @RequestParam(defaultValue = "0") Integer numeroPagina, @RequestParam(defaultValue = "10") Integer tamanhoPagina) {
+    public ResponseEntity<PageResponseDTO> getReservasByUsuarioIdOrMotoristaId(
+        @Parameter(description = "ID do usuário")
+        @PathVariable UUID usuarioId, 
+        
+        @Parameter(description = "Lista de Status da reserva")
+        @RequestParam(required = false) List<StatusReservaEnum> status, 
+        
+        @Parameter(description = "Número da pagina")
+        @RequestParam(defaultValue = "0") Integer numeroPagina, 
+        
+        @Parameter(description = "Quantidade de registros por pagina")
+        @RequestParam(defaultValue = "10") Integer tamanhoPagina
+    ) {
         Page<ReservaResponseDTO> reservas = reservaService.findByCriadoPorIdOrMotoristaId(usuarioId, status, numeroPagina, tamanhoPagina)
                 .map((r) -> {
                     Usuario criadoPor = r.getCriadoPor();
-                    String cpfOrCnpjCriador = usuarioUtils.getCpfOrCnpjByPermissao(criadoPor.getPermissao(), criadoPor.getId());
+                    String cpfOrCnpjCriador = usuarioUtils.getCpfOrCnpjByPermissaoAndId(criadoPor.getPermissao(), criadoPor.getId());
                     return reservaMapper.toResponse(r, cpfOrCnpjCriador);
                 });
                 
         return ResponseEntity.ok(new PageResponseDTO(reservas));
     }
     
-    /**
-     * Cria uma nova reserva com base nos dados passados.
-     * Só permite que as reservas sejam acessadas por um usuário com permissão de ADMIN, MOTORISTA ou EMPRESA.
-     * 
-     * @param reservaRequestDTO os dados da reserva a ser criada
-     * @return a reserva criada com status CREATED
-     */
+    // POST /reservas
+    @Operation(
+        summary = "Criar reserva",
+        description = "Cria uma nova reserva com base nos parâmetros informados."
+    )
+    @PostResponses
+    @DefaultResponses
     @PreAuthorize("hasAnyRole('ADMIN','MOTORISTA', 'EMPRESA')")
     @PostMapping()
-    public ResponseEntity<ReservaResponseDTO> createReserva(@RequestBody @Valid ReservaRequestDTO request) {
+    public ResponseEntity<ReservaResponseDTO> createReserva(
+        @Parameter(description = "Dados da reserva")
+        @Valid @RequestBody ReservaRequestDTO request
+    ) {
         Reserva novaReserva = reservaService.createReserva(request);
         Usuario criadoPor = novaReserva.getCriadoPor();
-        String cpfOrCnpjCriador = usuarioUtils.getCpfOrCnpjByPermissao(criadoPor.getPermissao(), criadoPor.getId());
+        String cpfOrCnpjCriador = usuarioUtils.getCpfOrCnpjByPermissaoAndId(criadoPor.getPermissao(), criadoPor.getId());
         return ResponseEntity.status(HttpStatus.CREATED).body(reservaMapper.toResponse(novaReserva, cpfOrCnpjCriador));
     }
 
-    /**
-     * Finaliza uma reserva com base no seu id, se a reserva já estiver como status 'ativa'.
-     * Só permite que as reservas sejam acessadas por um usuário com permissão de ADMIN, GESTOR ou AGENTE.
-     * 
-     * @param id o id da reserva a ser finalizada
-     * @return a reserva finalizada com status ok
-     */
+    // POST /reservas/{id}/finalizar-forcado
+    @Operation(
+        summary = "Finalizar reserva",
+        description = "Finaliza uma reserva com base no ID da reserva."
+    )
+    @PostResponses
+    @DefaultResponses
     @PreAuthorize("hasAnyRole('ADMIN','GESTOR','AGENTE')")
     @PostMapping("/{id}/finalizar-forcado")
-    public ResponseEntity<ReservaDTO> finalizarReservaForcado(@PathVariable UUID id) {
+    public ResponseEntity<ReservaDTO> finalizarReservaForcado(
+        @Parameter(description = "ID da reserva")
+        @PathVariable UUID id
+    ) {
         ReservaDTO reservaFinalizada = reservaService.finalizarForcado(id);
         return ResponseEntity.ok(reservaFinalizada);
     }
 
-    /**
-     * Realiza o check-in de uma reserva com base no seu id.
-     * Só permite que as reservas sejam acessadas por um usuário com permissão de ADMIN, MOTORISTA ou EMPRESA.
-     * Só o dono da reserva ou um usuário com permissão de ADMIN pode realizar o check-in, ou seja, um motorista só pode realizar o check-in de suas próprias reservas.
-     * 
-     * @param id o id da reserva a ser realizada o check-in
-     * @return a reserva com status ok
-     */
+    // POST /reservas/{id}/checkin
+    @Operation(
+        summary = "Realizar check-in",
+        description = "Realiza o check-in de uma reserva com base no ID da reserva."
+    )
+    @PostResponses
+    @DefaultResponses
     @PreAuthorize("hasAnyRole('ADMIN', 'MOTORISTA', 'EMPRESA')")
     @PostMapping("/{id}/checkin")
-    public ResponseEntity<ReservaResponseDTO> realizarCheckIn(@PathVariable UUID id) {
+    public ResponseEntity<ReservaResponseDTO> realizarCheckIn(
+        @Parameter(description = "ID da reserva")
+        @PathVariable UUID id
+    ) {
         Reserva reserva = reservaService.realizarCheckIn(id);
         Usuario criadoPor = reserva.getCriadoPor();
-        String cpfOrCnpjCriador = usuarioUtils.getCpfOrCnpjByPermissao(criadoPor.getPermissao(), criadoPor.getId());
+        String cpfOrCnpjCriador = usuarioUtils.getCpfOrCnpjByPermissaoAndId(criadoPor.getPermissao(), criadoPor.getId());
         return ResponseEntity.ok(reservaMapper.toResponse(reserva, cpfOrCnpjCriador));
     }
 
-    /**
-     * Atualiza uma reserva com base no seu id e usuarioId.
-     * 
-     * Só permite que as reservas sejam acessadas pelo própio dono ou por um usuário autenticado com permissão de ADMIN ou GESTOR.
-     * 
-     * @param id o id da reserva a ser atualizada
-     * @param usuarioId o id do usuário para atualizar a reserva
-     * @param reservaRequestDTO os dados da reserva a ser atualizados
-     * @return a reserva atualizada com status CREATED
-     */
+    
+    //PATCH /reservas/{id}/{usuarioId}
+    @Operation(
+        summary = "Atualizar reserva",
+        description = "Atualiza uma reserva com base no ID da reserva, ID do usuário e nos parâmetros informados."
+    )
+    @PatchResponses
+    @DefaultResponses
     @PreAuthorize("#usuarioId == authentication.principal.id or hasAnyRole('ADMIN', 'GESTOR')")
     @PatchMapping("/{id}/{usuarioId}")
-    public ResponseEntity<ReservaResponseDTO> updateReserva(@AuthenticationPrincipal UserAuthenticated userAuthenticated, @PathVariable UUID id, @PathVariable UUID usuarioId, @RequestBody @Valid ReservaPATCHRequestDTO reservaRequestDTO) {
+    public ResponseEntity<ReservaResponseDTO> updateReserva(
+        @Parameter(description = "Usuário autenticado")
+        @AuthenticationPrincipal UserAuthenticated userAuthenticated, 
+        
+        @Parameter(description = "ID da reserva")
+        @PathVariable UUID id, 
+        
+        @Parameter(description = "ID do usuário")
+        @PathVariable UUID usuarioId, 
+        
+        @Parameter(description = "Dados da reserva")
+        @Valid @RequestBody ReservaPATCHRequestDTO reservaRequestDTO
+    ) {
         Reserva reservaAtualizada = reservaService.atualizarReserva(userAuthenticated, id, usuarioId, reservaRequestDTO);
         Usuario criadoPor = reservaAtualizada.getCriadoPor();
-        String cpfOrCnpjCriador = usuarioUtils.getCpfOrCnpjByPermissao(criadoPor.getPermissao(), criadoPor.getId());
+        String cpfOrCnpjCriador = usuarioUtils.getCpfOrCnpjByPermissaoAndId(criadoPor.getPermissao(), criadoPor.getId());
         return ResponseEntity.status(HttpStatus.CREATED).body(reservaMapper.toResponse(reservaAtualizada, cpfOrCnpjCriador));
     }
 
-    /**
-     * Realiza o check-out de uma reserva com base no seu id.
-     * Só permite que as reservas sejam acessadas pelo própio dono ou por um usuário autenticado.
-     * 
-     * @param id o id da reserva a ser realizada o check-out
-     * @return a reserva com status CREATED
-     */
+    //PATCH /reservas/{id}/checkout
+    @Operation(
+        summary = "Realizar checkout",
+        description = "Realiza o checkout de uma reserva com base no ID da reserva."
+    )
+    @PatchResponses
+    @DefaultResponses
     @PatchMapping("checkout/{id}")
-    public ResponseEntity<ReservaResponseDTO> realizarCheckout(@AuthenticationPrincipal UserAuthenticated userAuthenticated, @PathVariable UUID id ) {
+    public ResponseEntity<ReservaResponseDTO> realizarCheckout(
+        @Parameter(description = "Usuário autenticado")
+        @AuthenticationPrincipal UserAuthenticated userAuthenticated, 
+        
+        @Parameter(description = "ID da reserva")
+        @PathVariable UUID id 
+    ) {
         Reserva reservaAtualizada = reservaService.realizarCheckout(id);
         Usuario criadoPor = reservaAtualizada.getCriadoPor();
-        String cpfOrCnpjCriador = usuarioUtils.getCpfOrCnpjByPermissao(criadoPor.getPermissao(), criadoPor.getId());
+        String cpfOrCnpjCriador = usuarioUtils.getCpfOrCnpjByPermissaoAndId(criadoPor.getPermissao(), criadoPor.getId());
         return ResponseEntity.status(HttpStatus.CREATED).body(reservaMapper.toResponse(reservaAtualizada, cpfOrCnpjCriador));
     }
 
-    /**
-     * Cancela uma reserva com base no seu id e usuarioId.
-     * 
-     * Só permite que as reservas sejam acessadas pelo própio dono ou por um usuário autenticado com permissão de ADMIN ou GESTOR.
-     * 
-     * @param id o id da reserva a ser cancelada
-     * @param usuarioId o id do usuário para cancelar a reserva
-     * @return status ok sem conteúdo
-     */
+    //DELETE /reservas/{id}/{usuarioId}
+    @Operation(
+        summary = "Cancelar reserva",
+        description = "Cancela uma reserva com base no ID da reserva e ID do usuário."
+    )
     @PreAuthorize("#usuarioId == authentication.principal.id or hasAnyRole('ADMIN', 'GESTOR')")
     @DeleteMapping("/{id}/{usuarioId}")
-    public ResponseEntity<Void> cancelarReserva(@PathVariable UUID id, @PathVariable UUID usuarioId) {
+    public ResponseEntity<Void> cancelarReserva(
+        @Parameter(description = "ID da reserva")
+        @PathVariable UUID id, 
         
+        @Parameter(description = "ID do usuário")
+        @PathVariable UUID usuarioId
+    ) {
         reservaService.cancelarReserva(id, usuarioId);
         return ResponseEntity.noContent().build();
-        
     }
 }

@@ -12,20 +12,19 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import lombok.RequiredArgsConstructor;
+
 
 @Configuration
 @EnableMethodSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
-        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
-    }
-
-    //deve ficar comentado para não dar conflito com o CORS config do nginx
-    // @Value("${app.cors.allowed-origins:http://localhost:3000,https://controle-de-vagas-front.vercel.app}")
-    // private List<String> allowedOrigins;
+    //TODO: deve ficar comentado ao usar o docker para não dar conflito com o CorsConfig do nginx
+    //  @Value("${app.cors.allowed-origins:http://localhost:3000,https://controle-de-vagas-front.vercel.app}")
+    //  private List<String> allowedOrigins;
 
     /**
      * Cria a cadeia de filtros de segurança para autenticar as requisições HTTP.
@@ -39,8 +38,8 @@ public class SecurityConfig {
         http
             .csrf(csrf -> csrf.disable())
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            //deve ficar comentado para não dar conflito com o CORS config do nginx
-            // .cors(withDefaults -> withDefaults.configurationSource(corsConfigurationSource()))
+            //TODO: deve ficar comentado ao usar o docker para não dar conflito com o CorsConfig do nginx
+            //  .cors(withDefaults -> withDefaults.configurationSource(corsConfigurationSource()))
             .authorizeHttpRequests(auth -> auth
                  .requestMatchers(
                     "/auth/login/",
@@ -73,7 +72,7 @@ public class SecurityConfig {
         return http.build();
     }
 
-    //deve ficar comentado para não dar conflito com o CORS config do nginx
+    //TODO: deve ficar comentado ao usar o docker para não dar conflito com o CorsConfig do nginx
     /**
      * Providencia uma fonte de configuração CORS para a aplicação (CorsConfigurationSource).
      * Permite origens especificadas na propriedade "app.cors.allowed-origins" do arquivo de configuração da aplicação.

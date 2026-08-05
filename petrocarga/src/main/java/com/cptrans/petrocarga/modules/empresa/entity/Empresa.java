@@ -17,13 +17,14 @@ import jakarta.persistence.MapsId;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "empresa")
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
 @EqualsAndHashCode
 public class Empresa {
@@ -44,6 +45,11 @@ public class Empresa {
 
     @OneToMany(mappedBy = "empresa", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<VeiculoEmpresaMotorista> veiculosEmpresaMotoristas;
+
+    public Empresa(Usuario usuario, String cnpj) {
+        this.usuario = usuario;
+        this.cnpj = cnpj;
+    }
 
     public void setId(UUID id) {
         this.id = id;

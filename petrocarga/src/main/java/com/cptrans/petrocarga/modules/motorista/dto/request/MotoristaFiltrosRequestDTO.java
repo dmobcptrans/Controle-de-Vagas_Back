@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Getter
-public class MotoristaFiltrosDTO {
+public class MotoristaFiltrosRequestDTO {
     private UUID id;
     private String nome;
     private String telefone;

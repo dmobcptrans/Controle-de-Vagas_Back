@@ -21,19 +21,6 @@ spring:
         connect-retries: 3
         clean-disabled: true
 
-    # SMTP configuration centralized and sourced exclusively from environment variables.
-    # Set these env vars in Railway project settings (recommended):
-    # - SMTP_HOST (e.g., smtp.gmail.com)
-    # - SMTP_PORT (use 465 for SSL - recommended for cloud providers)
-    # - SMTP_USERNAME (your email address)
-    # - SMTP_PASSWORD (App Password from Google Account)
-    # - SMTP_FROM (optional, defaults to SMTP_USERNAME)
-    # - SMTP_STARTTLS (optional, false when using SSL on port 465)
-    # - SMTP_SSL (optional, true when using port 465)
-    # - SMTP_TIMEOUT (optional, milliseconds - default 10000)
-    #
-    # IMPORTANTE: Porta 465 (SSL) é preferível em cloud providers (Railway, Heroku, etc.)
-    # porque a porta 587 (STARTTLS) é frequentemente bloqueada para evitar spam.
     mail:
         host: ${SMTP_HOST:smtp.cptrans.com.br}
         port: ${SMTP_PORT:465}
@@ -60,6 +47,8 @@ server:
     servlet:
         context-path: /petrocarga
     forward-headers-strategy: framework
+    tomcat:
+        max-connections: 15000
 
 logging:
     level:
@@ -95,7 +84,9 @@ app:
             active-key-version: ${ACTIVE_AES_KEY_VERSION:1}
             keys:
                 1: ${AES_KEY_V1:8uKfN5TgB6R1pJ3xY9aZcQ0dW4sH7kLm2nOqP8rS1tU=}
-            pepper: ${AES_PEPPER:super_secret}
+            active-pepper-version: ${ACTIVE_AES_PEPPER_VERSION:1}
+            peppers: 
+                1: ${AES_PEPPER_V1:super_secret}
 google:
     client-id: ${GOOGLE_CLIENT_ID:}
 springdoc:

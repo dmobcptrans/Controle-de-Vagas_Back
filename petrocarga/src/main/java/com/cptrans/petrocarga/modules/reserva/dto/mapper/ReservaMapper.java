@@ -27,6 +27,8 @@ public class ReservaMapper {
     private final MotoristaMapper motoristaMapper;
     private final UsuarioMapper usuarioMapper;
     private final VeiculoMapper veiculoMapper;
+    private final VagaMapper vagaMapper;
+    private final EnderecoVagaMapper enderecoVagaMapper;
 
     public Reserva toEntity (ReservaRequestDTO request, Vaga vaga, Motorista motorista, Veiculo veiculo, Usuario criadoPor){ 
         return new Reserva(
@@ -50,7 +52,7 @@ public class ReservaMapper {
         Usuario criadoPor = reserva.getCriadoPor();
         return new ReservaResponseDTO(
             reserva.getId(),
-            VagaMapper.toResponse(vaga),
+            vagaMapper.toResponse(vaga),
             motoristaMapper.toResponseSimplificado(motorista),
             veiculoMapper.toResponse(veiculo),
             usuarioMapper.toResponse(criadoPor, cpfOrCnpjCriador),
@@ -115,7 +117,7 @@ public class ReservaMapper {
             motorista != null ? motorista.getCpfCripto() : null,
             vaga != null ? vaga.getNumeroEndereco() : null,
             vaga != null ? vaga.getReferenciaEndereco() : null,
-            EnderecoVagaMapper.toResponse(enderecoVaga),
+            enderecoVagaMapper.toResponse(enderecoVaga),
             reserva.getInicio(),
             reserva.getFim(),
             veiculo != null ? veiculo.getTipo().getComprimento() : null,

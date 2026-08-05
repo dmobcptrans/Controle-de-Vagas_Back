@@ -1,71 +1,60 @@
 package com.cptrans.petrocarga.modules.pushToken.service;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.cptrans.petrocarga.modules.pushToken.dto.mapper.PushTokenMapper;
+import com.cptrans.petrocarga.modules.pushToken.dto.request.PushTokenRequestDTO;
+import com.cptrans.petrocarga.modules.pushToken.dto.response.PushTokenResponseDTO;
 import com.cptrans.petrocarga.modules.pushToken.entity.PushToken;
+import com.cptrans.petrocarga.modules.pushToken.exceptions.PushTokenExceptions;
 import com.cptrans.petrocarga.modules.pushToken.repository.PushTokenRepository;
 
-import jakarta.persistence.EntityNotFoundException;
+import lombok.RequiredArgsConstructor;
 
 @Service
+@RequiredArgsConstructor
 public class PushTokenService {
-    @Autowired
-    private PushTokenRepository pushTokenRepository;
+    private final PushTokenRepository pushTokenRepository;
+    private final PushTokenMapper pushTokenMapper;
+
+    public PushToken findByTokenAndUsuarioId(String token, UUID usuarioId) {
+        return pushTokenRepository.findByTokenAndUsuarioId(token, usuarioId).orElseThrow(() -> new PushTokenExceptions.PushTokenNotFoundException());
+    }
     
-    public PushToken salvar(PushToken novoPushToken) {
-        List<PushToken> existentes = pushTokenRepository.findByToken(novoPushToken.getToken());
+    public PushTokenResponseDTO registrarToken(PushTokenRequestDTO request, UUID usuarioId) {
+        List<PushToken> existentes = pushTokenRepository.findByToken(request.getToken());
 
         if (existentes == null || existentes.isEmpty()) {
-            novoPushToken.setAtivo(true);
-            return pushTokenRepository.save(novoPushToken);
+            PushToken novoPushToken = pushTokenRepository.save(pushTokenMapper.toEntity(request, usuarioId));
+            return pushTokenMapper.toResponse(novoPushToken);
         }
 
         PushToken response = null;
 
         for (PushToken existente : existentes) {
-            if (existente.getUsuarioId().equals(novoPushToken.getUsuarioId())) {
+            if (existente.getUsuarioId().equals(usuarioId)) {
                 existente.setAtivo(true);
                 response = existente;
-            } else{
+            } else {
                 existente.setAtivo(false);
             }
         }
 
         pushTokenRepository.saveAll(existentes);
-        return response;
+        return pushTokenMapper.toResponse(response);
     }
 
     public PushToken atualizarStatus(UUID usuarioId, String token, Boolean ativo) {
-        PushToken pushToken = pushTokenRepository.findByTokenAndUsuarioId(token, usuarioId).orElseThrow(() -> new EntityNotFoundException("Nenhum token encontrado para o usuário"));
-        
+        PushToken pushToken = findByTokenAndUsuarioId(token, usuarioId);
         pushToken.setAtivo(ativo);
-
         return pushTokenRepository.save(pushToken);
     }
 
-    public PushToken visualizarStatusByTokenAndUsuario(String token, UUID usuarioId) {
-        Optional<PushToken> push = pushTokenRepository.findByTokenAndUsuarioId(token, usuarioId);
-
-        if(push.isEmpty()){
-            throw new EntityNotFoundException("Nenhum token encontrado ou vínculado ao usuário");
-        }
-
-        return push.get();
-    }
-
     public List<PushToken> visualizarStatusByUsuario( UUID usuarioId) {
-        List<PushToken> pushList = pushTokenRepository.findByUsuarioId(usuarioId);
-
-        if(pushList.isEmpty()){
-            throw new EntityNotFoundException("Nenhum token encontrado ou vínculado ao usuário");
-        }
-
-        return pushList;
+        return pushTokenRepository.findByUsuarioId(usuarioId);
     }
 
 }

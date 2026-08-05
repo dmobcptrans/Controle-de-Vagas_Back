@@ -15,13 +15,14 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "disponibilidade_vaga")
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
 @EqualsAndHashCode
 public class DisponibilidadeVaga {
@@ -45,6 +46,13 @@ public class DisponibilidadeVaga {
 
     @Column(name = "criado_por_id", nullable = false)
     private UUID criadoPorId;
+
+    public DisponibilidadeVaga(Vaga vaga, OffsetDateTime inicio, OffsetDateTime fim, UUID criadoPorId) {
+        this.vaga = vaga;
+        this.inicio = inicio;
+        this.fim = fim;
+        this.criadoPorId = criadoPorId;
+    }
 
     public void setVaga(Vaga vaga) {
         this.vaga = vaga;

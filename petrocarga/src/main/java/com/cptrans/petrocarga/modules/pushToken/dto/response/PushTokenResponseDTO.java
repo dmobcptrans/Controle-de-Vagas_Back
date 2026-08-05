@@ -17,6 +17,6 @@ public class PushTokenResponseDTO {
     private UUID usuarioId;
     private String token;
     private PlataformaEnum plataforma;
-    private boolean ativo = true;
+    private boolean ativo;
     private OffsetDateTime criadoEm;
 }

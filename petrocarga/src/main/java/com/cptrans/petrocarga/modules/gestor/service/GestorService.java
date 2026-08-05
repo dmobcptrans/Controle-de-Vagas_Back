@@ -1,6 +1,5 @@
 package com.cptrans.petrocarga.modules.gestor.service;
 
-import java.util.List;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
@@ -42,36 +41,32 @@ public class GestorService {
     private final Sort sortAsc = Sort.by("usuario.nome").ascending();
     private final Sort sortDesc = Sort.by("usuario.nome").descending();
 
-    public List<Usuario> findAll() {
-        return usuarioService.findByPermissao(PermissaoEnum.GESTOR);
-    }
 
-    public List<Usuario> findAllByAtivo(Boolean ativo) {
-        return usuarioService.findByPermissaoAndAtivo(PermissaoEnum.GESTOR, ativo);
-    }
-
-    public Gestor findByUsuarioId(UUID usuarioId) {
-        return gestorRepository.findById(usuarioId).orElseThrow(() -> new GestorExceptions.GestorNotFoundException());
+    public Gestor findById(UUID id) {
+        return gestorRepository.findById(id).orElseThrow(() -> new GestorExceptions.GestorNotFoundException());
     }
 
     public Gestor createGestor(GestorRequestDTO request) {
         Usuario novoUsuario = usuarioService.createUsuario(new UsuarioRequestDTO(request.getNome(), request.getTelefone(), request.getEmail(), null, false), request.getCpf(), PermissaoEnum.GESTOR);
-        Gestor novoGestor = new Gestor();
+        
         String cpfHash = hashService.hash(request.getCpf().trim());
         String cpfCripto = criptoService.encrypt(request.getCpf().trim());
         String cpfLast5 = UsuarioUtils.gerarLastN(request.getCpf().trim(), 5);
-        novoGestor.setUsuario(novoUsuario);
-        novoGestor.setCpfHash(cpfHash);
-        novoGestor.setCpfCripto(cpfCripto);
-        novoGestor.setCpfLast5(cpfLast5);
+
+        Gestor novoGestor = new Gestor(
+            novoUsuario,
+            cpfHash,
+            cpfCripto,
+            cpfLast5
+        );
+
         return gestorRepository.save(novoGestor);
     }
 
     @Transactional
     public Gestor updateGestor(UUID id, UsuarioPATCHRequestDTO novoGestor) {
-        Gestor gestor = findByUsuarioId(id);
+        Gestor gestor = findById(id);
         Usuario novoUsuario = usuarioService.patchUpdate(id, PermissaoEnum.GESTOR, novoGestor);
-        gestor.setUsuario(novoUsuario);
         if (novoGestor.getCpf() != null) {
             String cpfHash = hashService.hash(novoGestor.getCpf().trim());
             String cpfCripto = criptoService.encrypt(novoGestor.getCpf().trim());
@@ -80,6 +75,8 @@ public class GestorService {
             gestor.setCpfCripto(cpfCripto);
             gestor.setCpfLast5(cpfLast5);
         }
+        
+        gestor.setUsuario(novoUsuario);
         return gestorRepository.save(gestor);
     }
 

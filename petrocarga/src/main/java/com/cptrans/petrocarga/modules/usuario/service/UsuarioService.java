@@ -20,8 +20,10 @@ import com.cptrans.petrocarga.enums.UsuarioProviderEnum;
 import com.cptrans.petrocarga.modules.messaging.email.EmailSender;
 import com.cptrans.petrocarga.modules.motorista.dto.request.MotoristaEmpresaRequestDTO;
 import com.cptrans.petrocarga.modules.motorista.entity.Motorista;
+import com.cptrans.petrocarga.modules.motorista.exceptions.MotoristaExceptions;
 import com.cptrans.petrocarga.modules.motorista.repository.MotoristaRepository;
 import com.cptrans.petrocarga.modules.agente.entity.Agente;
+import com.cptrans.petrocarga.modules.agente.exceptions.AgenteExceptions;
 import com.cptrans.petrocarga.modules.agente.repository.AgenteRepository;
 import com.cptrans.petrocarga.modules.auth.dto.request.AccountActivationRequest;
 import com.cptrans.petrocarga.modules.auth.dto.request.CompletarCadastroDTO;
@@ -33,19 +35,23 @@ import com.cptrans.petrocarga.modules.empresa.repository.EmpresaRepository;
 import com.cptrans.petrocarga.modules.events.SpringDomainEventPublisher;
 import com.cptrans.petrocarga.modules.events.UsuarioCriadoEvent;
 import com.cptrans.petrocarga.modules.gestor.entity.Gestor;
+import com.cptrans.petrocarga.modules.gestor.exceptions.GestorExceptions;
 import com.cptrans.petrocarga.modules.gestor.repository.GestorRepository;
 import com.cptrans.petrocarga.modules.reserva.utils.ReservaUtils;
+import com.cptrans.petrocarga.modules.usuario.dto.request.UsuarioFiltrosRequestDTO;
 import com.cptrans.petrocarga.modules.usuario.dto.request.UsuarioPATCHRequestDTO;
 import com.cptrans.petrocarga.modules.usuario.dto.request.UsuarioRequestDTO;
 import com.cptrans.petrocarga.modules.usuario.entity.Usuario;
 import com.cptrans.petrocarga.modules.usuario.exceptions.UsuarioExceptions;
 import com.cptrans.petrocarga.modules.usuario.repository.UsuarioRepository;
+import com.cptrans.petrocarga.modules.usuario.specification.UsuarioSpecification;
 import com.cptrans.petrocarga.modules.usuario.utils.UsuarioUtils;
+import com.cptrans.petrocarga.modules.veiculo.entity.Veiculo;
+import com.cptrans.petrocarga.modules.veiculo.repository.VeiculoRepository;
 import com.cptrans.petrocarga.shared.exceptions.GlobalHandlerExceptions;
 import com.cptrans.petrocarga.shared.utils.DateUtils;
 import com.cptrans.petrocarga.shared.utils.StringUtils;
 
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 
 
@@ -63,18 +69,30 @@ public class UsuarioService {
     private final MotoristaRepository motoristaRepository;
     private final AgenteRepository agenteRepository;
     private final GestorRepository gestorRepository;
+    private final VeiculoRepository veiculoRepository;
 
     private final Sort SORT_ASC = Sort.by("nome").ascending();
     private final Sort SORT_DESC = Sort.by("nome").descending();
 
-    public Page<Usuario> findAll(int pagina, int tamanhoPagina, OrdemEnum ordem) {
+    public Page<Usuario> findAll(UsuarioFiltrosRequestDTO filtros, int pagina, int tamanhoPagina, OrdemEnum ordem) {
         Pageable pageable = PageRequest.of(pagina, tamanhoPagina, !ordem.equals(OrdemEnum.ASC) ? SORT_DESC : SORT_ASC);
-        Page<Usuario> page = usuarioRepository.findAll(pageable);
+        if (filtros != null){
+            if (filtros.getEmail() != null && !filtros.getEmail().trim().isEmpty()){
+                filtros.setEmail(hashService.hash(filtros.getEmail().trim().toLowerCase()));
+            }
+            if (filtros.getTelefone() != null && !filtros.getTelefone().trim().isEmpty()){
+                filtros.setTelefone(hashService.hash(filtros.getTelefone().trim()));
+            }
+        }
+        Page<Usuario> page = usuarioRepository.findAll(UsuarioSpecification.filtrar(filtros), pageable);
         return page;
     }
 
+    @Transactional
     public Usuario findByIdAndAtivo(UUID id, Boolean ativo) {
-        return usuarioRepository.findByIdAndAtivo(id, ativo).orElseThrow(() -> new UsuarioExceptions.UsuarioNotFoundException());
+        Usuario usuario = usuarioRepository.findByIdAndAtivo(id, ativo).orElseThrow(() -> new UsuarioExceptions.UsuarioNotFoundException());
+        usuario = atualizarCriptografiaDosDadosSeNecessario(usuario);
+        return usuario;
     }
 
     public Usuario findByIdAndAtivoTrue(UUID id) {
@@ -180,7 +198,7 @@ public class UsuarioService {
         Usuario usuarioSalvo = usuarioRepository.save(usuario);
         String randomPassword = null;
 
-        emailSender.sendActivationCode((email != null ? email : criptoService.decrypt(usuarioSalvo.getEmailCripto(), usuarioSalvo.getPersonalDataKeyVersion())), codeStr, randomPassword);
+        emailSender.sendActivationCode((email != null ? email : criptoService.decrypt(usuarioSalvo.getEmailCripto(), usuarioSalvo.getCriptoVersion())), codeStr, randomPassword);
     }
 
     @Transactional
@@ -199,7 +217,7 @@ public class UsuarioService {
 
         usuarioRepository.save(usuario);
 
-        emailSender.sendPasswordResetCode(email != null ? email : criptoService.decrypt(usuario.getEmailCripto(), usuario.getPersonalDataKeyVersion()), codeStr);
+        emailSender.sendPasswordResetCode(email != null ? email : criptoService.decrypt(usuario.getEmailCripto(), usuario.getCriptoVersion()), codeStr);
     }
 
     @Transactional
@@ -217,11 +235,13 @@ public class UsuarioService {
         usuarioRepository.save(usuario);
     }
 
-
+    @Transactional
     public Usuario patchUpdate(UUID id, PermissaoEnum permissao, UsuarioPATCHRequestDTO patchRequestDTO) {
         Usuario usuarioExistente = findByIdAndAtivoTrue(id);
 
         if (!usuarioExistente.getPermissao().equals(permissao)) throw new AuthExceptions.UsuarioNaoAutorizadoException();
+        
+        usuarioExistente = atualizarCriptografiaDosDadosSeNecessario(usuarioExistente);
 
         if (patchRequestDTO.getNome() != null) usuarioExistente.setNome(StringUtils.formatarNome(patchRequestDTO.getNome().trim()));
         
@@ -229,7 +249,6 @@ public class UsuarioService {
             usuarioExistente.setTelefoneHash(hashService.hash(patchRequestDTO.getTelefone()));
             usuarioExistente.setTelefoneCripto(criptoService.encrypt(patchRequestDTO.getTelefone()));
             usuarioExistente.setTelefoneLast4(UsuarioUtils.gerarLastN(patchRequestDTO.getTelefone(), 4));
-            usuarioExistente = atualizarCriptografiaDosDados(usuarioExistente);
         }
 
         if (patchRequestDTO.getEmail() != null) {
@@ -239,7 +258,7 @@ public class UsuarioService {
             String emailCripto = criptoService.encrypt(emailString);
             usuarioExistente.setEmailHash(emailHash);
             usuarioExistente.setEmailCripto(emailCripto);
-            usuarioExistente = atualizarCriptografiaDosDados(usuarioExistente);
+            // se o email for alterado, o googleId deve ser nulo
             if (usuarioExistente.getGoogleId() != null) {
                 usuarioExistente.setGoogleId(null);
                 usuarioExistente.setProvider(UsuarioProviderEnum.LOCAL);
@@ -254,7 +273,10 @@ public class UsuarioService {
     }
     public void desativarById(UUID id) {
         Usuario usuario = findByIdAndAtivo(id, true);
-        if ((usuario.getPermissao().equals(PermissaoEnum.MOTORISTA) || usuario.getPermissao().equals(PermissaoEnum.EMPRESA)) && reservaUtils.existsAtivaByUsuarioId(id)){
+        if (
+            (usuario.getPermissao().equals(PermissaoEnum.MOTORISTA) || 
+            usuario.getPermissao().equals(PermissaoEnum.EMPRESA)) && 
+            reservaUtils.existsAtivaByUsuarioId(id)){
             throw new UsuarioExceptions.PossuiReservaAtivaException();
         }
         usuario.setAtivo(false);
@@ -272,7 +294,7 @@ public class UsuarioService {
         novoUsuario.setGoogleId(googleId);
         novoUsuario.setProvider(UsuarioProviderEnum.GOOGLE);
         novoUsuario.setPermissao(PermissaoEnum.MOTORISTA);
-        novoUsuario.setPersonalDataKeyVersion(criptoService.getActiveKeyVersion());
+        novoUsuario.setCriptoVersion(criptoService.getActiveKeyVersion());
 
         return usuarioRepository.save(novoUsuario);
     }
@@ -291,7 +313,7 @@ public class UsuarioService {
             usuarioCadastrado.getTelefoneHash() != null &&
             usuarioCadastrado.getTelefoneCripto() != null &&
             usuarioCadastrado.getTelefoneLast4() != null &&
-            usuarioCadastrado.getPersonalDataKeyVersion() != null
+            usuarioCadastrado.getCriptoVersion() != null
         ) return usuarioCadastrado;
 
         usuarioCadastrado.setAceitarTermos(request.getAceitarTermos());
@@ -300,16 +322,16 @@ public class UsuarioService {
         usuarioCadastrado.setTelefoneHash(hashService.hash(request.getTelefone()));
         usuarioCadastrado.setTelefoneCripto(criptoService.encrypt(request.getTelefone()));
         usuarioCadastrado.setTelefoneLast4(UsuarioUtils.gerarLastN(request.getTelefone(), 4));
-        usuarioCadastrado.setPersonalDataKeyVersion(criptoService.getActiveKeyVersion());
+        usuarioCadastrado.setCriptoVersion(criptoService.getActiveKeyVersion());
         usuarioCadastrado.setSenha((request.getSenha() != null ? passwordEncoder.encode(request.getSenha()) : null));
 
         return usuarioRepository.save(usuarioCadastrado);
 
     }  
 
-    public void reativar(UUID usuarioId){
+    public void reativarAgenteOuGestorDeletado(UUID usuarioId){
         Usuario usuario = usuarioRepository.findByIdAndAtivoAndPermissaoInAndDesativadoEmNotNull(usuarioId, false, List.of(PermissaoEnum.AGENTE, PermissaoEnum.GESTOR))
-            .orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado."));
+            .orElseThrow(() -> new UsuarioExceptions.UsuarioNotFoundException());
 
         usuario.setDesativadoEm(null);
         usuario.setAtivo(true);
@@ -320,30 +342,31 @@ public class UsuarioService {
         if ((email == null && cpf == null && cnpj == null) || (email != null && cpf != null && cnpj != null)) {
             throw new UsuarioExceptions.EmailOrCpfOrCnpjRequiredException();
         }
-        if (email != null) {
-            String emailHash = hashService.hash(email.trim().toLowerCase());
-            Optional<Usuario> userByEmailOpt = usuarioRepository.findByEmailHashAndAtivo(emailHash, ativo);
-            if (userByEmailOpt.isPresent()) return userByEmailOpt;
-        }
+        for (int version = hashService.getPeppers().keySet().size(); version > 0; version--) {
+            if (email != null) {
+                String emailHash = hashService.hash(email.trim().toLowerCase(), version);
+                Optional<Usuario> userByEmailOpt = usuarioRepository.findByEmailHashAndAtivo(emailHash, ativo);
+                if (userByEmailOpt.isPresent()) return userByEmailOpt;
+            }
 
-        if (cnpj != null) {
-            Optional<Empresa> empresaOpt = empresaRepository.findByCnpjAndUsuarioAtivo(cnpj.trim(), ativo);
-            if (empresaOpt.isPresent()) return Optional.of(empresaOpt.get().getUsuario());
-        }
+            if (cnpj != null) {
+                Optional<Empresa> empresaOpt = empresaRepository.findByCnpjAndUsuarioAtivo(cnpj.trim(), ativo);
+                if (empresaOpt.isPresent()) return Optional.of(empresaOpt.get().getUsuario());
+            }
 
-        if (cpf != null) {
-            String cpfHash = hashService.hash(cpf.trim());
-            
-            Optional<Motorista> motoristaOpt = motoristaRepository.findByCpfHashAndUsuarioAtivo(cpfHash, ativo);
-            if (motoristaOpt.isPresent()) return Optional.of(motoristaOpt.get().getUsuario());
+            if (cpf != null) {
+                String cpfHash = hashService.hash(cpf.trim(), version);
+                
+                Optional<Motorista> motoristaOpt = motoristaRepository.findByCpfHashAndUsuarioAtivo(cpfHash, ativo);
+                if (motoristaOpt.isPresent()) return Optional.of(motoristaOpt.get().getUsuario());
 
-            Optional<Agente> agenteOpt = agenteRepository.findByCpfHashAndUsuarioAtivo(cpfHash, ativo);
-            if (agenteOpt.isPresent()) return Optional.of(agenteOpt.get().getUsuario());
-            
-            Optional<Gestor> gestorOpt = gestorRepository.findByCpfHashAndUsuarioAtivo(cpfHash, ativo);
-            if (gestorOpt.isPresent()) return Optional.of(gestorOpt.get().getUsuario());
-        }
-
+                Optional<Agente> agenteOpt = agenteRepository.findByCpfHashAndUsuarioAtivo(cpfHash, ativo);
+                if (agenteOpt.isPresent()) return Optional.of(agenteOpt.get().getUsuario());
+                
+                Optional<Gestor> gestorOpt = gestorRepository.findByCpfHashAndUsuarioAtivo(cpfHash, ativo);
+                if (gestorOpt.isPresent()) return Optional.of(gestorOpt.get().getUsuario());
+            }
+        };
         return Optional.empty();
     }
 
@@ -389,18 +412,68 @@ public class UsuarioService {
         return existeMotoristaByCpfHash || existeAgenteByCpfHash || existeGestorByCpfHash;
     }
 
-    private Usuario atualizarCriptografiaDosDados(Usuario usuario){
-        Integer userKeyVersion = usuario.getPersonalDataKeyVersion();
+    //caso as chaves de criptografia e hash do usuario sejam diferentes das chaves ativas, atualiza os dados criptografados/hasheados
+    @Transactional
+    public Usuario atualizarCriptografiaDosDadosSeNecessario(Usuario usuario){
+        Integer criptoVersion = usuario.getCriptoVersion();
         Integer activeKeyVersion = criptoService.getActiveKeyVersion();
-        if (userKeyVersion.equals(activeKeyVersion)) return usuario;
-        String email = criptoService.decrypt(usuario.getEmailCripto(), userKeyVersion);
+        Integer hashVersion = usuario.getHashVersion();
+        Integer activeHashVersion = hashService.getActivePepperVersion();
+
+        if (criptoVersion.equals(activeKeyVersion) && hashVersion.equals(activeHashVersion)) return usuario;
+        
+        String email = criptoService.decrypt(usuario.getEmailCripto(), criptoVersion);
         String novoEmailCripto = criptoService.encrypt(email);
-        String telefone = criptoService.decrypt(usuario.getTelefoneCripto(), userKeyVersion);
+        String novoEmailHash = hashService.hash(email);
+        String telefone = criptoService.decrypt(usuario.getTelefoneCripto(), criptoVersion);
         String novoTelefoneCripto = criptoService.encrypt(telefone);
+        String novoTelefoneHash = hashService.hash(telefone);
         usuario.setEmailCripto(novoEmailCripto);
+        usuario.setEmailHash(novoEmailHash);
         usuario.setTelefoneCripto(novoTelefoneCripto);
-        usuario.setPersonalDataKeyVersion(activeKeyVersion);
-        return usuario;
+        usuario.setTelefoneHash(novoTelefoneHash);
+        usuario.setCriptoVersion(activeKeyVersion);
+        usuario.setHashVersion(activeHashVersion);
+        
+        switch (usuario.getPermissao()) {
+            case GESTOR:
+                Gestor gestor = gestorRepository.findById(usuario.getId()).orElseThrow(() -> new GestorExceptions.GestorNotFoundException());
+                String cpfGestor = criptoService.decrypt(gestor.getCpfCripto(), criptoVersion);
+                gestor.setCpfCripto(criptoService.encrypt(cpfGestor));
+                gestor.setCpfHash(hashService.hash(cpfGestor));
+                gestorRepository.save(gestor);
+                break;
+            case MOTORISTA:
+                Motorista motorista = motoristaRepository.findById(usuario.getId()).orElseThrow(() -> new MotoristaExceptions.MotoristaNotFoundException());
+                String cpfMotorista = criptoService.decrypt(motorista.getCpfCripto(), criptoVersion);
+                motorista.setCpfCripto(criptoService.encrypt(cpfMotorista));
+                motorista.setCpfHash(hashService.hash(cpfMotorista));
+                motoristaRepository.save(motorista);
+                break;
+            case AGENTE:
+                Agente agente = agenteRepository.findById(usuario.getId()).orElseThrow(() -> new AgenteExceptions.AgenteNotFoundException());
+                String cpfAgente = criptoService.decrypt(agente.getCpfCripto(), criptoVersion);
+                agente.setCpfCripto(criptoService.encrypt(cpfAgente));
+                agente.setCpfHash(hashService.hash(cpfAgente));
+                agenteRepository.save(agente);
+                break;
+            default:
+                break;
+        }
+
+        if ((usuario.getPermissao().equals(PermissaoEnum.MOTORISTA) || usuario.getPermissao().equals(PermissaoEnum.EMPRESA) && (usuario.getVeiculos() != null && !usuario.getVeiculos().isEmpty()))){
+            for (Veiculo veiculo : usuario.getVeiculos()){
+                if (veiculo.getCpfProprietarioCripto() != null){
+                    String cpfProprietario = criptoService.decrypt(veiculo.getCpfProprietarioCripto(), criptoVersion);
+                    String novoCpfProprietarioCripto = criptoService.encrypt(cpfProprietario);
+                    String novoCpfProprietarioHash = hashService.hash(cpfProprietario);
+                    veiculo.setCpfProprietarioCripto(novoCpfProprietarioCripto);
+                    veiculo.setCpfProprietarioHash(novoCpfProprietarioHash);
+                    veiculoRepository.save(veiculo);
+                }
+            }
+        }
+        return usuarioRepository.save(usuario);
     }
 
     private void validarCodigoEExpiracao(String code, String usuarioVerificationCode, LocalDateTime verificationCodeExpiresAt) {
@@ -434,7 +507,7 @@ public class UsuarioService {
         novoUsuario.setTelefoneHash(telefoneHash);
         novoUsuario.setTelefoneCripto(telefoneCripto);
         novoUsuario.setTelefoneLast4(telefoneLast4);
-        novoUsuario.setPersonalDataKeyVersion(criptoService.getActiveKeyVersion());
+        novoUsuario.setCriptoVersion(criptoService.getActiveKeyVersion());
         novoUsuario.setSenha(senha != null ? passwordEncoder.encode(senha) : null);
         novoUsuario.setAtivo(false);
         novoUsuario.setVerificationCode(gerarCodigoAleatorio());

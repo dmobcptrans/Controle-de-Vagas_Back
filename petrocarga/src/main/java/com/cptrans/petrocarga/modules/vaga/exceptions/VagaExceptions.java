@@ -17,8 +17,8 @@ public class VagaExceptions {
         }
     }  
 
-    public static class QuantidadeObrigatoriaException extends IllegalArgumentException {
-        public QuantidadeObrigatoriaException(){
+    public static class QuantidadePosicoesInvalidaException extends IllegalArgumentException {
+        public QuantidadePosicoesInvalidaException(){
             super("O campo 'quantidade' é obrigatório para vagas do tipo PERPENDICULAR e deve ser um número inteiro positivo.");
         }
     }
@@ -29,26 +29,21 @@ public class VagaExceptions {
         }
     }
 
-    public static class QuantidadePosicoesInvalidaException extends IllegalArgumentException {
-        public QuantidadePosicoesInvalidaException(){
-            super("Quantidade de posições deve ser um número inteiro positivo.");
-        }
-    }
-
     public static class TempoPermanenciaInvalidoExcpetion extends IllegalArgumentException {
         public TempoPermanenciaInvalidoExcpetion(Integer tempoMaximo){
             super("O tempo de permanência deve ser um número inteiro positivo menor ou igual a " + tempoMaximo + " horas.");
         }
     }
 
+    public static class BoundingBoxInvalidoException extends IllegalArgumentException {
+        public BoundingBoxInvalidoException(){
+            super("Parâmetros de bounding box inválidos.");
+        }
+    }
+
     @ExceptionHandler(VagaNotFoundException.class)
     public ResponseEntity<SystemResponse> handleVagaNotFoundException(VagaNotFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new SystemResponse(ex.getMessage(), 404));
-    }
-
-    @ExceptionHandler(QuantidadeObrigatoriaException.class)
-    public ResponseEntity<SystemResponse> handleQuantidadeObrigatoriaException(QuantidadeObrigatoriaException ex) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new SystemResponse(ex.getMessage(), 400));
     }
 
     @ExceptionHandler(ComprimentoInvalidoException.class)
@@ -63,6 +58,11 @@ public class VagaExceptions {
 
     @ExceptionHandler(TempoPermanenciaInvalidoExcpetion.class)
     public ResponseEntity<SystemResponse> handleTempoPermanenciaInvalidoExcpetion(TempoPermanenciaInvalidoExcpetion ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new SystemResponse(ex.getMessage(), 400));
+    }
+
+    @ExceptionHandler(BoundingBoxInvalidoException.class)
+    public ResponseEntity<SystemResponse> handleBoundingBoxInvalidoException(BoundingBoxInvalidoException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new SystemResponse(ex.getMessage(), 400));
     }
 }

@@ -37,7 +37,7 @@ public class GestorSpecification {
 
             if (filtros.getNome() != null) {
                 predicates.add(
-                    cb.like(cb.lower(Utils.createUnaccentExpression(cb, root.get("usuario").get("nome"))), "%" + StringUtils.normalize(filtros.getNome().trim().toLowerCase())+ "%")
+                    cb.like(cb.lower(Utils.createUnaccentExpression(cb, root.get("usuario").get("nome"))), "%" + StringUtils.removerAcentos(filtros.getNome().trim().toLowerCase())+ "%")
                 );
             }
 

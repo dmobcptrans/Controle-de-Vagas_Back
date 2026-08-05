@@ -15,18 +15,15 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 
 
 @Component
+@RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
-
-    public JwtAuthenticationFilter(JwtService jwtService, UserDetailsService userDetailsService) {
-        this.jwtService = jwtService;
-        this.userDetailsService = userDetailsService;
-    }
 
     /**
     * Filtra as requisições HTTP para verificar se o token de autenticação (Bearer) foi informado na requisição.
@@ -61,11 +58,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         
             if (token != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 final String email = jwtService.getEmailDoToken(token);
-                if(email != null && !email.isEmpty() && jwtService.validarToken(token)){
+                if (email != null && !email.isEmpty() && jwtService.validarToken(token)){
                     UserDetails userDetails = userDetailsService.loadUserByUsername(email);
                     UUID id = jwtService.getIdDoToken(token);
                     String nome = jwtService.getNomeDoToken(token);
-                    UserAuthenticated userAuthenticated = new UserAuthenticated(id, nome, userDetails);
+                    Integer criptoVersion = jwtService.getCriptoVersionDoToken(token);
+                    Integer hashVersion = jwtService.getHashVersionDoToken(token);
+                    UserAuthenticated userAuthenticated = new UserAuthenticated(id, nome, criptoVersion, hashVersion, userDetails);
                     UsernamePasswordAuthenticationToken authToken =
                             new UsernamePasswordAuthenticationToken(userAuthenticated, null, userDetails.getAuthorities());
                     SecurityContextHolder.getContext().setAuthentication(authToken);

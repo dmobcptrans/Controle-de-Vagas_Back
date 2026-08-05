@@ -36,7 +36,7 @@ public class MotoristaMapper {
                     (empresa != null ? empresa.getId() : null),
                     (empresa != null ? empresa.getCnpj() : null),
                     (empresaUsuario != null ? empresaUsuario.getNome() : null)
-                ), motorista.getUsuario().getPersonalDataKeyVersion());
+                ), motorista.getUsuario().getCriptoVersion());
     }
     
     public List<MotoristaResponseDTO> toResponseList(List<Motorista> motoristas){
@@ -49,7 +49,7 @@ public class MotoristaMapper {
         Usuario motoristaUsuario = motorista.getUsuario();
         String telefoneCriptoMotorista = motoristaUsuario != null ? motoristaUsuario.getTelefoneCripto() : null;
         String emailCriptoMotorista = motoristaUsuario != null ? motoristaUsuario.getEmailCripto() : null;
-        Integer keyVersionMotorista = motoristaUsuario != null ? motoristaUsuario.getPersonalDataKeyVersion() : null;
+        Integer keyVersionMotorista = motoristaUsuario != null ? motoristaUsuario.getCriptoVersion() : null;
         String telefoneMotorista = telefoneCriptoMotorista != null && keyVersionMotorista != null ? criptoUtils.decrypt(telefoneCriptoMotorista, keyVersionMotorista) : null;
         String emailMotorista = emailCriptoMotorista != null && keyVersionMotorista != null ? criptoUtils.decrypt(emailCriptoMotorista, keyVersionMotorista) : null;
         Empresa empresa = motorista.getEmpresa();

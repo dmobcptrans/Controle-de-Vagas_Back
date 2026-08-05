@@ -6,17 +6,18 @@ import java.util.UUID;
 import org.quartz.DisallowConcurrentExecution;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.cptrans.petrocarga.modules.reserva.service.ReservaService;
 
+import lombok.RequiredArgsConstructor;
+
 @DisallowConcurrentExecution
 @Component
+@RequiredArgsConstructor
 public class FinalizarReservaJob implements Job {
 
-    @Autowired
-    private ReservaService reservaService;
+    private final ReservaService reservaService;
 
     /**
      * Executa o job de finalizar reserva.
@@ -33,4 +34,3 @@ public class FinalizarReservaJob implements Job {
         reservaService.finalizarReserva(reservaId);
     }
 }
-

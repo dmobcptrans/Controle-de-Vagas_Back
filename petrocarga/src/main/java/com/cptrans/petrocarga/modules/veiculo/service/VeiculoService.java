@@ -8,14 +8,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.cptrans.petrocarga.enums.OrdemEnum;
 import com.cptrans.petrocarga.enums.PermissaoEnum;
 import com.cptrans.petrocarga.enums.StatusReservaEnum;
 import com.cptrans.petrocarga.modules.auth.exceptions.AuthExceptions;
+import com.cptrans.petrocarga.modules.auth.utils.AuthUtils;
 import com.cptrans.petrocarga.modules.cripto.CriptoService;
 import com.cptrans.petrocarga.modules.cripto.HashService;
 import com.cptrans.petrocarga.modules.reserva.repository.ReservaRepository;
@@ -32,7 +31,6 @@ import com.cptrans.petrocarga.modules.veiculo.repository.VeiculoRepository;
 import com.cptrans.petrocarga.modules.veiculo.specification.VeiculoSpecification;
 import com.cptrans.petrocarga.modules.veiculo.utils.VeiculoUtils;
 import com.cptrans.petrocarga.modules.veiculoEmpresaMotorista.repository.VeiculoEmpresaMotoristaRepository;
-import com.cptrans.petrocarga.security.UserAuthenticated;
 import com.cptrans.petrocarga.shared.dto.response.PageResponseDTO;
 import com.cptrans.petrocarga.shared.utils.DateUtils;
 
@@ -56,7 +54,6 @@ public class VeiculoService {
     public PageResponseDTO findAll(VeiculoFiltrosRequestDTO filtros, int pagina, int tamanhoPagina, OrdemEnum ordem) {
         Pageable pageable = PageRequest.of(pagina, tamanhoPagina, ordem != OrdemEnum.ASC ? SORT_DESC : SORT_ASC);
         
-        
         if (filtros != null){
             if (filtros.getTelefoneUsuario() != null){
                 String telefoneHash = hashService.hash(filtros.getTelefoneUsuario().trim());
@@ -75,23 +72,21 @@ public class VeiculoService {
         return new PageResponseDTO(pageResponse);
     }
 
+    public List<Veiculo> findByUsuarioIdAndAtivo(UUID usuarioId, boolean ativo) {
+        return veiculoRepository.findByUsuarioIdAndAtivoAndUsuarioAtivoTrue(usuarioId, ativo);
+    }
+
     public List<Veiculo> findAtivosByUsuarioId(UUID usuarioId){
-        return veiculoRepository.findByUsuarioIdAndAtivoTrueAndUsuarioAtivoTrue(usuarioId);
+        return findByUsuarioIdAndAtivo(usuarioId, true);
     }
 
     public Veiculo findById(UUID id) {
         Veiculo veiculo = veiculoRepository.findById(id).orElseThrow(() -> new VeiculoExceptions.VeiculoNotFoundException());
-        UserAuthenticated usuarioLogado = (UserAuthenticated) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        List<String> authorities = usuarioLogado.userDetails().getAuthorities().stream().map(GrantedAuthority::getAuthority).toList();
         if (
-            (
-                authorities.contains(PermissaoEnum.MOTORISTA.getRole()) || 
-                authorities.contains(PermissaoEnum.EMPRESA.getRole())
-            ) &&
-            (!veiculo.getUsuario().getId().equals(usuarioLogado.id()))
-        ) {
-            throw new AuthExceptions.UsuarioNaoAutorizadoException();
-        }
+            AuthUtils.containsAuthority(List.of(PermissaoEnum.MOTORISTA.getRole(), PermissaoEnum.EMPRESA.getRole())) &&
+            !AuthUtils.containsId(List.of(veiculo.getUsuario().getId()))
+        ) throw new AuthExceptions.UsuarioNaoAutorizadoException();
+
         return veiculo;
     }
 
@@ -136,6 +131,7 @@ public class VeiculoService {
         return veiculoRepository.save(novoVeiculo);
     }
 
+    @Transactional
     public Veiculo updateVeiculo(UUID veiculoId, UUID usuarioId, VeiculoRequestDTO request) {
         Veiculo veiculoRegistrado = findAtivoByIdAndUsuarioIdAtivo(veiculoId, usuarioId);
 
@@ -162,6 +158,7 @@ public class VeiculoService {
         
         if (request.getCpfProprietario() != null) {
             String cpf = request.getCpfProprietario().trim();
+            veiculoRegistrado.setUsuario(usuarioService.atualizarCriptografiaDosDadosSeNecessario(veiculoRegistrado.getUsuario()));
             veiculoRegistrado.setCpfProprietarioHash(hashService.hash(cpf));
             veiculoRegistrado.setCpfProprietarioCripto(criptoService.encrypt(cpf));
             veiculoRegistrado.setCpfProprietarioLast5(UsuarioUtils.gerarLastN(cpf, 5));

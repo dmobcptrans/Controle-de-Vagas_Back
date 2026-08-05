@@ -19,7 +19,7 @@ import com.cptrans.petrocarga.modules.empresa.entity.Empresa;
 import com.cptrans.petrocarga.modules.empresa.service.EmpresaService;
 import com.cptrans.petrocarga.modules.motorista.dto.mapper.MotoristaMapper;
 import com.cptrans.petrocarga.modules.motorista.dto.request.MotoristaEmpresaRequestDTO;
-import com.cptrans.petrocarga.modules.motorista.dto.request.MotoristaFiltrosDTO;
+import com.cptrans.petrocarga.modules.motorista.dto.request.MotoristaFiltrosRequestDTO;
 import com.cptrans.petrocarga.modules.motorista.dto.request.MotoristaRequestDTO;
 import com.cptrans.petrocarga.modules.motorista.dto.response.MotoristaResponseDTO;
 import com.cptrans.petrocarga.modules.motorista.dto.response.MotoristaSimplificadoResponseDTO;
@@ -56,7 +56,11 @@ public class MotoristaService {
 
     private final Sort SORT_ASC = Sort.by("usuario.nome").ascending();
     private final Sort SORT_DESC = Sort.by("usuario.nome").descending();
-
+    
+    public Motorista findById(UUID id) {
+        return motoristaRepository.findById(id).orElseThrow(()-> new MotoristaExceptions.MotoristaNotFoundException());
+    }
+    
     public Motorista findByIdAndAtivo(UUID id, Boolean ativo) {
         if (ativo == null) ativo = true;
         return motoristaRepository.findByIdAndUsuarioAtivo(id, ativo).orElseThrow(() -> new MotoristaExceptions.MotoristaNotFoundException());
@@ -66,7 +70,11 @@ public class MotoristaService {
         return findByIdAndAtivo(id, true);
     }
 
-    public PageResponseDTO findAllWithFiltros(MotoristaFiltrosDTO filtros, int pagina, int tamanhoPagina, OrdemEnum ordem) {
+    public Motorista findByIdAndEmpresaId(UUID id, UUID empresaId) {
+        return motoristaRepository.findByIdAndEmpresaId(id, empresaId).orElseThrow(() -> new MotoristaExceptions.MotoristaNotFoundException());
+    }
+
+    public PageResponseDTO findAllWithFiltros(MotoristaFiltrosRequestDTO filtros, int pagina, int tamanhoPagina, OrdemEnum ordem) {
         Pageable pageable = PageRequest.of(pagina, tamanhoPagina, !ordem.equals(OrdemEnum.ASC) ? SORT_DESC : SORT_ASC);
         
         if (filtros != null) {
@@ -81,9 +89,9 @@ public class MotoristaService {
         return new PageResponseDTO(pageResponse);
     }
 
-    public PageResponseDTO findByEmpresaId(UUID empresaId, int pagina, int tamanhoPagina, OrdemEnum ordem) {
+    public PageResponseDTO findByEmpresaId(MotoristaFiltrosRequestDTO filtros, int pagina, int tamanhoPagina, OrdemEnum ordem) {
         Pageable pageable = PageRequest.of(pagina, tamanhoPagina, !ordem.equals(OrdemEnum.ASC) ? SORT_DESC : SORT_ASC);
-        Page<Motorista> page = motoristaRepository.findByEmpresaId(empresaId, pageable);
+        Page<Motorista> page = motoristaRepository.findAll(MotoristaSpecification.filtrar(filtros), pageable);
         if (page == null || page.isEmpty()) return new PageResponseDTO(page);
         Page<MotoristaSimplificadoResponseDTO> pageResponse = page.map(motoristaMapper::toResponseSimplificado);
         return new PageResponseDTO(pageResponse);
@@ -91,7 +99,6 @@ public class MotoristaService {
 
     @Transactional
     public Motorista createMotorista(MotoristaRequestDTO request) {
-        
         if (motoristaRepository.existsByCnhHash(hashService.hash(request.getNumeroCnh().trim()))) throw new MotoristaExceptions.CnhAlreadyExistsException();
         
         Usuario usuario = usuarioService.createUsuario(request.getUsuario(), request.getCpf(), PermissaoEnum.MOTORISTA);
@@ -119,6 +126,15 @@ public class MotoristaService {
             motorista.setEmpresa(empresa);
             return motoristaRepository.save(motorista);
         }
+        
+        Optional<Motorista> motoristaByCnhOptional = motoristaRepository.findByCnhHash(hashService.hash(request.getNumeroCnh().trim()));
+        if (motoristaByCnhOptional.isPresent()) {
+            Motorista motorista = motoristaByCnhOptional.get();
+            if (motorista.getEmpresa() != null && !motorista.getEmpresa().getId().equals(empresa.getId())) throw new MotoristaExceptions.MotoristaJaPossuiEmpresaException();
+            if (!motorista.getUsuario().getAtivo()) throw new MotoristaExceptions.MotoristaCadastradadoInativoException();
+            motorista.setEmpresa(empresa);
+            return motoristaRepository.save(motorista);
+        }
 
         Optional<Motorista> motoristaByEmailOptional = motoristaRepository.findByUsuarioEmailHash(hashService.hash(request.getEmail().trim().toLowerCase()));
         if (motoristaByEmailOptional.isPresent()) {
@@ -129,15 +145,6 @@ public class MotoristaService {
             return motoristaRepository.save(motorista);
         }
 
-        Optional<Motorista> motoristaByCnhOptional = motoristaRepository.findByCnhHash(hashService.hash(request.getNumeroCnh().trim()));
-        if (motoristaByCnhOptional.isPresent()) {
-            Motorista motorista = motoristaByCnhOptional.get();
-            if (motorista.getEmpresa() != null && !motorista.getEmpresa().getId().equals(empresa.getId())) throw new MotoristaExceptions.MotoristaJaPossuiEmpresaException();
-            if (!motorista.getUsuario().getAtivo()) throw new MotoristaExceptions.MotoristaCadastradadoInativoException();
-            motorista.setEmpresa(empresa);
-            return motoristaRepository.save(motorista);
-        }
-    
         Usuario usuario = usuarioService.createMotoristaEmpresa(request);
     
         Motorista novoMotorista = instanciarMotorista(
@@ -155,9 +162,7 @@ public class MotoristaService {
 
     @Transactional
     public SystemResponse desvincularMotoristaEmpresa(UUID empresaId, UUID motoristaId) {
-        if (reservaUtils.existsAtivaByEmpresaIdAndMotoristaId(empresaId, motoristaId)) {
-            throw new UsuarioExceptions.PossuiReservaAtivaException();
-        }
+        if (reservaUtils.existsAtivaByEmpresaIdAndMotoristaId(empresaId, motoristaId)) throw new UsuarioExceptions.PossuiReservaAtivaException();
         veiculoEmpresaMotoristaService.desvincularTodosByMotoristaId(motoristaId);
         Motorista motorista = motoristaRepository.findByIdAndEmpresaId(motoristaId, empresaId).orElseThrow(() -> new MotoristaExceptions.MotoristaNotFoundException());
         motorista.setEmpresa(null);
@@ -168,6 +173,8 @@ public class MotoristaService {
     @Transactional
     public Motorista updateMotorista(UserAuthenticated usuarioAutenticado, UUID id, UsuarioPATCHRequestDTO motoristaRequest) {
         Motorista motoristaCadastrado = findByIdAndAtivoTrue(id);
+        
+        Usuario usuarioAtualizado = usuarioService.patchUpdate(id, PermissaoEnum.MOTORISTA, motoristaRequest);
         
         if (motoristaRequest.getDataValidadeCnh() != null) {
             if (motoristaRequest.getDataValidadeCnh().isBefore(LocalDate.now())) throw new MotoristaExceptions.CnhVencidaException();
@@ -185,14 +192,18 @@ public class MotoristaService {
 
         if (motoristaRequest.getTipoCnh() != null) motoristaCadastrado.setTipoCnh(motoristaRequest.getTipoCnh());
 
-        Usuario usuarioAtualizado = usuarioService.patchUpdate(id, PermissaoEnum.MOTORISTA, motoristaRequest);
+        if (motoristaRequest.getCpf() != null) {
+            String cpf = motoristaRequest.getCpf().trim();
+            String cpfHash = hashService.hash(cpf);
+            if (motoristaRepository.existsByCpfHashAndIdNot(cpfHash, id)) throw new UsuarioExceptions.CpfAlreadyExistsException();
+            motoristaCadastrado.setCpfHash(cpfHash);
+            motoristaCadastrado.setCpfCripto(criptoService.encrypt(cpf));
+            motoristaCadastrado.setCpfLast5(UsuarioUtils.gerarLastN(cpf, 5));
+        }
+
         motoristaCadastrado.setUsuario(usuarioAtualizado);
 
         return motoristaRepository.save(motoristaCadastrado);
-    }
-
-    public Motorista findById(UUID id) {
-        return motoristaRepository.findById(id).orElseThrow(()-> new MotoristaExceptions.MotoristaNotFoundException());
     }
 
     public void desativarById(UUID id) {
@@ -201,7 +212,7 @@ public class MotoristaService {
 
     @Transactional
     public Motorista completarCadastro(Usuario usuario, String numeroCnh, String cpf, LocalDate dataValidadeCnh, TipoCnhEnum tipoCnh){
-        if (motoristaRepository.existsByCnhHashAndIdNot(numeroCnh, usuario.getId())) throw new MotoristaExceptions.CnhAlreadyExistsException();
+        if (motoristaRepository.existsByCnhHashAndIdNot(numeroCnh.trim(), usuario.getId())) throw new MotoristaExceptions.CnhAlreadyExistsException();
         
         Optional<Motorista> motoristaOptional = motoristaRepository.findById(usuario.getId());
         
@@ -218,25 +229,14 @@ public class MotoristaService {
             motorista.setCpfCripto(criptoService.encrypt(cpf));
             motorista.setCpfLast5(UsuarioUtils.gerarLastN(cpf, 5));
             return motoristaRepository.save(motorista);
-        } else{
-            Motorista novoMotorista = new Motorista();
-            novoMotorista.setDataValidadeCnh(dataValidadeCnh);
-            novoMotorista.setTipoCnh(tipoCnh);
-            novoMotorista.setCnhHash(hashService.hash(numeroCnh));
-            novoMotorista.setCnhCripto(criptoService.encrypt(numeroCnh));
-            novoMotorista.setCnhLast4(UsuarioUtils.gerarLastN(numeroCnh, 4));
-            novoMotorista.setCpfHash(hashService.hash(cpf));
-            novoMotorista.setCpfCripto(criptoService.encrypt(cpf));
-            novoMotorista.setCpfLast5(UsuarioUtils.gerarLastN(cpf, 5));
-            novoMotorista.setUsuario(usuario);
+        } else {
+            Motorista novoMotorista = instanciarMotorista(usuario, numeroCnh, tipoCnh, dataValidadeCnh, cpf);
             return motoristaRepository.save(novoMotorista);
         }
 
     }
 
     private Motorista instanciarMotorista(Usuario usuario, String cnh, TipoCnhEnum tipoCnh, LocalDate dataValidadeCnh, String cpf) {
-        Motorista motorista = new Motorista();
-        
         cnh = cnh.trim();
         String cnhHash = hashService.hash(cnh);
         String cnhCripto = criptoService.encrypt(cnh);
@@ -247,17 +247,17 @@ public class MotoristaService {
         String cpfCripto = criptoService.encrypt(cpf);
         String cpfLast5 = UsuarioUtils.gerarLastN(cpf, 5);
 
-        motorista.setCnhHash(cnhHash);
-        motorista.setCnhCripto(cnhCripto);
-        motorista.setCnhLast4(cnhLast4);
-
-        motorista.setTipoCnh(tipoCnh);
-        motorista.setDataValidadeCnh(dataValidadeCnh);
-
-        motorista.setCpfHash(cpfHash);
-        motorista.setCpfCripto(cpfCripto);
-        motorista.setCpfLast5(cpfLast5);
-        motorista.setUsuario(usuario);
+        Motorista motorista = new Motorista(
+            usuario,
+            tipoCnh,
+            dataValidadeCnh,
+            cnhHash,
+            cnhCripto,
+            cnhLast4,
+            cpfHash,
+            cpfCripto,
+            cpfLast5
+        );
 
         return motorista;
     }

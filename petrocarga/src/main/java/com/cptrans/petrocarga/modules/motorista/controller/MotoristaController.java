@@ -24,7 +24,7 @@ import com.cptrans.petrocarga.config.swagger.response.PostResponses;
 import com.cptrans.petrocarga.enums.OrdemEnum;
 import com.cptrans.petrocarga.modules.motorista.dto.mapper.MotoristaMapper;
 import com.cptrans.petrocarga.modules.motorista.dto.request.MotoristaEmpresaRequestDTO;
-import com.cptrans.petrocarga.modules.motorista.dto.request.MotoristaFiltrosDTO;
+import com.cptrans.petrocarga.modules.motorista.dto.request.MotoristaFiltrosRequestDTO;
 import com.cptrans.petrocarga.modules.motorista.dto.request.MotoristaRequestDTO;
 import com.cptrans.petrocarga.modules.motorista.dto.response.MotoristaResponseDTO;
 import com.cptrans.petrocarga.modules.motorista.entity.Motorista;
@@ -36,10 +36,12 @@ import com.cptrans.petrocarga.shared.dto.response.SystemResponse;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
+@Tag(name = "Motoristas", description = "Endpoints para gerenciamento de motoristas")
 @RequestMapping("/motoristas")
 @RequiredArgsConstructor
 public class MotoristaController {
@@ -96,7 +98,7 @@ public class MotoristaController {
         @Parameter(description = "Ordem da listagem", example = "ASC")
         @RequestParam(defaultValue = "ASC") OrdemEnum ordem
     ) {
-        MotoristaFiltrosDTO filtros = new MotoristaFiltrosDTO(id, nome, telefone, email, cpf, cnh, empresaId, empresaCnpj, empresaRazaoSocial, ativo);
+        MotoristaFiltrosRequestDTO filtros = new MotoristaFiltrosRequestDTO(id, nome, telefone, email, cpf, cnh, empresaId, empresaCnpj, empresaRazaoSocial, ativo);
         PageResponseDTO motoristasFiltrados = motoristaService.findAllWithFiltros(filtros, pagina, tamanhoPagina, ordem);
         return ResponseEntity.ok(motoristasFiltrados);
     }
@@ -110,7 +112,13 @@ public class MotoristaController {
     @DefaultResponses
     @PreAuthorize("#id == authentication.principal.id or hasRole('ADMIN')")
     @GetMapping("/{id}")
-    public ResponseEntity<MotoristaResponseDTO> getMotoristaById(@PathVariable UUID id, @RequestParam(required = false, defaultValue = "true") Boolean ativo) {
+    public ResponseEntity<MotoristaResponseDTO> getMotoristaById(
+        @Parameter(description = "ID do motorista")
+        @PathVariable UUID id, 
+        
+        @Parameter(description = "Status do motorista (ativo/inativo)")
+        @RequestParam(required = false, defaultValue = "true") Boolean ativo
+    ) {
         Motorista motorista = motoristaService.findByIdAndAtivo(id, ativo);
         return ResponseEntity.ok(motoristaMapper.toResponse(motorista));
 
@@ -126,13 +134,26 @@ public class MotoristaController {
     @PreAuthorize("#empresaId == authentication.principal.id or hasAnyRole('ADMIN', 'GESTOR')")
     @GetMapping("/byEmpresa/{empresaId}")
     public ResponseEntity<PageResponseDTO> getMotoristaByEmpresaId(
-            @PathVariable UUID empresaId,
-            @RequestParam(defaultValue = "0") int pagina,
-            @RequestParam(defaultValue = "10") int tamanhoPagina,
-            @RequestParam(defaultValue = "ASC") OrdemEnum ordem
-        ) {
-    
-        return ResponseEntity.ok(motoristaService.findByEmpresaId(empresaId, pagina, tamanhoPagina, ordem));
+        @Parameter(description = "ID da empresa")
+        @PathVariable UUID empresaId,
+        
+        @Parameter(description = "Nome do motorista")
+        @RequestParam(required = false) String nome,
+
+        @Parameter(description = "Status do motorista (ativo/inativo)")
+        @RequestParam(required = false) Boolean ativo,
+
+        @Parameter(description = "Número da página", example = "0")
+        @RequestParam(defaultValue = "0") int pagina,
+
+        @Parameter(description = "Quantidade de registros por página", example = "10")
+        @RequestParam(defaultValue = "10") int tamanhoPagina,
+
+        @Parameter(description = "Ordem da listagem", example = "ASC")
+        @RequestParam(defaultValue = "ASC") OrdemEnum ordem
+    ) {
+        MotoristaFiltrosRequestDTO filtros = new MotoristaFiltrosRequestDTO(null, nome, null, null, null, null, empresaId, null, null, ativo);
+        return ResponseEntity.ok(motoristaService.findByEmpresaId(filtros, pagina, tamanhoPagina, ordem));
     }
 
     //POST /motoristas/cadastro
@@ -143,7 +164,10 @@ public class MotoristaController {
     @PostResponses
     @DefaultResponses
     @PostMapping("/cadastro")
-    public ResponseEntity<MotoristaResponseDTO> createMotorista(@RequestBody @Valid MotoristaRequestDTO request) {
+    public ResponseEntity<MotoristaResponseDTO> createMotorista(
+        @Parameter(description = "Dados do motorista a ser cadastrado")
+        @Valid @RequestBody MotoristaRequestDTO request
+    ) {
         Motorista motorista = motoristaService.createMotorista(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(motoristaMapper.toResponse(motorista));
 
@@ -158,7 +182,13 @@ public class MotoristaController {
     @DefaultResponses
     @PreAuthorize("#empresaId == authentication.principal.id or hasRole('ADMIN')")
     @PostMapping("/cadastroEmpresa/{empresaId}")
-    public ResponseEntity<MotoristaResponseDTO> createMotoristaEmpresa(@PathVariable UUID empresaId,@RequestBody @Valid MotoristaEmpresaRequestDTO request) {
+    public ResponseEntity<MotoristaResponseDTO> createMotoristaEmpresa(
+        @Parameter(description = "ID da empresa")
+        @PathVariable UUID empresaId,
+
+        @Parameter(description = "Dados do motorista a ser cadastrado")
+        @Valid @RequestBody MotoristaEmpresaRequestDTO request
+    ) {
         Motorista motorista = motoristaService.createMotoristaByEmpresa(empresaId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(motoristaMapper.toResponse(motorista));
 
@@ -193,7 +223,16 @@ public class MotoristaController {
     @DefaultResponses
     @PreAuthorize("#id == authentication.principal.id or hasRole('ADMIN')")
     @PatchMapping("/{id}")
-    public ResponseEntity<MotoristaResponseDTO> updateMotorista(@AuthenticationPrincipal UserAuthenticated usuarioAutenticado, @PathVariable UUID id,  @RequestBody @Valid UsuarioPATCHRequestDTO motoristaRequestDTO) {
+    public ResponseEntity<MotoristaResponseDTO> updateMotorista(
+        @Parameter(description = "Usuário autenticado")
+        @AuthenticationPrincipal UserAuthenticated usuarioAutenticado, 
+        
+        @Parameter(description = "ID do motorista")
+        @PathVariable UUID id,  
+        
+        @Parameter(description = "Dados do motorista a ser atualizado")
+        @Valid @RequestBody UsuarioPATCHRequestDTO motoristaRequestDTO
+    ) {
         Motorista motorista = motoristaService.updateMotorista(usuarioAutenticado, id, motoristaRequestDTO);
         return ResponseEntity.ok(motoristaMapper.toResponse(motorista));
 
@@ -208,7 +247,10 @@ public class MotoristaController {
     @DefaultResponses
     @PreAuthorize("#id == authentication.principal.id or hasRole('ADMIN')")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> desativarById(@PathVariable UUID id) {
+    public ResponseEntity<Void> desativarById(
+        @Parameter(description = "ID do motorista")
+        @PathVariable UUID id
+    ) {
         motoristaService.desativarById(id);
         return ResponseEntity.noContent().build();
     }

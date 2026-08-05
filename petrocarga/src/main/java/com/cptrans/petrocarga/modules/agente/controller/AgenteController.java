@@ -57,24 +57,24 @@ public class AgenteController {
     @DefaultResponses
     @GetMapping
     public ResponseEntity<PageResponseDTO> getAllAgentes(
-            @Parameter(description = "Nome do agente")
-            @RequestParam(required = false) String nome,
+        @Parameter(description = "Nome do agente")
+        @RequestParam(required = false) String nome,
 
-            @Parameter(description = "Matrícula do agente")
-            @RequestParam(required = false) String matricula,
+        @Parameter(description = "Matrícula do agente")
+        @RequestParam(required = false) String matricula,
 
-            @Parameter(description = "Status do agente (ativo/inativo)")
-            @RequestParam(required = false) Boolean ativo,
+        @Parameter(description = "Status do agente (ativo/inativo)")
+        @RequestParam(required = false) Boolean ativo,
 
-            @Parameter(description = "Número da página", example = "0")
-            @RequestParam(defaultValue = "0") int pagina,
+        @Parameter(description = "Número da página", example = "0")
+        @RequestParam(defaultValue = "0") int pagina,
 
-            @Parameter(description = "Quantidade de registros por página", example = "10")
-            @RequestParam(defaultValue = "10") int tamanhoPagina,
+        @Parameter(description = "Quantidade de registros por página", example = "10")
+        @RequestParam(defaultValue = "10") int tamanhoPagina,
 
-            @Parameter(description = "Ordem da listagem", example = "ASC")
-            @RequestParam(defaultValue = "ASC") OrdemEnum ordem
-        ) {
+        @Parameter(description = "Ordem da listagem", example = "ASC")
+        @RequestParam(defaultValue = "ASC") OrdemEnum ordem
+    ) {
         AgenteFiltrosDTO filtros = new AgenteFiltrosDTO(nome, matricula, ativo);
         return ResponseEntity.ok(agenteService.findByFiltros(filtros, pagina, tamanhoPagina, ordem));
     }
@@ -89,9 +89,9 @@ public class AgenteController {
     @PreAuthorize(" #id == authentication.principal.id or hasAnyRole('ADMIN', 'GESTOR')")
     @GetMapping("/{id}")
     public ResponseEntity<AgenteResponseDTO> getAgenteById(
-            @Parameter(description = "ID do agente", required = true)
-            @PathVariable UUID id
-        ) {
+        @Parameter(description = "ID do agente")
+        @PathVariable UUID id
+    ) {
         Agente agente = agenteService.findByIdAndAtivoTrue(id);
         return ResponseEntity.ok(agenteMapper.toResponse(agente));
     }
@@ -105,8 +105,9 @@ public class AgenteController {
     @DefaultResponses
     @PostMapping
     public ResponseEntity<AgenteResponseDTO> createAgente(
-            @Valid @RequestBody AgenteRequestDTO agenteRequestDTO
-        ) {
+        @Parameter(description = "Dados do agente a ser cadastrado")
+        @Valid @RequestBody AgenteRequestDTO agenteRequestDTO
+    ) {
         Agente savedAgente = agenteService.createAgente(agenteRequestDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(agenteMapper.toResponse(savedAgente));
     }
@@ -120,7 +121,13 @@ public class AgenteController {
     @DefaultResponses
     @PreAuthorize(" #id == authentication.principal.id or hasAnyRole('ADMIN', 'GESTOR')")
     @PatchMapping("/{id}")
-    public ResponseEntity<AgenteResponseDTO> updateAgenteById(@PathVariable UUID id, @RequestBody @Valid UsuarioPATCHRequestDTO agenteRequestDTO) {
+    public ResponseEntity<AgenteResponseDTO> updateAgenteById(
+        @Parameter(description = "ID do agente")
+        @PathVariable UUID id, @RequestBody 
+        
+        @Parameter(description = "Dados do agente a ser atualizado")
+        @Valid UsuarioPATCHRequestDTO agenteRequestDTO
+    ) {
         Agente updatedAgente = agenteService.updateAgenteById(id, agenteRequestDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(agenteMapper.toResponse(updatedAgente));
     }
@@ -131,9 +138,12 @@ public class AgenteController {
     )
     @DeleteResponses
     @DefaultResponses
-    @DeleteMapping("/{usuarioId}")
-    public ResponseEntity<Void> desativarAgente(@PathVariable UUID usuarioId) {
-        agenteService.desativarById(usuarioId);
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> desativarAgente(
+        @Parameter(description = "ID do agente")
+        @PathVariable UUID id
+    ) {
+        agenteService.desativarById(id);
         return ResponseEntity.noContent().build();
     }
 }

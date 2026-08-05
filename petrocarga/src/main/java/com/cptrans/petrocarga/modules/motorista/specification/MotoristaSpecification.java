@@ -5,7 +5,7 @@ import java.util.List;
 
 import org.springframework.data.jpa.domain.Specification;
 
-import com.cptrans.petrocarga.modules.motorista.dto.request.MotoristaFiltrosDTO;
+import com.cptrans.petrocarga.modules.motorista.dto.request.MotoristaFiltrosRequestDTO;
 import com.cptrans.petrocarga.modules.motorista.entity.Motorista;
 import com.cptrans.petrocarga.shared.utils.StringUtils;
 import com.cptrans.petrocarga.shared.utils.Utils;
@@ -23,7 +23,7 @@ public class MotoristaSpecification {
      * @return a Specification que filtra os motoristas com base nos filtros passados
      */
      public static Specification<Motorista> filtrar(
-        MotoristaFiltrosDTO filtros
+        MotoristaFiltrosRequestDTO filtros
     ) {
         return (root, query, cb) -> {
 
@@ -37,7 +37,7 @@ public class MotoristaSpecification {
 
             if (filtros.getNome() != null) {
                 predicates.add(
-                    cb.like(cb.lower(Utils.createUnaccentExpression(cb, root.get("usuario").get("nome"))), "%" + StringUtils.normalize(filtros.getNome().trim().toLowerCase()) + "%")
+                    cb.like(cb.lower(Utils.createUnaccentExpression(cb, root.get("usuario").get("nome"))), "%" + StringUtils.removerAcentos(filtros.getNome().trim().toLowerCase()) + "%")
                 );
             }
 
@@ -79,7 +79,7 @@ public class MotoristaSpecification {
 
             if (filtros.getEmpresaRazaoSocial() != null) {
                 predicates.add(
-                    cb.like(cb.lower(Utils.createUnaccentExpression(cb, root.get("empresa").get("usuario").get("nome"))), "%" + StringUtils.normalize(filtros.getEmpresaRazaoSocial().trim().toLowerCase()) + "%")
+                    cb.like(cb.lower(Utils.createUnaccentExpression(cb, root.get("empresa").get("usuario").get("nome"))), "%" + StringUtils.removerAcentos(filtros.getEmpresaRazaoSocial().trim().toLowerCase()) + "%")
                 );
             }
 

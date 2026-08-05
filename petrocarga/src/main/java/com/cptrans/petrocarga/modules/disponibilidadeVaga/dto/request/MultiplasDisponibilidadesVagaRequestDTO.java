@@ -4,32 +4,26 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
-import com.cptrans.petrocarga.modules.disponibilidadeVaga.entity.DisponibilidadeVaga;
 
-import jakarta.validation.Valid;
+import jakarta.validation.constraints.Future;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Getter
 public class MultiplasDisponibilidadesVagaRequestDTO {
-    @Valid
+    @NotNull(message = "A lista de vaga id deve ser informada")
+    @NotEmpty(message = "A lista de vaga id não pode estar vazia")
     private List<UUID> listaVagaId;
+
+    @NotNull(message = "O campo 'inicio' é obrigatório")
     private OffsetDateTime inicio;
+
+    @NotNull(message = "O campo 'fim' é obrigatório")
+    @Future(message = "O horário de fim deve ser posterior ao horário atual.")
     private OffsetDateTime fim;
 
-    public DisponibilidadeVaga toEntity(){
-        DisponibilidadeVaga disponibilidadeVaga = new DisponibilidadeVaga();
-        disponibilidadeVaga.setInicio(this.inicio);
-        disponibilidadeVaga.setFim(this.fim);
-        return disponibilidadeVaga;
-        
-    }
-
-    public List<UUID> getListaVagaId() {
-        return listaVagaId;
-    }
-    public OffsetDateTime getInicio() {
-        return inicio;
-    }
-    public OffsetDateTime getFim() {
-        return fim;
-    }
-    
 }

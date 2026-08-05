@@ -60,11 +60,6 @@ public class EmailService implements EmailSender {
         }
         try {
             if (mailSender instanceof JavaMailSenderImpl) {
-                JavaMailSenderImpl impl = (JavaMailSenderImpl) mailSender;
-                String host = impl.getHost();
-                int port = impl.getPort();
-                // Do NOT log password or sensitive props
-                LOGGER.info("Mail sender config - host: {}, port: {}, from: {}", host, port, from);
             } else {
                 LOGGER.info("Mail sender is not JavaMailSenderImpl, cannot read host/port. from={}", from);
             }
@@ -87,12 +82,12 @@ public class EmailService implements EmailSender {
 
         logMailEndpointInfo();
         String text;
-        if(randomPassword == null){
+        if (randomPassword == null){
             text = "Seu código de ativação é: " + code + "\n\n" +
             "Clique no link abaixo para ativar sua conta:\n" +
             frontendBaseUrl + "/autorizacao/login?ativar-conta=true\n\n" +
             "Se vocé nao solicitou, ignore este e-mail.";
-        }else{
+        } else {
             text = "Seu código de ativação é: " + code + "\n\n" +
             "Sua senha de acesso é: " + randomPassword + "\n\n" +
             "Lembre-se de alterar sua senha posterioremente através do 'esqueci minha senha'." + "\n\n" +
@@ -102,16 +97,12 @@ public class EmailService implements EmailSender {
         }
 
         try {
-            LOGGER.info("[{}] Sending activation code to {}", Thread.currentThread().getName(), to);
-            LOGGER.debug("Activation code for {}: {}", to, code);
-
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(from);
             message.setTo(to);
             message.setSubject("Código de Ativação - PetroCarga");
             message.setText(text);
             mailSender.send(message);
-            LOGGER.info("[{}] Email de ativação enviado com sucesso para: {}", Thread.currentThread().getName(), to);
         } catch (MailException e) {
             LOGGER.error("[{}] MailException ao enviar ativação para {}: {}", Thread.currentThread().getName(), to, e.getMessage(), e);
             // Não silenciar: rethrow para que o AsyncUncaughtExceptionHandler trate o erro e registre stacktrace
@@ -136,9 +127,6 @@ public class EmailService implements EmailSender {
         logMailEndpointInfo();
 
         try {
-            LOGGER.info("[{}] Sending password reset to {}", Thread.currentThread().getName(), to);
-            LOGGER.debug("Password reset code for {}: {}", to, code);
-
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(from);
             message.setTo(to);
@@ -151,7 +139,6 @@ public class EmailService implements EmailSender {
                     "Se você não solicitou esta recuperação, ignore este e-mail.");
 
             mailSender.send(message);
-            LOGGER.info("[{}] Email de reset de senha enviado com sucesso para: {}", Thread.currentThread().getName(), to);
         } catch (MailException e) {
             LOGGER.error("[{}] MailException ao enviar reset para {}: {}", Thread.currentThread().getName(), to, e.getMessage(), e);
             throw e;

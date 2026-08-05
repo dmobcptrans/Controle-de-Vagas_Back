@@ -16,6 +16,7 @@ import com.cptrans.petrocarga.modules.usuario.utils.UsuarioUtils;
 import com.cptrans.petrocarga.modules.veiculo.entity.Veiculo;
 import com.cptrans.petrocarga.shared.utils.DateUtils;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -96,12 +97,14 @@ public class Usuario implements UserDetails{
     @Enumerated(EnumType.STRING)
     private UsuarioProviderEnum provider = UsuarioProviderEnum.LOCAL;
 
-    @Column(name = "personal_data_key_version", nullable = false)
-    private Integer personalDataKeyVersion;
+    @Column(name = "cripto_version", nullable = false)
+    private Integer criptoVersion = 1;
 
-    @OneToMany(mappedBy = "usuario")
+    @Column(name = "hash_version", nullable = false)
+    private Integer hashVersion = 1;
+
+    @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Veiculo> veiculos;
-
 
     public Usuario(String nome, String telefone, String email, String senha, PermissaoEnum permissao) {
         this.nome = nome;
@@ -179,10 +182,14 @@ public class Usuario implements UserDetails{
         this.provider = provider;
     }
 
-    public void setPersonalDataKeyVersion(Integer personalDataKeyVersion) {
-        this.personalDataKeyVersion = personalDataKeyVersion;
+    public void setCriptoVersion(Integer criptoVersion) {
+        this.criptoVersion = criptoVersion;
     }
 
+    public void setHashVersion(Integer hashVersion) {
+        this.hashVersion = hashVersion;
+    }
+    
     public List<Veiculo> getVeiculosAtivos(){
         if (this.veiculos != null && !this.veiculos.isEmpty()) {
             return this.veiculos.stream().filter((veiculo) -> {

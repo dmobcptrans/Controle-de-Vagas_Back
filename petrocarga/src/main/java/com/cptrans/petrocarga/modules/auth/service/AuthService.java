@@ -14,7 +14,7 @@ import com.cptrans.petrocarga.modules.auth.dto.response.AuthResponseDTO;
 import com.cptrans.petrocarga.modules.auth.exceptions.AuthExceptions;
 import com.cptrans.petrocarga.modules.auth.exceptions.AuthExceptions.CredenciaisInvalidasException;
 import com.cptrans.petrocarga.modules.cripto.HashService;
-import com.cptrans.petrocarga.modules.googleAuth.GoogleAuthService;
+import com.cptrans.petrocarga.modules.googleAuth.service.GoogleAuthService;
 import com.cptrans.petrocarga.modules.motorista.service.MotoristaService;
 import com.cptrans.petrocarga.modules.usuario.dto.mapper.UsuarioMapper;
 import com.cptrans.petrocarga.modules.usuario.entity.Usuario;
@@ -43,7 +43,6 @@ public class AuthService {
     private final UsuarioMapper usuarioMapper;
 
  
-
     /**
      * Faz o login do usuário com base em (email ou cpf ou cnpj) e senha.
      * 
@@ -52,13 +51,11 @@ public class AuthService {
      * @throws CredenciaisInvalidasException se as credenciais forem inválidas ou o usuário não for encontrado.
      */
     public AuthResponseDTO login(AuthRequestDTO request) {
-
         Usuario usuario = usuarioService.findByEmailOrCpfOrCnpjAndAtivo(request.getEmail(), request.getCpf(), request.getCnpj(), true).orElseThrow(() -> new AuthExceptions.CredenciaisInvalidasException());
-
         if (usuario.getSenha() == null || !passwordEncoder.matches(request.getSenha(), usuario.getSenha())) throw new AuthExceptions.CredenciaisInvalidasException();
-        
+        usuarioService.atualizarCriptografiaDosDadosSeNecessario(usuario);
         String token = jwtService.gerarToken(usuario);
-        String cpfOrCnpj = usuarioUtils.getCpfOrCnpjByPermissao(usuario.getPermissao(), usuario.getId());
+        String cpfOrCnpj = usuarioUtils.getCpfOrCnpjByPermissaoAndId(usuario.getPermissao(), usuario.getId());
 
        return new AuthResponseDTO(usuarioMapper.toResponse(usuario, cpfOrCnpj), token);
     }
@@ -79,37 +76,44 @@ public class AuthService {
         Payload payload = googleAuthService.verifyGoogleToken(token);
 
         String email = payload.getEmail().trim().toLowerCase();
-        String emailHash = hashService.hash(email);
         String googleId = payload.getSubject();
         String name = (String) payload.get("name");
+        
+        Optional<Usuario> usuarioOptional = Optional.empty();
 
-        Optional<Usuario> usuario = usuarioRepository.findByEmailHashOrGoogleId(hashService.hash(emailHash), googleId);
+        for (int version = hashService.getPeppers().keySet().size(); version > 0; version--) {
+            String emailHash = hashService.hash(email, version);
+            usuarioOptional = usuarioRepository.findByEmailHashOrGoogleId(emailHash, googleId);
+            if (usuarioOptional.isPresent()) break;
+        }
 
-        if (!usuario.isPresent()) {
+        if (!usuarioOptional.isPresent()) {
             Usuario novoUsuario = usuarioService.createMotoristaByGoogleAccount(name, email, googleId);
             String jwt = jwtService.gerarToken(novoUsuario);
-            String cpfOrCnpj = usuarioUtils.getCpfOrCnpjByPermissao(novoUsuario.getPermissao(), novoUsuario.getId());
-
+            String cpfOrCnpj = usuarioUtils.getCpfOrCnpjByPermissaoAndId(novoUsuario.getPermissao(), novoUsuario.getId());
             return new AuthResponseDTO(usuarioMapper.toResponse(novoUsuario, cpfOrCnpj), jwt);
         }
 
-        if (!usuario.get().getAtivo()) {
-            if ((usuario.get().getPermissao().equals(PermissaoEnum.GESTOR) || usuario.get().getPermissao().equals(PermissaoEnum.AGENTE) || usuario.get().getPermissao().equals(PermissaoEnum.ADMIN)) && usuario.get().getDesativadoEm() != null) {
-                throw new IllegalArgumentException("Usuário desativado em " + usuario.get().getDesativadoEm() + ". Para mais informações, entre em contato com a CPTrans.");
+        Usuario usuario = usuarioOptional.get();
+
+        usuarioService.atualizarCriptografiaDosDadosSeNecessario(usuario);
+
+        if (!usuario.getAtivo()) {
+            if ((usuario.getPermissao().equals(PermissaoEnum.GESTOR) || usuario.getPermissao().equals(PermissaoEnum.AGENTE) || usuario.getPermissao().equals(PermissaoEnum.ADMIN)) && usuario.getDesativadoEm() != null) {
+                throw new IllegalArgumentException("Usuário desativado em " + usuario.getDesativadoEm() + ". Para mais informações, entre em contato com a CPTrans.");
             }
             usuarioService.resendActivationCode(email, null, null);
             throw new IllegalArgumentException("Usuário desativado. Se deseja ativar a conta, siga as instruções enviadas para o email '" + email + "'.");
         }
 
-        if (usuario.isPresent() && !usuario.get().getGoogleId().equals(googleId)) {
-            usuario.get().setGoogleId(googleId);
-            usuario.get().setProvider(UsuarioProviderEnum.GOOGLE);
-            usuarioRepository.save(usuario.get());
+        if (!usuario.getGoogleId().equals(googleId)) {
+            usuario.setGoogleId(googleId);
+            usuario.setProvider(UsuarioProviderEnum.GOOGLE);
+            usuarioRepository.save(usuario);
         }
-        String jwt = jwtService.gerarToken(usuario.get());
-        String cpfOrCnpj = usuarioUtils.getCpfOrCnpjByPermissao(usuario.get().getPermissao(), usuario.get().getId());
-
-        return new AuthResponseDTO(usuarioMapper.toResponse(usuario.get(), cpfOrCnpj), jwt);
+        String jwt = jwtService.gerarToken(usuario);
+        String cpfOrCnpj = usuarioUtils.getCpfOrCnpjByPermissaoAndId(usuario.getPermissao(), usuario.getId());
+        return new AuthResponseDTO(usuarioMapper.toResponse(usuario, cpfOrCnpj), jwt);
     }
 
     /**

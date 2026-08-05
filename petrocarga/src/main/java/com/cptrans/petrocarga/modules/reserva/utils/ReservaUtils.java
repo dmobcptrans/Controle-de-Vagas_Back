@@ -30,7 +30,6 @@ import com.cptrans.petrocarga.modules.vaga.entity.Vaga;
 import com.cptrans.petrocarga.modules.vaga.exceptions.VagaExceptions;
 import com.cptrans.petrocarga.modules.veiculo.entity.Veiculo;
 import com.cptrans.petrocarga.security.UserAuthenticated;
-import com.cptrans.petrocarga.shared.exceptions.DateExceptions;
 import com.cptrans.petrocarga.shared.utils.DateUtils;
 
 import lombok.RequiredArgsConstructor;
@@ -61,7 +60,7 @@ public class ReservaUtils {
         Motorista motoristaDaReserva = novaReserva.getMotorista();
         Integer tamanhoDisponivelVaga = vagaReserva.getComprimento() - veiculoDaReserva.getTipo().getComprimento();
         Usuario criadoPor = novaReserva.getCriadoPor();
-        String cpfOrCnpjCriador = usuarioUtils.getCpfOrCnpjByPermissao(criadoPor.getPermissao(), criadoPor.getId());
+        String cpfOrCnpjCriador = usuarioUtils.getCpfOrCnpjByPermissaoAndId(criadoPor.getPermissao(), criadoPor.getId());
         ReservaDTO novaReservaDTO = reservaMapper.toReservaDTO(novaReserva, cpfOrCnpjCriador);
         List<ReservaDTO> reservasSobrepostas = getReservasAtivasSobrepostas(novaReserva.getInicio(), novaReserva.getFim());
         
@@ -151,7 +150,7 @@ public class ReservaUtils {
         if (reservas != null && !reservas.isEmpty()) {
             reservas.forEach((r) -> {
                 Usuario criadoPor = r.getCriadoPor();
-                String cpfOrCnpjCriador = usuarioUtils.getCpfOrCnpjByPermissao(criadoPor.getPermissao(), criadoPor.getId());
+                String cpfOrCnpjCriador = usuarioUtils.getCpfOrCnpjByPermissaoAndId(criadoPor.getPermissao(), criadoPor.getId());
                 listaFinalReservas.add(reservaMapper.toReservaDTO(r, cpfOrCnpjCriador));
             });
         }
@@ -163,18 +162,10 @@ public class ReservaUtils {
         return reservaRepository.existsAtivaByCriadoPorIdOrMotoristaId(usuarioId);
     }
     public Boolean existsAtivaByEmpresaIdAndMotoristaId(UUID empresaId, UUID motoristaId) {
-        return reservaRepository.existsByCriadoPorIdAndMotoristaIdAndStatusIn(empresaId, motoristaId, List.of(StatusReservaEnum.RESERVADA, StatusReservaEnum.ATIVA));
-    }
-
-    public static void validarFiltrosData(LocalDate data, Integer mes, Integer ano) {
-        boolean informouData = data != null;
-        boolean informouMesEAno = mes != null && ano != null;
-
-        if ((informouData && informouMesEAno)) {
-            throw new DateExceptions.FiltroDataInvalidoException();
-        }
-
-        DateUtils.validarMesEAno(mes, ano);
+        List<StatusReservaEnum> listaStatus = List.of(StatusReservaEnum.RESERVADA, StatusReservaEnum.ATIVA);
+        Boolean existeCriadoPelaEmpresaEComMotorista = reservaRepository.existsByCriadoPorIdAndMotoristaIdAndStatusIn(empresaId, motoristaId, listaStatus);
+        Boolean existeVeiculoDaEmpresaEComMotorista = reservaRepository.existsByVeiculoUsuarioIdAndMotoristaIdAndStatusIn(empresaId, motoristaId, listaStatus);
+        return existeCriadoPelaEmpresaEComMotorista || existeVeiculoDaEmpresaEComMotorista;
     }
 
     public static void validarCapacidadePerpendicularPorPosicao(

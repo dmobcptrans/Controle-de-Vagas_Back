@@ -6,18 +6,19 @@ import org.quartz.DisallowConcurrentExecution;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.cptrans.petrocarga.enums.StatusVagaEnum;
 import com.cptrans.petrocarga.modules.disponibilidadeVaga.service.DisponibilidadeVagaService;
 
+import lombok.RequiredArgsConstructor;
+
 @DisallowConcurrentExecution
 @Component
+@RequiredArgsConstructor
 public class AlterarDisponibilidadeJob implements Job {
 
-    @Autowired
-    private DisponibilidadeVagaService disponibilidadeVagaService;
+    private final DisponibilidadeVagaService disponibilidadeVagaService;
 
 /**
  * Executa o job de alterar disponibilidade de vaga.
@@ -35,7 +36,6 @@ public class AlterarDisponibilidadeJob implements Job {
             context.getMergedJobDataMap().getString("status")
         );
 
-        disponibilidadeVagaService.alterarDisponibilidade(disponibilidadeId, novoStatus);
+        disponibilidadeVagaService.alterarStatusVaga(disponibilidadeId, novoStatus);
     }
-    
 }

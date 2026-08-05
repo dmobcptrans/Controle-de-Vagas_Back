@@ -22,6 +22,7 @@ import lombok.RequiredArgsConstructor;
 public class DenunciaMapper {
 
     private final CriptoUtils criptoUtils;
+    private final EnderecoVagaMapper enderecoVagaMapper;
 
     public DenunciaResponseDTO toResponse(Denuncia denuncia){
         if (denuncia == null) return null;
@@ -42,7 +43,7 @@ public class DenunciaMapper {
             usuarioMotorista != null ? usuarioMotorista.getNome() : null,
             usuarioMotorista != null ?  usuarioMotorista.getTelefoneCripto() : null,
             denuncia.getDescricao(),
-            EnderecoVagaMapper.toResponse(enderecoVaga),
+            enderecoVagaMapper.toResponse(enderecoVaga),
             vaga != null ? vaga.getNumeroEndereco() : null,
             vaga != null ? vaga.getReferenciaEndereco() : null,
             veiculo != null ? veiculo.getMarca() : null,
@@ -57,7 +58,7 @@ public class DenunciaMapper {
             denuncia.getAtualizadoEm(),
             denuncia.getEncerradoEm()
                 
-        ), usuarioMotorista.getPersonalDataKeyVersion());
+        ), usuarioMotorista.getCriptoVersion());
     }
 
     public List<DenunciaResponseDTO> toResponseList(List<Denuncia> denuncias){

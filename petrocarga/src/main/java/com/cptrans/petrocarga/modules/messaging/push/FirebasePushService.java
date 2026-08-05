@@ -3,7 +3,6 @@ package com.cptrans.petrocarga.modules.messaging.push;
 import java.util.List;
 import java.util.Map;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.cptrans.petrocarga.modules.notificacao.entity.Notificacao;
@@ -12,11 +11,13 @@ import com.cptrans.petrocarga.modules.pushToken.repository.PushTokenRepository;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.Message;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class FirebasePushService implements PushNotificationService {
 
-    @Autowired
-    private PushTokenRepository pushTokenRepository;
+    private final PushTokenRepository pushTokenRepository;
 
     /**
      * Envia uma notificação para todos os dispositivos de um usuário com base no seu id.
@@ -39,7 +40,6 @@ public class FirebasePushService implements PushNotificationService {
                             "tipo", notificacao.getTipo().name(),
                             "lida", String.valueOf(notificacao.isLida()),
                             "metadata", notificacao.getMetadata().toString()
-                                
                         ))
                     .build();
 

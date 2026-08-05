@@ -32,7 +32,7 @@ public class AgenteSpecification {
 
             if (filtros.nome() != null) {
                 predicates.add(
-                    cb.like(Utils.createUnaccentExpression(cb, cb.lower(root.get("usuario").get("nome"))), "%" + StringUtils.normalize(filtros.nome().trim().toLowerCase()) + "%")
+                    cb.like(Utils.createUnaccentExpression(cb, cb.lower(root.get("usuario").get("nome"))), "%" + StringUtils.removerAcentos(filtros.nome().trim().toLowerCase()) + "%")
                 );
             }
 

@@ -13,13 +13,14 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.MapsId;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "gestor")
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
 @EqualsAndHashCode
 public class Gestor {
@@ -39,6 +40,14 @@ public class Gestor {
 
     @Column(name = "cpf_last5", nullable = false)
     private String cpfLast5;
+
+    public Gestor(Usuario usuario, String cpfHash, String cpfCripto, String cpfLast5) {
+        this.usuario = usuario;
+        this.cpfHash = cpfHash;
+        this.cpfCripto = cpfCripto;
+        this.cpfLast5 = cpfLast5;
+    }
+
 
     public void setUsuario(Usuario usuario) {
         this.usuario = usuario;

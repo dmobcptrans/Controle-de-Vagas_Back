@@ -1,11 +1,12 @@
-package com.cptrans.petrocarga.modules.googleAuth;
+package com.cptrans.petrocarga.modules.googleAuth.service;
 
 import java.util.Collections;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.stereotype.Service;
 
+import com.cptrans.petrocarga.modules.auth.exceptions.AuthExceptions;
+import com.cptrans.petrocarga.shared.exceptions.GlobalHandlerExceptions;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken.Payload;
@@ -21,9 +22,7 @@ public class GoogleAuthService {
 
     public Payload verifyGoogleToken(String idTokenString)  {
 
-        if(googleClientId == null || googleClientId.isEmpty()) {
-            throw new IllegalStateException("Google Client ID não configurado");
-        }
+        if (googleClientId == null || googleClientId.isEmpty()) throw new GlobalHandlerExceptions.GoogleIdNaoConfiguradoException();
 
         GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(
                 new NetHttpTransport(),
@@ -36,25 +35,22 @@ public class GoogleAuthService {
         try {
             idToken = verifier.verify(idTokenString);
         } catch (Exception e) {
-            throw new AuthorizationDeniedException("Token Google inválido");
+            throw new AuthExceptions.GoogleTokenInvalidoException();
         }
 
-        if (idToken == null) {
-           throw new AuthorizationDeniedException("Token Google inválido");
-        }
+        if (idToken == null) throw new AuthExceptions.GoogleTokenInvalidoException();
 
         Payload payload = idToken.getPayload();
 
         String issuer = payload.getIssuer();
 
-        if (!issuer.equals("accounts.google.com") &&
-            !issuer.equals("https://accounts.google.com")) {
-            throw new AuthorizationDeniedException("Token Google inválido");
-        }
+        if (
+            !issuer.equals("accounts.google.com") &&
+            !issuer.equals("https://accounts.google.com")
+        ) throw new AuthExceptions.GoogleTokenInvalidoException();
 
-        if (payload.getEmailVerified() == null || !payload.getEmailVerified()) {
-            throw new AuthorizationDeniedException("Token Google inválido");
-        }
+        if (payload.getEmailVerified() == null || !payload.getEmailVerified()) throw new AuthExceptions.GoogleTokenInvalidoException();
+        
         return payload;
     }
 }

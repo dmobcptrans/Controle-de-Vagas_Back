@@ -171,7 +171,16 @@ public class VeiculoEmpresaMotoristaController {
     @DefaultResponses
     @PreAuthorize("#empresaId == authentication.principal.id or hasAnyRole('ADMIN', 'GESTOR')")
     @PostMapping("/vincular/{empresaId}")
-    public ResponseEntity<VeiculoEmpresaMotoristaResponseDTO> vincularMotoristaAoVeiculo(@PathVariable UUID empresaId, @RequestParam UUID veiculoId, @RequestParam UUID motoristaId) {
+    public ResponseEntity<VeiculoEmpresaMotoristaResponseDTO> vincularMotoristaAoVeiculo(
+        @Parameter(description = "ID da empresa")
+        @PathVariable UUID empresaId, 
+        
+        @Parameter(description = "ID do veiculo")
+        @RequestParam UUID veiculoId,
+
+        @Parameter(description = "ID do motorista")
+        @RequestParam UUID motoristaId
+    ) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.vincularMotoristaAoVeiculo(empresaId, veiculoId, motoristaId));
     }
 
@@ -184,7 +193,16 @@ public class VeiculoEmpresaMotoristaController {
     @DefaultResponses
     @PreAuthorize("#empresaId == authentication.principal.id or hasAnyRole('ADMIN', 'GESTOR')")
     @PostMapping("/desvincular/{empresaId}")
-    public ResponseEntity<Void> desvincularMotoristaDoVeiculo(@PathVariable UUID empresaId, @RequestParam UUID veiculoId, @RequestParam UUID motoristaId) {
+    public ResponseEntity<Void> desvincularMotoristaDoVeiculo(
+        @Parameter(description = "ID da empresa")
+        @PathVariable UUID empresaId,
+
+        @Parameter(description = "ID do veiculo")
+        @RequestParam UUID veiculoId,
+        
+        @Parameter(description = "ID do motorista")
+        @RequestParam UUID motoristaId
+    ) {
         service.desvincularMotoristaDoVeiculo(empresaId, veiculoId, motoristaId);
         return ResponseEntity.noContent().build();
     }

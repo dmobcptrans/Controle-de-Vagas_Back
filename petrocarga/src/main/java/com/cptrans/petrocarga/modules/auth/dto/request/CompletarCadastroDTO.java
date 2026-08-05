@@ -6,11 +6,11 @@ import org.hibernate.validator.constraints.br.CPF;
 
 import com.cptrans.petrocarga.enums.TipoCnhEnum;
 
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -22,17 +22,26 @@ public class CompletarCadastroDTO {
     @CPF(message = "Informe um cpf válido")
     private String cpf;
 
-    @Size(min = 10, max = 11)
+    @NotNull(message = "Telefone é obrigatório!")
+    @NotBlank(message = "Telefone não pode estar em branco.")
+    @Pattern(
+        regexp = "^\\d{10,11}$",
+        message = "O telefone deve conter apenas números e ter entre 10 e 11 dígitos"
+    )
     private String telefone;
 
     @NotNull(message = "Aceitar Termos é obrigatório")
+    @AssertTrue(message = "Você deve aceitar os termos de uso para ativar a conta.")
     private Boolean aceitarTermos;
     
     @NotNull(message = "O campo 'tipoCnh' é obrigatório.")
     private TipoCnhEnum tipoCnh;
 
     @NotNull(message = "O campo 'numeroCnh' é obrigatório.")
-    @Size(min = 9, max = 11, message = "Número da CNH deve ter entre 9 e 11 caracteres.")
+    @Pattern(
+        regexp = "^\\d{9,11}$",
+        message = "O número da CNH deve conter apenas números e ter entre 9 e 11 dígitos"
+    )
     private String numeroCnh;
 
     @NotNull(message = "O campo 'dataValidadeCnh' é obrigatório.")

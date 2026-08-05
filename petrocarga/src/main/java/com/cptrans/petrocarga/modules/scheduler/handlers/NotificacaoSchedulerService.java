@@ -17,15 +17,14 @@ import com.cptrans.petrocarga.config.quartz.QuartzGroups;
 import com.cptrans.petrocarga.modules.scheduler.jobs.notificacao.NotificarCheckInDisponivelJob;
 import com.cptrans.petrocarga.modules.scheduler.jobs.notificacao.NotificarFimProximoJob;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class NotificacaoSchedulerService {
     private final Scheduler scheduler;
     private final String CHECKIN_DISPONIVEL = "CHECKIN_DISPONIVEL";
     private final String FIM_PROXIMO = "FIM_PROXIMO";
-
-    public NotificacaoSchedulerService(Scheduler scheduler) {
-        this.scheduler = scheduler;
-    }
 
     /**
      * Agenda notificacao de check-in disponível.
@@ -41,9 +40,7 @@ public class NotificacaoSchedulerService {
             QuartzGroups.NOTIFICACAO
         );
 
-        if (scheduler.checkExists(jobKey)) {
-            return;
-        }
+        if (scheduler.checkExists(jobKey)) return;
 
         JobDetail job = JobBuilder.newJob(NotificarCheckInDisponivelJob.class)
         .withIdentity("envia-notificacao-" + CHECKIN_DISPONIVEL + "-usuario-" + usuarioId.toString() + "-reserva-" + reservaId.toString(),
@@ -77,9 +74,7 @@ public class NotificacaoSchedulerService {
             QuartzGroups.NOTIFICACAO
         );
 
-        if (scheduler.checkExists(jobKey)) {
-            return;
-        }
+        if (scheduler.checkExists(jobKey)) return;
 
         JobDetail job = JobBuilder.newJob(NotificarFimProximoJob.class)
         .withIdentity("envia-notificacao-" + FIM_PROXIMO + "-usuario-" + usuarioId.toString() + "-reserva-" + reservaId.toString(),
@@ -112,9 +107,9 @@ public class NotificacaoSchedulerService {
             "envia-notificacao-" + CHECKIN_DISPONIVEL + "-usuario-" + usuarioId.toString() + "-reserva-" + reservaId.toString(),
             QuartzGroups.NOTIFICACAO
         );
-        if (!scheduler.checkExists(jobKey)) {
-            return;
-        }
+
+        if (!scheduler.checkExists(jobKey)) return;
+
         scheduler.deleteJob(
             JobKey.jobKey(
                 "envia-notificacao-" + CHECKIN_DISPONIVEL + "-usuario-" + usuarioId.toString() + "-reserva-" + reservaId.toString(),
@@ -135,9 +130,9 @@ public class NotificacaoSchedulerService {
             "envia-notificacao-" + FIM_PROXIMO + "-usuario-" + usuarioId.toString() + "-reserva-" + reservaId.toString(),
             QuartzGroups.NOTIFICACAO
         );
-        if (!scheduler.checkExists(jobKey)) {
-            return;
-        }
+
+        if (!scheduler.checkExists(jobKey)) return;
+        
         scheduler.deleteJob(
             JobKey.jobKey(
                 "envia-notificacao-" + FIM_PROXIMO + "-usuario-" + usuarioId.toString() + "-reserva-" + reservaId.toString(),

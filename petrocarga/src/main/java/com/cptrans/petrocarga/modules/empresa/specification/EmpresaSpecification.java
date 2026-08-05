@@ -31,7 +31,7 @@ public class EmpresaSpecification {
             }
 
             if (filtros.getNome() != null) {
-                predicates.add(cb.like(Utils.createUnaccentExpression(cb, cb.lower(root.get("usuario").get("nome"))), "%" + StringUtils.normalize(filtros.getNome().trim().toLowerCase()) + "%"));
+                predicates.add(cb.like(Utils.createUnaccentExpression(cb, cb.lower(root.get("usuario").get("nome"))), "%" + StringUtils.removerAcentos(filtros.getNome().trim().toLowerCase()) + "%"));
             }
 
             if (filtros.getTelefone() != null){
