@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -34,15 +33,14 @@ import com.cptrans.petrocarga.security.UserAuthenticated;
 import com.cptrans.petrocarga.shared.utils.DateUtils;
 
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 
 @Service
+@RequiredArgsConstructor
 public class NotificacaoService {
-    @Autowired
-    private UsuarioService usuarioService;
-    @Autowired
-    private NotificacaoRepository notificacaoRepository;
-    @Autowired
-    private SpringDomainEventPublisher eventPublisher;
+    private final UsuarioService usuarioService;
+    private final NotificacaoRepository notificacaoRepository;
+    private final SpringDomainEventPublisher eventPublisher;
 
     private Notificacao createNotificacao(UUID usuarioId, String titulo, String mensagem, TipoNotificacaoEnum tipo, Map<String, Object> dadosAdicionais) {
         UserAuthenticated usuarioLogado = AuthUtils.getUsuarioAutenticado();
@@ -54,7 +52,7 @@ public class NotificacaoService {
         dadosAdicionais.put("remetente", usuarioLogado.nome());
         Notificacao novaNotificacao = new Notificacao(usuarioDestinatario.getId(), titulo, mensagem, tipo, dadosAdicionais);
         
-        return notificacaoRepository.save(novaNotificacao);
+        return saveNotificacao(novaNotificacao);
     }
 
     @Transactional
