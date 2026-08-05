@@ -21,7 +21,10 @@ public class EmpresaRequestDTO {
     private String nome;
 
     @NotNull(message="O campo 'telefone' é obrigatório.")
-    @Size(min = 10, max = 11, message="Telefone deve conter entre 10 e 11 dígitos.")
+    @Pattern(
+        regexp = "^\\d{10,11}$",
+        message = "O telefone deve conter apenas números e ter entre 10 e 11 dígitos"
+    )
     private String telefone;
 
     @NotNull(message="O campo 'email' é obrigatório.")

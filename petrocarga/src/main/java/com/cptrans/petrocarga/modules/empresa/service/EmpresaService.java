@@ -12,6 +12,7 @@ import com.cptrans.petrocarga.modules.empresa.entity.Empresa;
 import com.cptrans.petrocarga.modules.empresa.exceptions.EmpresaExceptions;
 import com.cptrans.petrocarga.modules.empresa.repository.EmpresaRepository;
 import com.cptrans.petrocarga.modules.empresa.specification.EmpresaSpecification;
+import com.cptrans.petrocarga.modules.reserva.utils.ReservaUtils;
 import com.cptrans.petrocarga.modules.usuario.dto.request.UsuarioPATCHRequestDTO;
 import com.cptrans.petrocarga.modules.usuario.dto.request.UsuarioRequestDTO;
 import com.cptrans.petrocarga.modules.usuario.entity.Usuario;
@@ -38,6 +39,7 @@ public class EmpresaService {
     private final UsuarioService usuarioService;
     private final HashService hashService;
     private final EmpresaMapper empresaMapper;
+    private final ReservaUtils reservaUtils;
     private final Sort SORT_ASC = Sort.by("usuario.nome").ascending();
     private final Sort SORT_DESC = Sort.by("usuario.nome").descending();
 
@@ -55,6 +57,7 @@ public class EmpresaService {
     }
 
     public void desativarEmpresa(UUID usuarioId) {
+        if (reservaUtils.existsAtivaByUsuarioId(usuarioId)) throw new EmpresaExceptions.EmpresaPossuiReservaAtivaException();
         Empresa empresa = findByIdAndAtivoTrue(usuarioId);
         empresa.getUsuario().setAtivo(false);
         empresa.getUsuario().setDesativadoEm(DateUtils.agora());
@@ -70,10 +73,10 @@ public class EmpresaService {
 
         Usuario usuarioSalvo = usuarioService.createUsuario(new UsuarioRequestDTO(request.getNome(), request.getTelefone(), request.getEmail(), request.getSenha(), request.getAceitouTermos()), null, PermissaoEnum.EMPRESA);
         
-        Empresa novaEmpresa = new Empresa();
-
-        novaEmpresa.setUsuario(usuarioSalvo);
-        novaEmpresa.setCnpj(cnpj);
+        Empresa novaEmpresa = new Empresa(
+            usuarioSalvo,
+            cnpj
+        );
 
         Empresa empresaSalva = empresaRepository.save(novaEmpresa);
         return empresaMapper.toResponse(empresaSalva);
@@ -86,9 +89,7 @@ public class EmpresaService {
         empresa.setUsuario(usuarioAtualizado);
 
         if (request.getCnpj() != null && !request.getCnpj().equals(empresa.getCnpj())) {
-            if (empresaRepository.existsByCnpjAndIdNot(request.getCnpj(), empresa.getId())){
-                throw new EmpresaExceptions.CnpjAlreadyExistsException();
-            }
+            if (empresaRepository.existsByCnpjAndIdNot(request.getCnpj(), empresa.getId())) throw new EmpresaExceptions.CnpjAlreadyExistsException();
             empresa.setCnpj(request.getCnpj());
         }
 
