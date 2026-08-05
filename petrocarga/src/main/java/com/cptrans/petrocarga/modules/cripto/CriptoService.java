@@ -12,8 +12,15 @@ import javax.crypto.spec.SecretKeySpec;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
+import com.cptrans.petrocarga.modules.cripto.exceptions.CriptoExceptions;
+
+import lombok.Getter;
+import lombok.Setter;
+
 @Component
 @ConfigurationProperties(prefix = "app.security.aes-criptography")
+@Getter
+@Setter
 public class CriptoService {
 
     private static final String ALGORITHM = "AES/GCM/NoPadding";
@@ -62,7 +69,7 @@ public class CriptoService {
             return Base64.getEncoder().encodeToString(result);
 
         } catch (Exception e) {
-            throw new RuntimeException("Erro ao criptografar String", e);
+            throw new CriptoExceptions.EncryptException();
         }
     }
 
@@ -80,14 +87,11 @@ public class CriptoService {
      */
     public String decrypt(String encryptedString, Integer version) {
         if (version == null) return null;
-        
         try {
             String key = keys.get(version);
-
             byte[] decoded = Base64.getDecoder().decode(encryptedString);
 
             byte[] keyBytes = Base64.getDecoder().decode(key);
-
 
             byte[] iv = new byte[IV_LENGTH];
             byte[] cipherText = new byte[decoded.length - IV_LENGTH];
@@ -97,7 +101,6 @@ public class CriptoService {
 
             SecretKeySpec keySpec = new SecretKeySpec(keyBytes, "AES");
 
-
             Cipher cipher = Cipher.getInstance(ALGORITHM);
 
             GCMParameterSpec spec = new GCMParameterSpec(TAG_LENGTH, iv);
@@ -105,48 +108,11 @@ public class CriptoService {
             cipher.init(Cipher.DECRYPT_MODE, keySpec, spec);
 
             byte[] decrypted = cipher.doFinal(cipherText);
-
             return new String(decrypted);
 
         } catch (Exception e) {
-            throw new RuntimeException("Erro ao descriptografar String", e);
+            System.out.println(e);
+            throw new CriptoExceptions.DecryptException();
         }
-    }
-
-    /**
-     * Retorna um mapa contendo as chaves de descriptografia,
-     * onde a chave é a versão da chave e o valor é a chave
-     * em si mesma.
-     * @return um mapa contendo as chaves de descriptografia
-     */
-    public Map<Integer, String> getKeys() {
-        return keys;
-    }
-
-    /**
-     * Define o mapa de chaves de criptografia, onde a chave
-     * é a versão da chave e o valor é a chave em si mesma.
-     * @param keys o mapa de chaves de criptografia
-     */
-    public void setKeys(Map<Integer, String> keys) {
-        this.keys = keys;
-    }
-
-    /**
-     * Retorna a versão ativa da chave de criptografia.
-
-     * @return a versão ativa da chave de criptografia
-     */
-    public Integer getActiveKeyVersion() {
-        return activeKeyVersion;
-    }
-
-    /**
-     * Define a versão ativa da chave de criptografia.
-     * 
-     * @param activeKeyVersion a versão ativa da chave de criptografia
-     */
-    public void setActiveKeyVersion(Integer activeKeyVersion) {
-        this.activeKeyVersion = activeKeyVersion;
     }
 }
