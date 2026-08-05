@@ -20,7 +20,7 @@ public class DenunciaUtils {
     public static void validarCriacaoDenuncia(StatusReservaEnum statusReserva, UUID criadorReservaId, UUID motoristaReservaId, UUID criadorDenunciaId) {
         if (!statusReserva.equals(StatusReservaEnum.RESERVADA) && !statusReserva.equals(StatusReservaEnum.ATIVA)) throw new DenunciaExceptions.ReservaStatusInvalidException();
 
-        if (!criadorReservaId.equals(criadorDenunciaId) && motoristaReservaId.equals(criadorDenunciaId)) throw new AuthExceptions.UsuarioNaoAutorizadoException();
+        if (!criadorReservaId.equals(criadorDenunciaId) && !motoristaReservaId.equals(criadorDenunciaId)) throw new AuthExceptions.UsuarioNaoAutorizadoException();
     }
 
 }

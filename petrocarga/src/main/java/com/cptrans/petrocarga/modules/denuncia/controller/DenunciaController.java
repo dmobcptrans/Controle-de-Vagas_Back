@@ -37,11 +37,13 @@ import com.cptrans.petrocarga.shared.dto.response.PageResponseDTO;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 
 @RestController
+@Tag(name = "Denúncias", description = "Endpoints para gerenciamento de denúncias")
 @RequestMapping("/denuncias")
 @RequiredArgsConstructor
 public class DenunciaController {
@@ -162,7 +164,7 @@ public class DenunciaController {
         @RequestParam(defaultValue = "DESC") OrdemEnum ordem
         
     ) {
-        return ResponseEntity.ok().body(denunciaService.findAllByUsuarioIdAndStatusIn(usuarioId, listaStatus, pagina, tamanhoPagina, ordem));
+        return ResponseEntity.ok().body(denunciaService.findAllByUsuarioIdAndOptionalStatusIn(usuarioId, listaStatus, pagina, tamanhoPagina, ordem));
     }
 
     @Operation(
@@ -173,7 +175,13 @@ public class DenunciaController {
     @DefaultResponses
     @PreAuthorize("hasAnyRole('ADMIN','GESTOR', 'AGENTE')")
     @PatchMapping("iniciarAnalise/{denunciaId}")
-    public ResponseEntity<DenunciaResponseDTO> iniciarAnalise(@AuthenticationPrincipal UserAuthenticated userAuthenticated, @PathVariable UUID denunciaId) {
+    public ResponseEntity<DenunciaResponseDTO> iniciarAnalise(
+        @Parameter(description = "Usuário autenticado")
+        @AuthenticationPrincipal UserAuthenticated userAuthenticated, 
+        
+        @Parameter(description = "ID da denúncia")
+        @PathVariable UUID denunciaId
+    ) {
         Usuario usuarioLogado = usuarioService.findByIdAndAtivo(userAuthenticated.id(), true);
         return ResponseEntity.ok().body(denunciaMapper.toResponse(denunciaService.iniciarAnalise(usuarioLogado, denunciaId)));
     }
@@ -186,9 +194,17 @@ public class DenunciaController {
     @DefaultResponses
     @PreAuthorize("hasAnyRole('ADMIN','GESTOR', 'AGENTE')")
     @PatchMapping("finalizarAnalise/{denunciaId}")
-    public ResponseEntity<DenunciaResponseDTO> finalizarAnalise(@AuthenticationPrincipal UserAuthenticated userAuthenticated, @PathVariable UUID denunciaId, @RequestBody @Valid FinalizarDenunciaRequestDTO respostaRequest) {
+    public ResponseEntity<DenunciaResponseDTO> finalizarAnalise(
+        @Parameter(description = "Usuário autenticado")
+        @AuthenticationPrincipal UserAuthenticated userAuthenticated,
+
+        @Parameter(description = "ID da denúncia")
+        @PathVariable UUID denunciaId,
+
+        @Parameter(description = "Dados da resposta da análise")
+        @RequestBody @Valid FinalizarDenunciaRequestDTO respostaRequest
+    ) {
         Usuario usuarioLogado = usuarioService.findByIdAndAtivo(userAuthenticated.id(), true);
         return ResponseEntity.ok().body(denunciaMapper.toResponse((denunciaService.finalizarAnalise(usuarioLogado, denunciaId, respostaRequest))));
     }
-    
 }
