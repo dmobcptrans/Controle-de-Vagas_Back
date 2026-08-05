@@ -1,41 +1,61 @@
 package com.cptrans.petrocarga.modules.operacaoVaga.service;
 
-import java.time.LocalTime;
-import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.cptrans.petrocarga.enums.DiaSemanaEnum;
+import com.cptrans.petrocarga.modules.operacaoVaga.dto.mapper.OperacaoVagaMapper;
+import com.cptrans.petrocarga.modules.operacaoVaga.dto.request.OperacaoVagaRequestDTO;
+import com.cptrans.petrocarga.modules.operacaoVaga.dto.response.OperacaoVagaResponseDTO;
 import com.cptrans.petrocarga.modules.operacaoVaga.entity.OperacaoVaga;
 import com.cptrans.petrocarga.modules.operacaoVaga.repository.OperacaoVagaRepository;
 import com.cptrans.petrocarga.modules.vaga.entity.Vaga;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class OperacaoVagaService {
 
-    @Autowired
-    private OperacaoVagaRepository operacaoVagaRepository;
+    private final OperacaoVagaRepository operacaoVagaRepository;
+    private final OperacaoVagaMapper operacaoVagaMapper;
 
     public List<OperacaoVaga> salvarOperacoesVaga(Set<OperacaoVaga> listaOperacaoVaga) {
         return operacaoVagaRepository.saveAll(listaOperacaoVaga);
     }
 
-    public Set<OperacaoVaga> setOperacoesVagaDefault(Vaga vaga) {
-        Set<OperacaoVaga> operacoesVaga = new HashSet<>();
-        final int HORARIO_DEFAULT_INICIO = 0;
-        final int HORARIO_DEFAULT_FIM = 13;
-        for(int i = 1; i <= 7; i++) {
-            OperacaoVaga operacaoVaga = new OperacaoVaga();
-            operacaoVaga.setDiaSemana(DiaSemanaEnum.toEnumByCodigo(i));
-            operacaoVaga.setHoraInicio(LocalTime.of(HORARIO_DEFAULT_INICIO, 0));
-            operacaoVaga.setHoraFim(LocalTime.of(HORARIO_DEFAULT_FIM, 00));
-            operacaoVaga.setVaga(vaga);
-            operacoesVaga.add(operacaoVaga);
+    public Set<OperacaoVagaResponseDTO> findByVagaId(UUID vagaId) {
+        Set<OperacaoVaga> setOperacoesVaga = operacaoVagaRepository.findByVagaId(vagaId);
+        return operacaoVagaMapper.toResponseSet(setOperacoesVaga);
+    }
+
+    public void atualizarOperacoesVaga(Set<OperacaoVagaRequestDTO> request, Vaga vaga){
+        Map<DiaSemanaEnum, OperacaoVaga> mapaExistentes = vaga.getOperacoesVaga()
+                .stream()
+                .collect(Collectors.toMap(OperacaoVaga::getDiaSemana, o -> o));
+
+        Map<DiaSemanaEnum, OperacaoVaga> mapaNovas = operacaoVagaMapper.toEntitySet(request, vaga)
+                .stream()
+                .collect(Collectors.toMap(OperacaoVaga::getDiaSemana, o -> o, (o1, o2) -> o1)); // caso venha duplicado, mantém o primeiro
+
+        for (OperacaoVaga novaOperacao : mapaNovas.values()) {
+            OperacaoVaga existente = mapaExistentes.get(novaOperacao.getDiaSemana());
+            if (existente != null) {
+                existente.setHoraInicio(novaOperacao.getHoraInicio());
+                existente.setHoraFim(novaOperacao.getHoraFim());
+            } else {
+                novaOperacao.setVaga(vaga);
+                vaga.getOperacoesVaga().add(novaOperacao);
+            }
         }
-        return salvarOperacoesVaga(operacoesVaga).stream().collect(Collectors.toSet());
+
+        vaga.getOperacoesVaga().removeIf(
+            operacao -> !mapaNovas.containsKey(operacao.getDiaSemana())
+        );
     }
 }

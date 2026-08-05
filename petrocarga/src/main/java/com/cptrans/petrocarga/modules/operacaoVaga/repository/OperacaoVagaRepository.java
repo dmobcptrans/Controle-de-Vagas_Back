@@ -1,5 +1,6 @@
 package com.cptrans.petrocarga.modules.operacaoVaga.repository;
 
+import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -9,5 +10,5 @@ import com.cptrans.petrocarga.modules.operacaoVaga.entity.OperacaoVaga;
 
 @Repository
 public interface OperacaoVagaRepository extends JpaRepository<OperacaoVaga, UUID>{
-    
+    public Set<OperacaoVaga> findByVagaId(UUID vagaId);
 }
