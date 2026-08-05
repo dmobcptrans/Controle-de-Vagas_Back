@@ -7,17 +7,18 @@ import org.quartz.DisallowConcurrentExecution;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.cptrans.petrocarga.modules.notificacao.service.NotificacaoService;
 
+import lombok.RequiredArgsConstructor;
+
 @DisallowConcurrentExecution
 @Component
+@RequiredArgsConstructor
 public class NotificarFimProximoJob implements Job {
 
-    @Autowired
-    private NotificacaoService notificacaoService;
+    private final NotificacaoService notificacaoService;
 
     /**
      * Executa o job de notificacao de fim de reserva.
@@ -37,5 +38,4 @@ public class NotificarFimProximoJob implements Job {
 
         notificacaoService.notificarFimProximo(usuarioId, fimReserva);
     }
-    
 }

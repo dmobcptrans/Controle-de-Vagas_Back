@@ -2,17 +2,22 @@ package com.cptrans.petrocarga.modules.scheduler.jobs.reserva;
 
 import java.util.UUID;
 
+import org.quartz.DisallowConcurrentExecution;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import com.cptrans.petrocarga.modules.reserva.service.ReservaService;
 
+import lombok.RequiredArgsConstructor;
+
+@DisallowConcurrentExecution
+@Component
+@RequiredArgsConstructor
 public class NoShowJob implements Job {
 
-    @Autowired
-    private ReservaService reservaService;
+    private final ReservaService reservaService;
 
     /**
      * Executa o job de processar no show.
@@ -25,5 +30,4 @@ public class NoShowJob implements Job {
        UUID reservaId = UUID.fromString(context.getMergedJobDataMap().getString("reservaId"));
        reservaService.processarNoShow(reservaId);
     }
-    
 }
