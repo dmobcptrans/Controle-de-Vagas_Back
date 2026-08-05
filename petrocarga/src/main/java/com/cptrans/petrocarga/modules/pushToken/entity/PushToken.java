@@ -14,13 +14,14 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "push_token")
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
 @EqualsAndHashCode
 public class PushToken {
@@ -46,11 +47,6 @@ public class PushToken {
 
     public PushToken(UUID usuarioId, String token, PlataformaEnum plataforma) {
         this.usuarioId = usuarioId;
-        this.token = token;
-        this.plataforma = plataforma;
-    }
-
-    public PushToken(String token, PlataformaEnum plataforma) {
         this.token = token;
         this.plataforma = plataforma;
     }
