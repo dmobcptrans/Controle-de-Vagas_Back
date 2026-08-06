@@ -7,17 +7,20 @@ import org.quartz.DisallowConcurrentExecution;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.cptrans.petrocarga.modules.notificacao.service.NotificacaoService;
 
-import lombok.RequiredArgsConstructor;
+import lombok.NoArgsConstructor;
 
 @DisallowConcurrentExecution
 @Component
-@RequiredArgsConstructor
+@NoArgsConstructor
 public class NotificarCheckInDisponivelJob implements Job{
-    private final NotificacaoService notificacaoService;
+    
+    @Autowired
+    private NotificacaoService notificacaoService;
 
     /**
      * Executa o job de notificacao de check-in em disponibilidade.
