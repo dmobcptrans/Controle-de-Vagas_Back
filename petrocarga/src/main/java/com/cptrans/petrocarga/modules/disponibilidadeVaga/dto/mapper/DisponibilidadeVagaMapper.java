@@ -40,9 +40,9 @@ public class DisponibilidadeVagaMapper {
             enderecoVagaMapper.toResponse(enderecoVaga),
             vaga != null ? vaga.getReferenciaEndereco() : null,
             vaga != null ? vaga.getNumeroEndereco() : null,
-            disponibilidadeVaga.getInicio(),
-            disponibilidadeVaga.getFim(),
-            disponibilidadeVaga.getCriadoEm(),
+            DateUtils.fusoHorarioBrasilia(disponibilidadeVaga.getInicio()),
+            DateUtils.fusoHorarioBrasilia(disponibilidadeVaga.getFim()),
+            DateUtils.fusoHorarioBrasilia(disponibilidadeVaga.getCriadoEm()),
             disponibilidadeVaga.getCriadoPorId()
         );
     }
