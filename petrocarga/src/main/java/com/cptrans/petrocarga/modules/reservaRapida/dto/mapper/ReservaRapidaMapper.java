@@ -14,6 +14,7 @@ import com.cptrans.petrocarga.modules.usuario.dto.mapper.UsuarioMapper;
 import com.cptrans.petrocarga.modules.usuario.entity.Usuario;
 import com.cptrans.petrocarga.modules.vaga.entity.Vaga;
 import com.cptrans.petrocarga.modules.veiculo.utils.VeiculoUtils;
+import com.cptrans.petrocarga.shared.utils.DateUtils;
 
 import lombok.RequiredArgsConstructor;
 
@@ -28,8 +29,8 @@ public class ReservaRapidaMapper {
             vaga,
             request.getTipoVeiculo(),
             request.getPlaca() != null ? VeiculoUtils.normalizarEValidar(request.getPlaca()) : null,
-            request.getInicio(),
-            request.getFim(),
+            DateUtils.fusoHorarioBrasilia(request.getInicio()),
+            DateUtils.fusoHorarioBrasilia(request.getFim()),
             request.getPosicaoPerpendicular(),
             request.getCidadeOrigem(),
             request.getEntradaCidade()
@@ -60,8 +61,8 @@ public class ReservaRapidaMapper {
             vaga != null ? vaga.getNumeroEndereco() : null,
             vaga != null ? vaga.getReferenciaEndereco() : null,
             enderecoVagaMapper.toResponse(enderecoVaga),
-            reserva.getInicio(),
-            reserva.getFim(),
+            DateUtils.fusoHorarioBrasilia(reserva.getInicio()),
+            DateUtils.fusoHorarioBrasilia(reserva.getFim()),
             reserva.getTipoVeiculo().getComprimento(),
             reserva.getPlaca(),
             null,
@@ -75,7 +76,7 @@ public class ReservaRapidaMapper {
             null,
             null,
             usuarioMapper.toResponse(criadoPor, cpfOrCnpjCriador),
-            reserva.getCriadoEm(),
+            DateUtils.fusoHorarioBrasilia(reserva.getCriadoEm()),
             reserva.getPosicaoPerpendicular()
         );
     }
