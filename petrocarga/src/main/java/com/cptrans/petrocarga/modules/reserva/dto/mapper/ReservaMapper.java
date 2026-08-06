@@ -1,8 +1,14 @@
 package com.cptrans.petrocarga.modules.reserva.dto.mapper;
 
 
+import java.util.UUID;
+
 import org.springframework.stereotype.Component;
 
+import com.cptrans.petrocarga.enums.PermissaoEnum;
+import com.cptrans.petrocarga.modules.empresa.entity.Empresa;
+import com.cptrans.petrocarga.modules.empresa.exceptions.EmpresaExceptions;
+import com.cptrans.petrocarga.modules.empresa.repository.EmpresaRepository;
 import com.cptrans.petrocarga.modules.enderecoVaga.dto.mapper.EnderecoVagaMapper;
 import com.cptrans.petrocarga.modules.enderecoVaga.entity.EnderecoVaga;
 import com.cptrans.petrocarga.modules.motorista.dto.mapper.MotoristaMapper;
@@ -18,6 +24,8 @@ import com.cptrans.petrocarga.modules.vaga.dto.mapper.VagaMapper;
 import com.cptrans.petrocarga.modules.vaga.entity.Vaga;
 import com.cptrans.petrocarga.modules.veiculo.dto.mapper.VeiculoMapper;
 import com.cptrans.petrocarga.modules.veiculo.entity.Veiculo;
+import com.cptrans.petrocarga.shared.utils.DateUtils;
+import com.cptrans.petrocarga.shared.utils.StringUtils;
 
 import lombok.RequiredArgsConstructor;
 
@@ -29,6 +37,7 @@ public class ReservaMapper {
     private final VeiculoMapper veiculoMapper;
     private final VagaMapper vagaMapper;
     private final EnderecoVagaMapper enderecoVagaMapper;
+    private final EmpresaRepository empresaRepository;
 
     public Reserva toEntity (ReservaRequestDTO request, Vaga vaga, Motorista motorista, Veiculo veiculo, Usuario criadoPor){ 
         return new Reserva(
@@ -38,8 +47,8 @@ public class ReservaMapper {
             criadoPor,
             request.getCidadeOrigem(),
             request.getEntradaCidade(),
-            request.getInicio(),
-            request.getFim(),
+            DateUtils.fusoHorarioBrasilia(request.getInicio()),
+            DateUtils.fusoHorarioBrasilia(request.getFim()),
             request.getPosicaoPerpendicular()
         );
     }
@@ -59,8 +68,8 @@ public class ReservaMapper {
             reserva.getCidadeOrigem(),
             reserva.getEntradaCidade(),
             reserva.getCriadoEm(),
-            reserva.getInicio(),
-            reserva.getFim(),
+            DateUtils.fusoHorarioBrasilia(reserva.getInicio()),
+            DateUtils.fusoHorarioBrasilia(reserva.getFim()),
             reserva.getStatus(),
             reserva.getCheckedIn(),
             reserva.getCheckInEm(),
@@ -77,6 +86,11 @@ public class ReservaMapper {
         Usuario usuarioMotorista = motorista != null ? motorista.getUsuario() : null;
         Veiculo veiculo = reserva.getVeiculo();
         Usuario criadoPor = reserva.getCriadoPor();
+        Empresa empresa = criadoPor != null && criadoPor.getPermissao().equals(PermissaoEnum.EMPRESA) ? findEmpresaById(criadoPor.getId()) : null;
+        UUID empresaId = empresa != null ? empresa.getId() : null;
+        String empresaNome = empresa != null ? criadoPor.getNome() : null;
+        String empresaCnpj = empresaId != null ? empresa.getCnpj() : null;
+
         return new ReservaDetailedResponseDTO(
             reserva.getId(),
             vaga != null ? vaga.getId() : null,
@@ -86,17 +100,19 @@ public class ReservaMapper {
             enderecoVaga != null ? enderecoVaga.getBairro() : null,
             motorista != null ? motorista.getId() : null,
             usuarioMotorista != null ? usuarioMotorista.getNome() : null,
+            motorista != null ? StringUtils.aplicarMascaraCpf(motorista.getCpfLast5()): null,
             veiculo != null ? veiculo.getId() : null,
             veiculo != null ? veiculo.getPlaca() : null,
             veiculo != null ? veiculo.getModelo() : null,
             veiculo != null ? veiculo.getMarca() : null,
-            criadoPor != null ? criadoPor.getId() : null,
-            criadoPor != null ? criadoPor.getNome() : null,
+            empresaId != null ? empresaId : null,
+            empresaNome != null ? empresaNome : null,
+            empresaCnpj != null ? StringUtils.formatarCnpj(empresaCnpj) : null,
             reserva.getCidadeOrigem(),
             reserva.getEntradaCidade(),
             reserva.getCriadoEm(),
-            reserva.getInicio(),
-            reserva.getFim(),
+            DateUtils.fusoHorarioBrasilia(reserva.getInicio()),
+            DateUtils.fusoHorarioBrasilia(reserva.getFim()),
             reserva.getStatus()
         );
     }
@@ -118,8 +134,8 @@ public class ReservaMapper {
             vaga != null ? vaga.getNumeroEndereco() : null,
             vaga != null ? vaga.getReferenciaEndereco() : null,
             enderecoVagaMapper.toResponse(enderecoVaga),
-            reserva.getInicio(),
-            reserva.getFim(),
+            DateUtils.fusoHorarioBrasilia(reserva.getInicio()),
+            DateUtils.fusoHorarioBrasilia(reserva.getFim()),
             veiculo != null ? veiculo.getTipo().getComprimento() : null,
             veiculo != null ? veiculo.getPlaca() : null,
             veiculo != null ? veiculo.getModelo() : null,
@@ -133,8 +149,13 @@ public class ReservaMapper {
             reserva.getCheckInEm(),
             reserva.getCheckOutEm(),
             usuarioMapper.toResponse(criadoPor, cpfOrCnpjCriador),
-            reserva.getCriadoEm(),
+            DateUtils.fusoHorarioBrasilia(reserva.getCriadoEm()),
             reserva.getPosicaoPerpendicular()
         );
+    }
+
+    private Empresa findEmpresaById(UUID empresaId) {
+        if (empresaId == null) return null;
+        return empresaRepository.findByIdAndUsuarioAtivoTrue(empresaId).orElseThrow(() -> new EmpresaExceptions.EmpresaNotFoundException());
     }
 }
