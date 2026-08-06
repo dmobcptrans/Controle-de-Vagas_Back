@@ -65,13 +65,23 @@
                 <td class="label">Status</td>
                 <td th:text="${reserva.status}"></td>
             </tr>
-            <tr>
-                <td class="label">Criado por</td>
-                <td th:text="${reserva.criadoPorNome}"></td>
-            </tr>
+            <th:block th:if="${reserva.empresaNome != null}">
+                <tr>
+                    <td class="label">Empresa</td>
+                    <td th:text="${reserva.empresaNome}"></td>
+                </tr>
+                <tr>
+                    <td class="label">CNPJ da Empresa</td>
+                    <td th:text="${reserva.empresaCnpj}"></td>
+                </tr>
+            </th:block>
             <tr>
                 <td class="label">Motorista</td>
                 <td th:text="${reserva.motoristaNome}"></td>
+            </tr>
+            <tr>
+                <td class="label">Cpf do Motorista</td>
+                <td th:text="${reserva.motoristaCpfLast5}"></td>
             </tr>
             <tr>
                 <td class="label">Veículo</td>

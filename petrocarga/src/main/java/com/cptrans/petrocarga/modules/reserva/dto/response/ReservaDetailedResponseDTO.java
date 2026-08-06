@@ -22,12 +22,14 @@ public class ReservaDetailedResponseDTO {
     private String bairro;
     private UUID motoristaId;
     private String motoristaNome;
+    private String motoristaCpfLast5;
     private UUID veiculoId;
     private String veiculoPlaca;
     private String veiculoModelo;
     private String veiculoMarca;
-    private UUID criadoPorId;
-    private String criadoPorNome;
+    private UUID empresaId;
+    private String empresaNome;
+    private String empresaCnpj;
     private String cidadeOrigem;
     private String entradaCidade;
     private OffsetDateTime criadoEm;

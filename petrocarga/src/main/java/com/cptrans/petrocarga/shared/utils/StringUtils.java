@@ -33,4 +33,16 @@ public class StringUtils {
         return Normalizer.normalize(input, Form.NFD)
                 .replaceAll("\\p{M}", "");
     }
+
+    public static String aplicarMascaraCpf(String cpfLast5){
+        if (cpfLast5 == null || cpfLast5.trim().length() != 5) return null;
+        cpfLast5 = cpfLast5.trim();
+        return "***.***." + cpfLast5.substring(0,3) + "-" + cpfLast5.substring(3);
+    }
+
+    public static String formatarCnpj(String cnpj){
+        if (cnpj == null || cnpj.trim().length() != 14) return null;
+        cnpj = cnpj.trim();
+        return cnpj.substring(0, 2) + "." + cnpj.substring(2, 5) + "." + cnpj.substring(5, 8) + "/" + cnpj.substring(8, 12) + "-" + cnpj.substring(12, 14);
+    }
 }
