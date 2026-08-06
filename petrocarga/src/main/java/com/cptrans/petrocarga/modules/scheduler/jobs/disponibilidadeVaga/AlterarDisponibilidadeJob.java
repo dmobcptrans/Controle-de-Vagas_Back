@@ -6,26 +6,29 @@ import org.quartz.DisallowConcurrentExecution;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.cptrans.petrocarga.enums.StatusVagaEnum;
 import com.cptrans.petrocarga.modules.disponibilidadeVaga.service.DisponibilidadeVagaService;
 
-import lombok.RequiredArgsConstructor;
+import lombok.NoArgsConstructor;
+
 
 @DisallowConcurrentExecution
 @Component
-@RequiredArgsConstructor
+@NoArgsConstructor
 public class AlterarDisponibilidadeJob implements Job {
 
-    private final DisponibilidadeVagaService disponibilidadeVagaService;
+    @Autowired
+    private DisponibilidadeVagaService disponibilidadeVagaService;
 
-/**
- * Executa o job de alterar disponibilidade de vaga.
- * Este job altera o status de uma disponibilidade de vaga.
- * @param context contexto do job
- * @throws JobExecutionException se ocorrer algum erro durante a execução do job
- */
+    /**
+     * Executa o job de alterar disponibilidade de vaga.
+     * Este job altera o status de uma disponibilidade de vaga.
+     * @param context contexto do job
+     * @throws JobExecutionException se ocorrer algum erro durante a execução do job
+     */
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
         UUID disponibilidadeId = UUID.fromString(
