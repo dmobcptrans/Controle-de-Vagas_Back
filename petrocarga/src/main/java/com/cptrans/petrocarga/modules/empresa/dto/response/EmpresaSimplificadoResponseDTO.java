@@ -2,6 +2,8 @@ package com.cptrans.petrocarga.modules.empresa.dto.response;
 
 import java.util.UUID;
 
+import com.cptrans.petrocarga.shared.utils.StringUtils;
+
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -16,4 +18,8 @@ public class EmpresaSimplificadoResponseDTO {
     private String nome;
     private String cnpj;
     private Boolean ativo;
+
+    public void formatarDados(){
+        this.cnpj = StringUtils.formatarCnpj(cnpj);
+    }
 }

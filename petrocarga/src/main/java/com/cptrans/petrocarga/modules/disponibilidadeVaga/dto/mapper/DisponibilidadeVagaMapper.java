@@ -34,17 +34,19 @@ public class DisponibilidadeVagaMapper {
         if (disponibilidadeVaga == null) return null;
         Vaga vaga = disponibilidadeVaga.getVaga();
         EnderecoVaga enderecoVaga = vaga != null ? vaga.getEndereco() : null;
-        return new DisponibilidadeVagaResponseDTO(
+        DisponibilidadeVagaResponseDTO response = new DisponibilidadeVagaResponseDTO(
             disponibilidadeVaga.getId(),
             vaga != null ? vaga.getId() : null,
             enderecoVagaMapper.toResponse(enderecoVaga),
             vaga != null ? vaga.getReferenciaEndereco() : null,
             vaga != null ? vaga.getNumeroEndereco() : null,
-            DateUtils.fusoHorarioBrasilia(disponibilidadeVaga.getInicio()),
-            DateUtils.fusoHorarioBrasilia(disponibilidadeVaga.getFim()),
-            DateUtils.fusoHorarioBrasilia(disponibilidadeVaga.getCriadoEm()),
+            disponibilidadeVaga.getInicio(),
+            disponibilidadeVaga.getFim(),
+            disponibilidadeVaga.getCriadoEm(),
             disponibilidadeVaga.getCriadoPorId()
         );
+        response.formatarDados();
+        return response;
     }
 
     public  List<DisponibilidadeVagaResponseDTO> toResponseList(List<DisponibilidadeVaga> disponibilidadeVagas) {
@@ -54,7 +56,13 @@ public class DisponibilidadeVagaMapper {
 
     public DisponibilidadeVagaSimplificadoResponseDTO toResponseSimplificado(DisponibilidadeVaga disponibilidadeVaga) {
         if (disponibilidadeVaga == null) return null;
-        return new DisponibilidadeVagaSimplificadoResponseDTO(disponibilidadeVaga.getId(), disponibilidadeVaga.getInicio(), disponibilidadeVaga.getFim());
+        DisponibilidadeVagaSimplificadoResponseDTO response = new DisponibilidadeVagaSimplificadoResponseDTO(
+            disponibilidadeVaga.getId(), 
+            disponibilidadeVaga.getInicio(), 
+            disponibilidadeVaga.getFim()
+        );
+        response.formatarDados();
+        return response;
     }
 
     public List<DisponibilidadeVagaSimplificadoResponseDTO> toResponseSimplificadoList(List<DisponibilidadeVaga> disponibilidadeVagas) {

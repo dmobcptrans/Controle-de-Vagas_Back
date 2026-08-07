@@ -25,7 +25,6 @@ import com.cptrans.petrocarga.modules.vaga.entity.Vaga;
 import com.cptrans.petrocarga.modules.veiculo.dto.mapper.VeiculoMapper;
 import com.cptrans.petrocarga.modules.veiculo.entity.Veiculo;
 import com.cptrans.petrocarga.shared.utils.DateUtils;
-import com.cptrans.petrocarga.shared.utils.StringUtils;
 
 import lombok.RequiredArgsConstructor;
 
@@ -59,23 +58,25 @@ public class ReservaMapper {
         Veiculo veiculo = reserva.getVeiculo();
         Motorista motorista = reserva.getMotorista();
         Usuario criadoPor = reserva.getCriadoPor();
-        return new ReservaResponseDTO(
+        ReservaResponseDTO response = new ReservaResponseDTO(
             reserva.getId(),
-            vagaMapper.toResponse(vaga),
+            vagaMapper.toResponseSimplificado(vaga),
             motoristaMapper.toResponseSimplificado(motorista),
-            veiculoMapper.toResponse(veiculo),
-            usuarioMapper.toResponse(criadoPor, cpfOrCnpjCriador),
+            veiculoMapper.toResponseSimplificado(veiculo),
+            usuarioMapper.toResponseSimplificado(criadoPor, cpfOrCnpjCriador),
             reserva.getCidadeOrigem(),
             reserva.getEntradaCidade(),
             reserva.getCriadoEm(),
-            DateUtils.fusoHorarioBrasilia(reserva.getInicio()),
-            DateUtils.fusoHorarioBrasilia(reserva.getFim()),
+            reserva.getInicio(),
+            reserva.getFim(),
             reserva.getStatus(),
             reserva.getCheckedIn(),
             reserva.getCheckInEm(),
             reserva.getCheckOutEm(),
             reserva.getPosicaoPerpendicular()
         );
+        response.formatarDados();
+        return response;
     }
 
     public ReservaDetailedResponseDTO toDetailedResponse(Reserva reserva) {
@@ -91,7 +92,7 @@ public class ReservaMapper {
         String empresaNome = empresa != null ? criadoPor.getNome() : null;
         String empresaCnpj = empresaId != null ? empresa.getCnpj() : null;
 
-        return new ReservaDetailedResponseDTO(
+        ReservaDetailedResponseDTO response =  new ReservaDetailedResponseDTO(
             reserva.getId(),
             vaga != null ? vaga.getId() : null,
             vaga != null ? vaga.getNumeroEndereco() : null,
@@ -100,21 +101,23 @@ public class ReservaMapper {
             enderecoVaga != null ? enderecoVaga.getBairro() : null,
             motorista != null ? motorista.getId() : null,
             usuarioMotorista != null ? usuarioMotorista.getNome() : null,
-            motorista != null ? StringUtils.aplicarMascaraCpf(motorista.getCpfLast5()): null,
+            motorista != null ? motorista.getCpfLast5() : null,
             veiculo != null ? veiculo.getId() : null,
             veiculo != null ? veiculo.getPlaca() : null,
             veiculo != null ? veiculo.getModelo() : null,
             veiculo != null ? veiculo.getMarca() : null,
             empresaId != null ? empresaId : null,
             empresaNome != null ? empresaNome : null,
-            empresaCnpj != null ? StringUtils.formatarCnpj(empresaCnpj) : null,
+            empresaCnpj != null ? empresaCnpj : null,
             reserva.getCidadeOrigem(),
             reserva.getEntradaCidade(),
             reserva.getCriadoEm(),
-            DateUtils.fusoHorarioBrasilia(reserva.getInicio()),
-            DateUtils.fusoHorarioBrasilia(reserva.getFim()),
+            reserva.getInicio(),
+            reserva.getFim(),
             reserva.getStatus()
         );
+        response.formatarDados();
+        return response;
     }
 
     public ReservaDTO toReservaDTO(Reserva reserva, String cpfOrCnpjCriador) {
@@ -125,7 +128,7 @@ public class ReservaMapper {
         Usuario usuarioMotorista = motorista != null ? motorista.getUsuario() : null;
         Veiculo veiculo = reserva.getVeiculo();
         Usuario criadoPor = reserva.getCriadoPor();
-        return new ReservaDTO(
+        ReservaDTO response = new ReservaDTO(
             reserva.getId(),
             vaga != null ? vaga.getId() : null,
             motorista != null ? motorista.getId() : null,
@@ -134,8 +137,8 @@ public class ReservaMapper {
             vaga != null ? vaga.getNumeroEndereco() : null,
             vaga != null ? vaga.getReferenciaEndereco() : null,
             enderecoVagaMapper.toResponse(enderecoVaga),
-            DateUtils.fusoHorarioBrasilia(reserva.getInicio()),
-            DateUtils.fusoHorarioBrasilia(reserva.getFim()),
+            reserva.getInicio(),
+            reserva.getFim(),
             veiculo != null ? veiculo.getTipo().getComprimento() : null,
             veiculo != null ? veiculo.getPlaca() : null,
             veiculo != null ? veiculo.getModelo() : null,
@@ -148,10 +151,12 @@ public class ReservaMapper {
             reserva.getCheckedIn(),
             reserva.getCheckInEm(),
             reserva.getCheckOutEm(),
-            usuarioMapper.toResponse(criadoPor, cpfOrCnpjCriador),
-            DateUtils.fusoHorarioBrasilia(reserva.getCriadoEm()),
+            usuarioMapper.toResponseSimplificado(criadoPor, cpfOrCnpjCriador),
+            reserva.getCriadoEm(),
             reserva.getPosicaoPerpendicular()
         );
+        response.formatarDados();
+        return response;
     }
 
     private Empresa findEmpresaById(UUID empresaId) {

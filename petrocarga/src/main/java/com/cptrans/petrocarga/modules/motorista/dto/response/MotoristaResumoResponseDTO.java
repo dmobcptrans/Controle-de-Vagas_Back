@@ -1,31 +1,39 @@
 package com.cptrans.petrocarga.modules.motorista.dto.response;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
+import com.cptrans.petrocarga.enums.TipoCnhEnum;
+import com.cptrans.petrocarga.modules.usuario.dto.response.UsuarioSimplificadoResponseDTO;
 import com.cptrans.petrocarga.shared.utils.StringUtils;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Getter
-@EqualsAndHashCode
-public class MotoristaSimplificadoResponseDTO {
+public class MotoristaResumoResponseDTO {
     private UUID id;
-    private String nome;
-    private String telefone;
-    private String email;
-    private Boolean ativo;
+    private UsuarioSimplificadoResponseDTO usuario;
+    private TipoCnhEnum tipoCnh;
+    private String numeroCnh;
+    private LocalDate dataValidadeCnh;
     private UUID empresaId;
     private String empresaCnpj;
     private String empresaRazaoSocial;
 
+    public void setNumeroCnh(String numeroCnh) {
+        this.numeroCnh = numeroCnh;
+    }
+
+    public void setUsuario(UsuarioSimplificadoResponseDTO usuario) {
+        this.usuario = usuario;
+    }
+
     public void formatarDados() {
-        this.telefone = StringUtils.formatarTelefone(this.telefone);
         this.empresaCnpj = StringUtils.formatarCnpj(this.empresaCnpj);
     }
 }

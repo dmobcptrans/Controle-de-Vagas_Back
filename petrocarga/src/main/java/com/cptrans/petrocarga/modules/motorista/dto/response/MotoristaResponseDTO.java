@@ -5,6 +5,7 @@ import java.util.UUID;
 
 import com.cptrans.petrocarga.enums.TipoCnhEnum;
 import com.cptrans.petrocarga.modules.usuario.dto.response.UsuarioResponseDTO;
+import com.cptrans.petrocarga.shared.utils.StringUtils;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -30,5 +31,9 @@ public class MotoristaResponseDTO {
 
     public void setUsuario(UsuarioResponseDTO usuario) {
         this.usuario = usuario;
+    }
+
+    public void formatarDados() {
+        this.empresaCnpj = StringUtils.formatarCnpj(this.empresaCnpj);
     }
 }

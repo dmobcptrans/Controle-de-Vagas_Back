@@ -6,6 +6,8 @@ import java.util.UUID;
 import com.cptrans.petrocarga.enums.StatusDenunciaEnum;
 import com.cptrans.petrocarga.enums.TipoDenunciaEnum;
 import com.cptrans.petrocarga.modules.enderecoVaga.dto.response.EnderecoVagaResponseDTO;
+import com.cptrans.petrocarga.shared.utils.DateUtils;
+import com.cptrans.petrocarga.shared.utils.StringUtils;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -41,5 +43,12 @@ public class DenunciaResponseDTO {
 
     public void setTelefoneMotorista(String telefoneMotorista) {
         this.telefoneMotorista = telefoneMotorista;
+    }
+
+    public void formatarDados(){
+        telefoneMotorista = StringUtils.formatarTelefone(telefoneMotorista);
+        criadoEm = DateUtils.fusoHorarioBrasilia(criadoEm);
+        atualizadoEm = DateUtils.fusoHorarioBrasilia(atualizadoEm);
+        encerradoEm = DateUtils.fusoHorarioBrasilia(encerradoEm);
     }
 }

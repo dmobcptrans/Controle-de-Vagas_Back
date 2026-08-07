@@ -13,6 +13,7 @@ import com.cptrans.petrocarga.modules.motorista.entity.Motorista;
 import com.cptrans.petrocarga.modules.motorista.exceptions.MotoristaExceptions;
 import com.cptrans.petrocarga.modules.motorista.repository.MotoristaRepository;
 import com.cptrans.petrocarga.modules.usuario.dto.response.UsuarioResponseDTO;
+import com.cptrans.petrocarga.modules.usuario.dto.response.UsuarioSimplificadoResponseDTO;
 import com.cptrans.petrocarga.modules.usuario.entity.Usuario;
 import com.cptrans.petrocarga.modules.veiculo.entity.Veiculo;
 import com.cptrans.petrocarga.shared.utils.CriptoUtils;
@@ -55,7 +56,7 @@ public class UsuarioMapper {
         cpfOrCnpj = cpfOrCnpj != null && cpfOrCnpj.length() > 14 ? criptoUtils.decrypt(cpfOrCnpj, usuario.getCriptoVersion()) : cpfOrCnpj;
         String cpf = cpfOrCnpj != null && cpfOrCnpj.length() == 11 ? cpfOrCnpj : null;
         String cnpj = cpfOrCnpj != null && cpfOrCnpj.length() == 14 ? cpfOrCnpj : null;
-        return criptoUtils.decrypt(
+        UsuarioResponseDTO response = criptoUtils.decrypt(
             new UsuarioResponseDTO(
                 usuario.getId(),
                 usuario.getNome(),
@@ -69,5 +70,30 @@ public class UsuarioMapper {
                 usuario.getDesativadoEm(),
                 resolvePossuiVeiculoAtivo(usuario.getPermissao(), usuario.getId(), usuario.getVeiculosAtivos())
             ), usuario.getCriptoVersion());    
+        response.formatarDados();
+        return response;
+    }
+
+    public List<UsuarioResponseDTO> toResponseList(List<Usuario> usuarios, String cpfOrCnpj) {
+        if (usuarios == null || usuarios.isEmpty()) return List.of();
+        return usuarios.stream().map(u -> toResponse(u, cpfOrCnpj)).toList();
+    }
+
+    public UsuarioSimplificadoResponseDTO toResponseSimplificado(Usuario usuario, String cnpj) {
+        if (usuario == null) return null;
+        if (cnpj == null || cnpj.length() != 14) cnpj = null;
+
+        UsuarioSimplificadoResponseDTO response = criptoUtils.decrypt(
+            new UsuarioSimplificadoResponseDTO(
+                usuario.getId(),
+                usuario.getNome(),
+                usuario.getTelefoneCripto(),
+                usuario.getEmailCripto(),
+                cnpj,
+                usuario.getPermissao(),
+                usuario.getAtivo()
+            ), usuario.getCriptoVersion());
+        response.formatarDados();
+        return response;
     }
 }

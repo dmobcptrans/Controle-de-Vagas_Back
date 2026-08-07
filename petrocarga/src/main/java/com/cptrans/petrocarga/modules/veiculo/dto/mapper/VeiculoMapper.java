@@ -20,7 +20,7 @@ public class VeiculoMapper {
         if (veiculo == null) {
             return null;
         }
-        return criptoUtils.decrypt(
+        VeiculoResponseDTO response = criptoUtils.decrypt(
             new VeiculoResponseDTO(
                 veiculo.getId(),
                 veiculo.getPlaca(),
@@ -35,6 +35,8 @@ public class VeiculoMapper {
             ), 
             veiculo.getUsuario().getCriptoVersion()
         );
+        response.formatarDados();
+        return response;
     }
 
     public List<VeiculoResponseDTO> toResponseList(List<Veiculo> veiculos) {

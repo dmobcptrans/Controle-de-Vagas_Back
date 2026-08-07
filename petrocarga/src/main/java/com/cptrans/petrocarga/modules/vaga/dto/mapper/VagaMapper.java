@@ -106,8 +106,7 @@ public class VagaMapper {
             vaga.getTipoVaga(),
             vaga.getComprimento(),
             vaga.getQuantidade(),
-            vaga.getStatus(),
-            operacaoVagaMapper.toResponseSet(vaga.getOperacoesVaga())
+            vaga.getStatus()
         );
     }
 

@@ -5,7 +5,9 @@ import java.util.UUID;
 
 import com.cptrans.petrocarga.enums.StatusReservaEnum;
 import com.cptrans.petrocarga.modules.enderecoVaga.dto.response.EnderecoVagaResponseDTO;
-import com.cptrans.petrocarga.modules.usuario.dto.response.UsuarioResponseDTO;
+import com.cptrans.petrocarga.modules.usuario.dto.response.UsuarioSimplificadoResponseDTO;
+import com.cptrans.petrocarga.shared.utils.DateUtils;
+import com.cptrans.petrocarga.shared.utils.StringUtils;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -41,7 +43,18 @@ public class ReservaDTO {
     private Boolean checkedIn;
     private OffsetDateTime checkInEm;
     private OffsetDateTime checkOutEm;
-    private UsuarioResponseDTO criadoPor;
+    private UsuarioSimplificadoResponseDTO criadoPor;
     private OffsetDateTime criadoEm;
     private Integer posicaoPerpendicular;
+
+    public void formatarDados(){
+        motoristaCpf = StringUtils.formatarCpf(motoristaCpf);
+        cpfProprietarioVeiculo = StringUtils.formatarCpf(cpfProprietarioVeiculo);
+        cnpjProprietarioVeiculo = StringUtils.formatarCnpj(cnpjProprietarioVeiculo);
+        inicio = DateUtils.fusoHorarioBrasilia(inicio);
+        fim = DateUtils.fusoHorarioBrasilia(fim);
+        criadoEm = DateUtils.fusoHorarioBrasilia(criadoEm);
+        checkInEm = DateUtils.fusoHorarioBrasilia(checkInEm);
+        checkOutEm = DateUtils.fusoHorarioBrasilia(checkOutEm);
+    }
 }

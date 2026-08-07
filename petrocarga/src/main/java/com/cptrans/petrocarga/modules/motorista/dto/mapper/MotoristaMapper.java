@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 
 import com.cptrans.petrocarga.modules.empresa.entity.Empresa;
 import com.cptrans.petrocarga.modules.motorista.dto.response.MotoristaResponseDTO;
+import com.cptrans.petrocarga.modules.motorista.dto.response.MotoristaResumoResponseDTO;
 import com.cptrans.petrocarga.modules.motorista.dto.response.MotoristaSimplificadoResponseDTO;
 import com.cptrans.petrocarga.modules.motorista.entity.Motorista;
 import com.cptrans.petrocarga.modules.usuario.dto.mapper.UsuarioMapper;
@@ -26,7 +27,7 @@ public class MotoristaMapper {
         Usuario motoristaUsuario = motorista.getUsuario();
         Empresa empresa = motorista.getEmpresa();
         Usuario empresaUsuario = empresa != null ? empresa.getUsuario() : null;
-        return criptoUtils.decrypt(
+        MotoristaResponseDTO response = criptoUtils.decrypt(
             new MotoristaResponseDTO(
                 motorista.getId(),
                 (motoristaUsuario != null ? usuarioMapper.toResponse(motoristaUsuario, motorista.getCpfCripto()) : null),
@@ -37,6 +38,30 @@ public class MotoristaMapper {
                     (empresa != null ? empresa.getCnpj() : null),
                     (empresaUsuario != null ? empresaUsuario.getNome() : null)
                 ), motorista.getUsuario().getCriptoVersion());
+        response.formatarDados();
+        return response;
+        
+    }
+
+    public MotoristaResumoResponseDTO toResponseResumido(Motorista motorista){
+        if (motorista == null) return null;
+        Usuario motoristaUsuario = motorista.getUsuario();
+        Empresa empresa = motorista.getEmpresa();
+        Usuario empresaUsuario = empresa != null ? empresa.getUsuario() : null;
+        MotoristaResumoResponseDTO response = criptoUtils.decrypt(
+            new MotoristaResumoResponseDTO(
+                motorista.getId(),
+                (motoristaUsuario != null ? usuarioMapper.toResponseSimplificado(motoristaUsuario, motorista.getCpfCripto()) : null),
+                motorista.getTipoCnh(),
+                motorista.getCnhCripto(),
+                motorista.getDataValidadeCnh(),
+                    (empresa != null ? empresa.getId() : null),
+                    (empresa != null ? empresa.getCnpj() : null),
+                    (empresaUsuario != null ? empresaUsuario.getNome() : null)
+                ), motorista.getUsuario().getCriptoVersion());
+        response.formatarDados();
+        return response;
+        
     }
     
     public List<MotoristaResponseDTO> toResponseList(List<Motorista> motoristas){
@@ -54,7 +79,7 @@ public class MotoristaMapper {
         String emailMotorista = emailCriptoMotorista != null && keyVersionMotorista != null ? criptoUtils.decrypt(emailCriptoMotorista, keyVersionMotorista) : null;
         Empresa empresa = motorista.getEmpresa();
         Usuario empresaUsuario = empresa != null ? empresa.getUsuario() : null;
-        return new MotoristaSimplificadoResponseDTO(
+        MotoristaSimplificadoResponseDTO response = new MotoristaSimplificadoResponseDTO(
                 motorista.getId(),
                 motorista.getUsuario().getNome(),
                 telefoneMotorista,
@@ -64,6 +89,8 @@ public class MotoristaMapper {
                 (empresa != null ? empresa.getCnpj() : null),
                 (empresaUsuario != null ? empresaUsuario.getNome() : null)
             );
+        response.formatarDados();
+        return response;
     }
 
     public List<MotoristaSimplificadoResponseDTO> toResponseSimplificadoList(List<Motorista> motoristas){
