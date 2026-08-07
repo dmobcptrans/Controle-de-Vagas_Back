@@ -3,6 +3,7 @@ package com.cptrans.petrocarga.modules.veiculo.dto.response;
 import java.util.UUID;
 
 import com.cptrans.petrocarga.enums.TipoVeiculoEnum;
+import com.cptrans.petrocarga.shared.utils.StringUtils;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -30,4 +31,10 @@ public class VeiculoResponseDTO {
     public void setCpfProprietario(String cpfProprietario) {
         this.cpfProprietario = cpfProprietario;
     }
+
+    public void formatarDados() {
+        this.cpfProprietario = StringUtils.formatarCpf(cpfProprietario);
+        this.cnpjProprietario = StringUtils.formatarCnpj(cnpjProprietario);
+    }
+
 }

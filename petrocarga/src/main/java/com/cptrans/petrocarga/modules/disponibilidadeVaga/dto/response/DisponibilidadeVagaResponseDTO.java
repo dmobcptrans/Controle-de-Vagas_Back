@@ -4,6 +4,7 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 import com.cptrans.petrocarga.modules.enderecoVaga.dto.response.EnderecoVagaResponseDTO;
+import com.cptrans.petrocarga.shared.utils.DateUtils;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -23,4 +24,10 @@ public class DisponibilidadeVagaResponseDTO {
     private OffsetDateTime fim;
     private OffsetDateTime criadoEm;
     private UUID criadoPorId;
+
+    public void formatarDados() {
+        inicio = DateUtils.fusoHorarioBrasilia(inicio);
+        fim = DateUtils.fusoHorarioBrasilia(fim);   
+        criadoEm = DateUtils.fusoHorarioBrasilia(criadoEm);
+    }
 }

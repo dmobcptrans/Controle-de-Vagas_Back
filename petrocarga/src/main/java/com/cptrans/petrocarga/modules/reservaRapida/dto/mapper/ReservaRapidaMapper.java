@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.stereotype.Component;
 
+import com.cptrans.petrocarga.modules.agente.entity.Agente;
 import com.cptrans.petrocarga.modules.enderecoVaga.dto.mapper.EnderecoVagaMapper;
 import com.cptrans.petrocarga.modules.enderecoVaga.entity.EnderecoVaga;
 import com.cptrans.petrocarga.modules.reserva.dto.response.ReservaDTO;
@@ -39,7 +40,27 @@ public class ReservaRapidaMapper {
 
     public ReservaRapidaResponseDTO toResponse(ReservaRapida reservaRapida) {
         if (reservaRapida == null) return null;
-        return new ReservaRapidaResponseDTO(reservaRapida);
+        Vaga vaga = reservaRapida.getVaga();
+        EnderecoVaga enderecoVaga = vaga != null ? vaga.getEndereco() : null;
+        Agente agente = reservaRapida.getAgente();
+        ReservaRapidaResponseDTO response = new ReservaRapidaResponseDTO(
+            reservaRapida.getId(),
+            vaga != null ? vaga.getId() : null,
+            agente != null ? agente.getId() : null,
+            enderecoVaga != null ? enderecoVaga.getLogradouro() : null,
+            enderecoVaga != null ? enderecoVaga.getBairro() : null,
+            reservaRapida.getTipoVeiculo(),
+            reservaRapida.getPlaca(),
+            reservaRapida.getInicio(),
+            reservaRapida.getFim(),
+            reservaRapida.getCriadoEm(),
+            reservaRapida.getStatus(),
+            reservaRapida.getPosicaoPerpendicular(),
+            reservaRapida.getCidadeOrigem(),
+            reservaRapida.getEntradaCidade()
+        );
+        response.formatarDados();
+        return response;
     }  
 
     public List<ReservaRapidaResponseDTO> toResponseList(List<ReservaRapida> reservaRapidas) {
@@ -52,7 +73,7 @@ public class ReservaRapidaMapper {
         Vaga vaga = reserva.getVaga();
         EnderecoVaga enderecoVaga = vaga != null ? vaga.getEndereco() : null;
         Usuario criadoPor = reserva.getAgente() != null ? reserva.getAgente().getUsuario() : null;
-        return new ReservaDTO(
+        ReservaDTO response = new ReservaDTO(
             reserva.getId(),
             vaga != null ? vaga.getId() : null,
             null,
@@ -61,8 +82,8 @@ public class ReservaRapidaMapper {
             vaga != null ? vaga.getNumeroEndereco() : null,
             vaga != null ? vaga.getReferenciaEndereco() : null,
             enderecoVagaMapper.toResponse(enderecoVaga),
-            DateUtils.fusoHorarioBrasilia(reserva.getInicio()),
-            DateUtils.fusoHorarioBrasilia(reserva.getFim()),
+            reserva.getInicio(),
+            reserva.getFim(),
             reserva.getTipoVeiculo().getComprimento(),
             reserva.getPlaca(),
             null,
@@ -75,10 +96,12 @@ public class ReservaRapidaMapper {
             null,
             null,
             null,
-            usuarioMapper.toResponse(criadoPor, cpfOrCnpjCriador),
-            DateUtils.fusoHorarioBrasilia(reserva.getCriadoEm()),
+            usuarioMapper.toResponseSimplificado(criadoPor, cpfOrCnpjCriador),
+            reserva.getCriadoEm(),
             reserva.getPosicaoPerpendicular()
         );
+        response.formatarDados();
+        return response;
     }
 
 }

@@ -16,6 +16,14 @@ public class PushTokenMapper {
     } 
 
     public PushTokenResponseDTO toResponse(PushToken pushToken) {
-        return new PushTokenResponseDTO(pushToken.getId(), pushToken.getToken(), pushToken.getPlataforma(), pushToken.isAtivo(), pushToken.getCriadoEm());
+        PushTokenResponseDTO response = new PushTokenResponseDTO(
+            pushToken.getId(), 
+            pushToken.getToken(), 
+            pushToken.getPlataforma(), 
+            pushToken.isAtivo(), 
+            pushToken.getCriadoEm()
+        );
+        response.formatarDados();
+        return response;
     }
 }

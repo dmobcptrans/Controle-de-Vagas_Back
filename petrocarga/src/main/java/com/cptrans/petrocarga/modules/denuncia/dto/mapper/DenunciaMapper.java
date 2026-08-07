@@ -33,7 +33,7 @@ public class DenunciaMapper {
         Motorista motorista = reserva != null ? reserva.getMotorista() : null;
         Usuario usuarioMotorista = motorista != null ? motorista.getUsuario() : null;
         EnderecoVaga enderecoVaga = vaga != null ? vaga.getEndereco() : null;
-        return criptoUtils.decrypt(
+        DenunciaResponseDTO response = criptoUtils.decrypt(
             new DenunciaResponseDTO(
             denuncia.getId(),
             criadoPor != null ? criadoPor.getId() : null,
@@ -59,6 +59,8 @@ public class DenunciaMapper {
             denuncia.getEncerradoEm()
                 
         ), usuarioMotorista.getCriptoVersion());
+        response.formatarDados();
+        return response;
     }
 
     public List<DenunciaResponseDTO> toResponseList(List<Denuncia> denuncias){

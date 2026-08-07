@@ -111,7 +111,6 @@ public class CriptoService {
             return new String(decrypted);
 
         } catch (Exception e) {
-            System.out.println(e);
             throw new CriptoExceptions.DecryptException();
         }
     }

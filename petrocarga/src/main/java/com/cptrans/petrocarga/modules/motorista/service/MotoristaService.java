@@ -21,7 +21,7 @@ import com.cptrans.petrocarga.modules.motorista.dto.mapper.MotoristaMapper;
 import com.cptrans.petrocarga.modules.motorista.dto.request.MotoristaEmpresaRequestDTO;
 import com.cptrans.petrocarga.modules.motorista.dto.request.MotoristaFiltrosRequestDTO;
 import com.cptrans.petrocarga.modules.motorista.dto.request.MotoristaRequestDTO;
-import com.cptrans.petrocarga.modules.motorista.dto.response.MotoristaResponseDTO;
+import com.cptrans.petrocarga.modules.motorista.dto.response.MotoristaResumoResponseDTO;
 import com.cptrans.petrocarga.modules.motorista.dto.response.MotoristaSimplificadoResponseDTO;
 import com.cptrans.petrocarga.modules.motorista.entity.Motorista;
 import com.cptrans.petrocarga.modules.motorista.exceptions.MotoristaExceptions;
@@ -85,7 +85,7 @@ public class MotoristaService {
         }
         Page<Motorista> page = motoristaRepository.findAll(MotoristaSpecification.filtrar(filtros), pageable);
         if (page == null || page.isEmpty()) return new PageResponseDTO(page);
-        Page<MotoristaResponseDTO> pageResponse = page.map(motoristaMapper::toResponse);
+        Page<MotoristaResumoResponseDTO> pageResponse = page.map(motoristaMapper::toResponseResumido);
         return new PageResponseDTO(pageResponse);
     }
 

@@ -32,12 +32,14 @@ public class EmpresaMapper {
 
     public EmpresaSimplificadoResponseDTO toResponseSimplificado(Empresa empresa) {
         if (empresa == null) return null;
-        return new EmpresaSimplificadoResponseDTO(
+        EmpresaSimplificadoResponseDTO response = new EmpresaSimplificadoResponseDTO(
             empresa.getId(),
             empresa.getUsuario().getNome(),
             empresa.getCnpj(),
             empresa.getUsuario().getAtivo()
         );
+        response.formatarDados();
+        return response;
     }
 
     public List<EmpresaSimplificadoResponseDTO> toResponseSimplificadoList(List<Empresa> empresas) { 

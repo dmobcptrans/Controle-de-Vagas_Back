@@ -4,6 +4,8 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 import com.cptrans.petrocarga.enums.PermissaoEnum;
+import com.cptrans.petrocarga.shared.utils.DateUtils;
+import com.cptrans.petrocarga.shared.utils.StringUtils;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -37,5 +39,12 @@ public class UsuarioResponseDTO {
     public void setPossuiVeiculoAtivo(Boolean possuiVeiculoAtivo) {
         this.possuiVeiculoAtivo = possuiVeiculoAtivo;
     }
-    
+
+    public void formatarDados(){
+        this.cpf = StringUtils.formatarCpf(cpf);
+        this.cnpj = StringUtils.formatarCnpj(cnpj);
+        this.telefone = StringUtils.formatarTelefone(telefone);
+        this.criadoEm = DateUtils.fusoHorarioBrasilia(criadoEm);
+        this.desativadoEm = DateUtils.fusoHorarioBrasilia(desativadoEm);
+    }
 }

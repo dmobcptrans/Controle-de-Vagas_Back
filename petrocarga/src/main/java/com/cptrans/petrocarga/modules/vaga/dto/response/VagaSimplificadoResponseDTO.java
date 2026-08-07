@@ -1,12 +1,10 @@
 package com.cptrans.petrocarga.modules.vaga.dto.response;
 
-import java.util.Set;
 import java.util.UUID;
 
 import com.cptrans.petrocarga.enums.AreaVagaEnum;
 import com.cptrans.petrocarga.enums.StatusVagaEnum;
 import com.cptrans.petrocarga.enums.TipoVagaEnum;
-import com.cptrans.petrocarga.modules.operacaoVaga.dto.response.OperacaoVagaResponseDTO;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -28,5 +26,4 @@ public class VagaSimplificadoResponseDTO {
     private Integer comprimento;
     private Integer quantidade;
     private StatusVagaEnum status;
-    private Set<OperacaoVagaResponseDTO> operacoesVaga;
 }

@@ -12,6 +12,7 @@ import com.cptrans.petrocarga.shared.exceptions.DateExceptions;
 @Component
 public class DateUtils {
     public static final ZoneId FUSO_BRASILIA = ZoneOffset.of("-03:00");
+    public static final int anoAtual = agora().getYear();
     /**
      * Converte um OffsetDateTime para um LocalDate no fuso horário do Brasil (Brasília).
      * Se o OffsetDateTime for nulo, retorna nulo.
@@ -25,11 +26,13 @@ public class DateUtils {
     }
 
     public static void validarFiltroDeMesEAno(Integer mes, Integer ano) {
+        final int anoInicial = 2026;
+
         if ((ano != null || mes != null) && (ano == null || mes == null)) throw new DateExceptions.MesOuAnoNullException();
 
         if (mes < 1 || mes > 12) throw new DateExceptions.MesInvalidoException();
 
-        if (ano < 2026 || ano > 2100) throw new DateExceptions.AnoInvalidoException();
+        if (ano < anoInicial || ano > anoAtual) throw new DateExceptions.AnoInvalidoException();
     }
 
     public static void validarFiltrosData(LocalDate data, Integer mes, Integer ano) {
@@ -46,6 +49,7 @@ public class DateUtils {
     }
 
     public static OffsetDateTime fusoHorarioBrasilia(OffsetDateTime data) {
+        if (data == null) return null;
         return data.atZoneSameInstant(FUSO_BRASILIA).toOffsetDateTime();
     }
 
@@ -54,6 +58,7 @@ public class DateUtils {
     }
 
     public static OffsetDateTime getInicioMes(int mes, int ano) {
+        validarFiltroDeMesEAno(mes, ano);
         return OffsetDateTime.of(ano, mes, 1, 0, 0, 0, 0, ZoneOffset.of(FUSO_BRASILIA.toString()));
     }
 

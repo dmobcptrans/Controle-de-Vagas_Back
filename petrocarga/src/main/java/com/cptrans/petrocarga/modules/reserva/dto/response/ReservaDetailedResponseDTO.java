@@ -4,6 +4,8 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 import com.cptrans.petrocarga.enums.StatusReservaEnum;
+import com.cptrans.petrocarga.shared.utils.DateUtils;
+import com.cptrans.petrocarga.shared.utils.StringUtils;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -36,4 +38,12 @@ public class ReservaDetailedResponseDTO {
     private OffsetDateTime inicio;
     private OffsetDateTime fim;
     private StatusReservaEnum status;
+
+    public void formatarDados(){
+        motoristaCpfLast5 = StringUtils.aplicarMascaraCpf(motoristaCpfLast5);
+        empresaCnpj = StringUtils.formatarCnpj(empresaCnpj);
+        criadoEm = DateUtils.fusoHorarioBrasilia(criadoEm);
+        inicio = DateUtils.fusoHorarioBrasilia(inicio);
+        fim = DateUtils.fusoHorarioBrasilia(fim);
+    }
 }

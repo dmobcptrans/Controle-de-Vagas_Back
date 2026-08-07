@@ -16,6 +16,4 @@ import lombok.NoArgsConstructor;
 public class EmpresaResponseDTO {
     private UUID id;
     private UsuarioResponseDTO usuario;
-    // private List<MotoristaSimplificadoResponseDTO> motoristas;
-    // private Map<UUID, List<UUID>> veiculoMotoristas;
 }
