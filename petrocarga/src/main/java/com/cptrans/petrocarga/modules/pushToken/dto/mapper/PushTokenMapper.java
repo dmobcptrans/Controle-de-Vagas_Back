@@ -16,6 +16,8 @@ public class PushTokenMapper {
     } 
 
     public PushTokenResponseDTO toResponse(PushToken pushToken) {
+        if (pushToken == null) return null;
+        
         PushTokenResponseDTO response = new PushTokenResponseDTO(
             pushToken.getId(), 
             pushToken.getToken(), 
