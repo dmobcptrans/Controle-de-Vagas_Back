@@ -118,15 +118,22 @@ public class Veiculo {
         this.deletadoEm = deletadoEm;
     }
 
-    public List<Motorista> getMotoristasByVeiculoId(UUID veiculoId){
-        if(this.veiculosEmpresaMotoristas == null || this.veiculosEmpresaMotoristas.isEmpty()) return List.of();
+    public List<Motorista> getMotoristas(){
+        if (id == null || veiculosEmpresaMotoristas == null || veiculosEmpresaMotoristas.isEmpty() ) return List.of();
         List<Motorista> motoristas = new ArrayList<>();
-        for (VeiculoEmpresaMotorista vem : this.veiculosEmpresaMotoristas) {
-            if (vem.getVeiculo().getId().equals(veiculoId)){
-                motoristas.add(vem.getMotorista());
-            }
-        }
+        veiculosEmpresaMotoristas.forEach(vem -> {
+            if (vem.getVeiculo().getId().equals(id)) motoristas.add(vem.getMotorista());
+        });          
         return motoristas;
+    }
+
+    public List<UUID> getMotoristasIds(){
+        if (id == null || veiculosEmpresaMotoristas == null || veiculosEmpresaMotoristas.isEmpty() ) return List.of();
+        List<UUID> motoristasIds = new ArrayList<>();
+        veiculosEmpresaMotoristas.forEach(vem -> {
+            if (vem.getVeiculo().getId().equals(id)) motoristasIds.add(vem.getMotorista().getId());
+        });          
+        return motoristasIds;
     }
 
 }

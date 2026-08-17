@@ -22,6 +22,12 @@ public class VeiculoExceptions {
         }
     }
 
+    public static class MotoristaNaoVinculadoAoVeiculoException extends DataIntegrityViolationException {
+        public MotoristaNaoVinculadoAoVeiculoException() {
+            super("O motorista não está vinculado ao veículo.");
+        }
+    }
+
     public static class ConflitoCpjCnpjProprietarioException extends DataIntegrityViolationException {
         public ConflitoCpjCnpjProprietarioException() {
             super("Veículo deve conter CPF OU CNPJ do proprietário.");
@@ -84,6 +90,11 @@ public class VeiculoExceptions {
 
     @ExceptionHandler(VeiculoAlreadyExistsException.class)
     public ResponseEntity<SystemResponse> handleVeiculoAlreadyExistsException(VeiculoAlreadyExistsException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(new SystemResponse(ex.getMessage(), 409));
+    }
+
+    @ExceptionHandler(MotoristaNaoVinculadoAoVeiculoException.class)
+    public ResponseEntity<SystemResponse> handleMotoristaNaoVinculadoAoVeiculoException(MotoristaNaoVinculadoAoVeiculoException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(new SystemResponse(ex.getMessage(), 409));
     }
 }
