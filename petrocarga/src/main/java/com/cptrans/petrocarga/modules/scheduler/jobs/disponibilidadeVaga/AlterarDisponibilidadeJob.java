@@ -20,7 +20,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class AlterarDisponibilidadeJob implements Job {
 
-    @Autowired
+    @Autowired //deve usar o @Autowired + @NoArgsConstructor para que o spring injete a dependência corretamente
     private DisponibilidadeVagaService disponibilidadeVagaService;
 
     /**

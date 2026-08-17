@@ -237,6 +237,14 @@ public class NotificacaoService {
         return notificarOcorrido(usuarioId, TITULO, MENSAGEM, TipoNotificacaoEnum.RESERVA, DESCRICAO_DATA, inicioReserva) ;
     }
 
+    @Transactional
+    public Notificacao notificarNovaReserva(String empresaNome, UUID motoristaId, OffsetDateTime criadoEm) {
+        final String TITULO = "Nova Reserva";
+        final String MENSAGEM = "A empresa '" + empresaNome + "' realizou uma nova reserva para você. Acesse a aba 'minhas reservas' para conferir os detalhes.";
+        final String DESCRICAO_DATA = "criadoEm";
+        return notificarOcorrido(motoristaId, TITULO, MENSAGEM, TipoNotificacaoEnum.RESERVA, DESCRICAO_DATA, criadoEm);
+    }
+
     private List<Usuario> findUsuariosAtivosByPermissao(PermissaoEnum permissao) {
         List<Usuario> usuarios = usuarioService.findByPermissaoAndAtivo(permissao, true);
         if (usuarios == null || usuarios.isEmpty()) {

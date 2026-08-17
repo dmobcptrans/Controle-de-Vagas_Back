@@ -84,7 +84,18 @@ public class VeiculoService {
         Veiculo veiculo = veiculoRepository.findById(id).orElseThrow(() -> new VeiculoExceptions.VeiculoNotFoundException());
         if (
             AuthUtils.containsAuthority(List.of(PermissaoEnum.MOTORISTA.getRole(), PermissaoEnum.EMPRESA.getRole())) &&
-            !AuthUtils.containsId(List.of(veiculo.getUsuario().getId()))
+            !AuthUtils.containsUserId(List.of(veiculo.getUsuario().getId()))
+        ) throw new AuthExceptions.UsuarioNaoAutorizadoException();
+
+        return veiculo;
+    }
+
+    public Veiculo findByIdAndAtivoTrue(UUID id) {
+        Veiculo veiculo = veiculoRepository.findByIdAndAtivoTrue(id).orElseThrow(() -> new VeiculoExceptions.VeiculoNotFoundException());
+        
+        if (
+            AuthUtils.containsAuthority(List.of(PermissaoEnum.MOTORISTA.getRole(), PermissaoEnum.EMPRESA.getRole())) &&
+            !AuthUtils.containsUserId(List.of(veiculo.getUsuario().getId()))
         ) throw new AuthExceptions.UsuarioNaoAutorizadoException();
 
         return veiculo;

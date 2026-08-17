@@ -1,6 +1,7 @@
-package com.cptrans.petrocarga.modules.scheduler.jobs.notificacao;
+package com.cptrans.petrocarga.modules.scheduler.jobs.reserva;
 
 import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 
 import org.quartz.DisallowConcurrentExecution;
@@ -17,27 +18,22 @@ import lombok.NoArgsConstructor;
 @DisallowConcurrentExecution
 @Component
 @NoArgsConstructor
-public class NotificarCheckInDisponivelJob implements Job{
-    
+public class NovaReservaJob implements Job{
+   
     @Autowired //deve usar o @Autowired + @NoArgsConstructor para que o spring injete a dependência corretamente
     private NotificacaoService notificacaoService;
 
     /**
-     * Executa o job de notificacao de check-in em disponibilidade.
-     * Este job notifica o usuario sobre a proximidade da reserva.
+     * Executa o job de processar no show.
+     * Este job finaliza uma reserva caso o motorista não faça check-in à tempo.
      * @param context contexto do job
      * @throws JobExecutionException se ocorrer algum erro durante a execução do job
      */
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
-        UUID usuarioId = UUID.fromString(
-            context.getMergedJobDataMap().getString("usuarioId")
-        );
-
-        OffsetDateTime inicioReserva = OffsetDateTime.parse(
-            context.getMergedJobDataMap().getString("inicioReserva")
-        );
-
-        notificacaoService.notificarCheckInDisponivel(usuarioId, inicioReserva);
+        String empresaNome = context.getMergedJobDataMap().getString("empresaNome");
+        UUID motoristaId = UUID.fromString(context.getMergedJobDataMap().getString("motoristaId"));
+        OffsetDateTime criadoEm = OffsetDateTime.parse(context.getMergedJobDataMap().getString("criadoEm"));
+        notificacaoService.notificarNovaReserva(empresaNome, motoristaId, criadoEm);
     }
 }

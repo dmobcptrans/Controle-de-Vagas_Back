@@ -61,7 +61,7 @@ public class AuthUtils {
     }
 
 
-    public static Boolean containsId(List<UUID> idsToCompare) {
+    public static Boolean containsUserId(List<UUID> idsToCompare) {
         UserAuthenticated userAuthenticated = getUsuarioAutenticado();
         if (userAuthenticated == null) return false;
         UUID userId = userAuthenticated.id();

@@ -100,7 +100,7 @@ public class DenunciaService {
         Denuncia denuncia = findById(denunciaId);
 
         if (
-            !AuthUtils.containsId(List.of(denuncia.getCriadoPor().getId())) &&
+            !AuthUtils.containsUserId(List.of(denuncia.getCriadoPor().getId())) &&
             !AuthUtils.containsAuthority(List.of(PermissaoEnum.ADMIN.getRole(), PermissaoEnum.GESTOR.getRole()))
         ) throw new AuthExceptions.UsuarioNaoAutorizadoException();
 

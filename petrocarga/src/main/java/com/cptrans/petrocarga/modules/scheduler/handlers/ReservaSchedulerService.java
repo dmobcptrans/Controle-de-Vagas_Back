@@ -39,18 +39,14 @@ public class ReservaSchedulerService {
         if (scheduler.checkExists(jobKey)) return;
         
         JobDetail job = JobBuilder.newJob(FinalizarReservaJob.class)
-        .withIdentity(
-            "finaliza-reserva-" + reservaDTO.getId(),
-            QuartzGroups.RESERVAS)
-        .usingJobData("reservaId", reservaDTO.getId().toString())
-        .build();
+            .withIdentity(jobKey)
+            .usingJobData("reservaId", reservaDTO.getId().toString())
+            .build();
 
         Trigger trigger = TriggerBuilder.newTrigger()
-        .withIdentity(
-            "trigger-finaliza-reserva-" + reservaDTO.getId(),
-            QuartzGroups.RESERVAS)
-        .startAt(Date.from(reservaDTO.getFim().toInstant()))
-        .build();
+            .withIdentity("trigger-" + jobKey.getName() , jobKey.getGroup())
+            .startAt(Date.from(reservaDTO.getFim().toInstant()))
+            .build();
 
         scheduler.scheduleJob(job, trigger);
     }
@@ -70,18 +66,14 @@ public class ReservaSchedulerService {
         if (scheduler.checkExists(jobKey)) return;
 
         JobDetail job = JobBuilder.newJob(NoShowJob.class)
-        .withIdentity(
-            "finaliza-noshow-reserva" + reservaDTO.getId(),
-            QuartzGroups.RESERVAS)
-        .usingJobData("reservaId", reservaDTO.getId().toString())
-        .build();
+            .withIdentity(jobKey)
+            .usingJobData("reservaId", reservaDTO.getId().toString())
+            .build();
 
         Trigger trigger = TriggerBuilder.newTrigger()
-        .withIdentity(
-            "trigger-finaliza-noshow-reserva" + reservaDTO.getId(),
-            QuartzGroups.RESERVAS)
-        .startAt(Date.from(reservaDTO.getInicio().plusMinutes(10).toInstant()))
-        .build();
+            .withIdentity("trigger-" + jobKey.getName(), jobKey.getGroup())
+            .startAt(Date.from(reservaDTO.getInicio().plusMinutes(10).toInstant()))
+            .build();
 
         scheduler.scheduleJob(job, trigger);
     }
@@ -97,9 +89,7 @@ public class ReservaSchedulerService {
 
         if (!scheduler.checkExists(jobKey)) return;
         
-        scheduler.deleteJob(
-            JobKey.jobKey("finaliza-reserva-" + reservaId, QuartzGroups.RESERVAS)
-        );
+        scheduler.deleteJob(jobKey);
     }
 
     /**
@@ -113,8 +103,6 @@ public class ReservaSchedulerService {
 
         if (!scheduler.checkExists(jobKey)) return;
         
-        scheduler.deleteJob(
-            JobKey.jobKey("finaliza-noshow-reserva" + reservaId, QuartzGroups.RESERVAS)
-        );
+        scheduler.deleteJob(jobKey);
     }
 }
