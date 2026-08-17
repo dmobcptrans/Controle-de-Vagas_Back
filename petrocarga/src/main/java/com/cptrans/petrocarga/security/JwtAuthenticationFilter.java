@@ -13,6 +13,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -83,11 +84,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
      * @return o token de autenticação da requisição, ou null caso o token não seja encontrado
      */
     private String resolveToken(HttpServletRequest request) {
-        if (request.getCookies() != null) {
-            for (var cookie : request.getCookies()) {
-                if ("auth-token".equals(cookie.getName())) {
-                    return cookie.getValue();
-                }
+        if (request.getCookies() != null && request.getCookies().length > 0) {
+            for (Cookie cookie : request.getCookies()) {
+                if ("auth-token".equals(cookie.getName())) return cookie.getValue();
             }
         }
         
