@@ -54,6 +54,7 @@ import com.cptrans.petrocarga.modules.usuario.utils.UsuarioUtils;
 import com.cptrans.petrocarga.modules.vaga.entity.Vaga;
 import com.cptrans.petrocarga.modules.vaga.service.VagaService;
 import com.cptrans.petrocarga.modules.veiculo.entity.Veiculo;
+import com.cptrans.petrocarga.modules.veiculo.exceptions.VeiculoExceptions;
 import com.cptrans.petrocarga.modules.veiculo.service.VeiculoService;
 import com.cptrans.petrocarga.security.UserAuthenticated;
 import com.cptrans.petrocarga.shared.utils.DateUtils;
@@ -120,12 +121,12 @@ public class ReservaService {
 
         if (
             AuthUtils.containsAuthority(List.of(PermissaoEnum.MOTORISTA.getRole())) &&
-            !AuthUtils.containsId(List.of(reserva.getMotorista().getId()))
+            !AuthUtils.containsUserId(List.of(reserva.getMotorista().getId()))
         ) throw new AuthExceptions.UsuarioNaoAutorizadoException();
 
         if (
             AuthUtils.containsAuthority(List.of(PermissaoEnum.EMPRESA.getRole())) &&
-            !AuthUtils.containsId(List.of(reserva.getCriadoPor().getId(), reserva.getVeiculo().getUsuario().getId()))
+            !AuthUtils.containsUserId(List.of(reserva.getCriadoPor().getId(), reserva.getVeiculo().getUsuario().getId()))
         ) throw new AuthExceptions.UsuarioNaoAutorizadoException();
 
         return reserva;
@@ -137,7 +138,7 @@ public class ReservaService {
     }
 
     public Page<Reserva> findByCriadoPorIdOrMotoristaId(UUID usuarioId, List<StatusReservaEnum> status, Integer numeroPagina, Integer tamanhoPagina) {
-        Pageable pageable = PageRequest.of(numeroPagina, tamanhoPagina, Sort.by("inicio").descending());
+        Pageable pageable = PageRequest.of(numeroPagina, tamanhoPagina, Sort.by("criadoEm").descending());
         Page<Reserva> reservasPage;
         if (status != null && !status.isEmpty()) reservasPage = reservaRepository.findByStatusInAndCriadoPorIdOrMotoristaId(status, usuarioId, usuarioId, pageable);
         else reservasPage = reservaRepository.findByCriadoPorIdOrMotoristaId(usuarioId, usuarioId, pageable);
@@ -154,7 +155,7 @@ public class ReservaService {
 
         Usuario usuarioLogado = usuarioService.findByIdAndAtivoTrue(userAuthenticated.id());
 
-        Motorista motorista = motoristaService.findById(request.getMotoristaId());
+        Motorista motorista = motoristaService.findByIdAndAtivoTrue(request.getMotoristaId());
 
         if (AuthUtils.containsAuthority(List.of(PermissaoEnum.EMPRESA.getRole()))) {
             if (motorista.getEmpresa() == null || (motorista.getEmpresa() != null && !motorista.getEmpresa().getId().equals(usuarioLogado.getId()))){ 
@@ -162,7 +163,13 @@ public class ReservaService {
             }
         }
 
-        Veiculo veiculo = veiculoService.findById(request.getVeiculoId());
+        Veiculo veiculo = veiculoService.findByIdAndAtivoTrue(request.getVeiculoId());
+
+        if (usuarioLogado.getPermissao().equals(PermissaoEnum.EMPRESA)) {
+            if (!veiculo.getMotoristasIds().stream().anyMatch((id) -> id.equals(motorista.getId()))){
+                throw new VeiculoExceptions.MotoristaNaoVinculadoAoVeiculoException();
+            }
+        }
 
         Reserva novaReserva = reservaMapper.toEntity(request, vaga, motorista, veiculo, usuarioLogado);
 
@@ -416,7 +423,7 @@ public class ReservaService {
             }
         }
 
-        if (reserva.isPresent()) cancelarSchedulers(reservaDTO.getId(), reservaDTO.getMotoristaId());
+        if (reserva.isPresent()) cancelarSchedulers(reserva.get().getCriadoPor().getId(), reservaDTO.getId(), reservaDTO.getMotoristaId());
         
         return reservaDTO;
 
@@ -434,7 +441,7 @@ public class ReservaService {
 
         if (!StatusReservaEnum.RESERVADA.equals(reserva.getStatus())) throw new IllegalStateException("Reserva não está ativa.");
 
-        if (!reserva.getCheckedIn()) throw new IllegalStateException("Check-in já foi realizado para esta reserva.");
+        if (reserva.getCheckedIn()) throw new IllegalStateException("Check-in já foi realizado para esta reserva.");
 
         OffsetDateTime agora = DateUtils.agora();
         OffsetDateTime limiteAntes = reserva.getInicio().minusMinutes(5);
@@ -445,12 +452,12 @@ public class ReservaService {
 
         if (
             AuthUtils.containsAuthority(List.of(PermissaoEnum.MOTORISTA.getRole())) &&
-            !AuthUtils.containsId(List.of(reserva.getMotorista().getId()))
+            !AuthUtils.containsUserId(List.of(reserva.getMotorista().getId()))
         ) throw new IllegalArgumentException("Motorista só pode fazer check-in em suas próprias reservas.");
 
         if (
             AuthUtils.containsAuthority(List.of(PermissaoEnum.EMPRESA.getRole())) &&
-            !AuthUtils.containsId(List.of(reserva.getCriadoPor().getId()))
+            !AuthUtils.containsUserId(List.of(reserva.getCriadoPor().getId()))
         ) throw new IllegalArgumentException("Empresa só pode fazer check-in em reservas criadas por ela.");
 
         reserva.setCheckedIn(true);
@@ -499,7 +506,7 @@ public class ReservaService {
         reserva.setStatus(StatusReservaEnum.CONCLUIDA);
         reserva.setCheckOutEm(DateUtils.agora());
         Reserva reservaSalva = reservaRepository.save(reserva);
-        cancelarSchedulers(reservaSalva.getId(), reservaSalva.getMotorista().getId());
+        cancelarSchedulers(reserva.getCriadoPor().getId(), reservaSalva.getId(), reservaSalva.getMotorista().getId());
         return reservaSalva;
     }
 
@@ -509,14 +516,14 @@ public class ReservaService {
         if (!StatusReservaEnum.RESERVADA.equals(reserva.getStatus())) throw new IllegalStateException("Só é possivel cancelar uma reserva com status 'RESERVADA'.");
         
         if (
-            !AuthUtils.containsId(List.of(reserva.getCriadoPor().getId(), reserva.getMotorista().getId())) &&
+            !AuthUtils.containsUserId(List.of(reserva.getCriadoPor().getId(), reserva.getMotorista().getId())) &&
             !AuthUtils.containsAuthority(List.of(PermissaoEnum.ADMIN.getRole(), PermissaoEnum.GESTOR.getRole()))
         ) throw new AuthExceptions.UsuarioNaoAutorizadoException();
 
         reserva.setStatus(StatusReservaEnum.CANCELADA);
         Reserva reservaSalva = reservaRepository.save(reserva);
 
-        cancelarSchedulers(reservaSalva.getId(), reservaSalva.getMotorista().getId());
+        cancelarSchedulers(reservaSalva.getCriadoPor().getId(), reservaSalva.getId(), reservaSalva.getMotorista().getId());
 
     }
 
@@ -531,7 +538,7 @@ public class ReservaService {
             notificacaoService.notificarNoShow(reservaSalva.getCriadoPor().getId(), reservaSalva.getInicio());
         }
         notificacaoService.notificarNoShow(reservaSalva.getMotorista().getId(), reservaSalva.getInicio());
-        cancelarSchedulers(reservaSalva.getId(), reservaSalva.getMotorista().getId());
+        cancelarSchedulers(reservaSalva.getCriadoPor().getId(), reservaSalva.getId(), reservaSalva.getMotorista().getId());
     }
 
 
@@ -555,35 +562,40 @@ public class ReservaService {
         }
     }
 
-    private void cancelarSchedulers(UUID reservaId, UUID motoristaId) {
+    private void cancelarSchedulers(UUID criadoPorId, UUID reservaId, UUID motoristaId) {
         try {
             reservaSchedulerService.cancelarSchedulerFinalizaReserva(reservaId);
             reservaSchedulerService.cancelarSchedulerNoShowReserva(reservaId);
             notificacaoSchedulerService.cancelarSchedulerCheckIn(motoristaId, reservaId);
             notificacaoSchedulerService.cancelarSchedulerFimProximo(motoristaId, reservaId);
+            notificacaoSchedulerService.cancelarSchedulerNovaReserva(criadoPorId, reservaId, motoristaId);
         } catch (SchedulerException e) {
-            throw new RuntimeException("Erro ao agendar finalização da reserva: " + e.getMessage());
+            throw new RuntimeException("Erro ao cancelar schedulers da reserva: " + e.getMessage());
         }
     }
 
     private void agendarSchedulers(ReservaDTO reservaDTO) {
         UUID reservaId = reservaDTO.getId();
         UUID criadoPorId = reservaDTO.getCriadoPor().getId();
+        System.out.println("criadoPorId: " + criadoPorId);
+        String criadoPorNome = reservaDTO.getCriadoPor().getNome();
         UUID motoristaId = reservaDTO.getMotoristaId();
         OffsetDateTime inicio = reservaDTO.getInicio();
         OffsetDateTime fim = reservaDTO.getFim();
+        OffsetDateTime criadoEm = reservaDTO.getCriadoEm();
         try {
-            cancelarSchedulers(reservaId, motoristaId);
+            cancelarSchedulers(criadoPorId, reservaId, motoristaId);
             reservaSchedulerService.agendarFinalizacaoReserva(reservaDTO);
             reservaSchedulerService.agendarFinalizacaoNoShow(reservaDTO);
-            if (!criadoPorId.equals(motoristaId)) {
+            if (criadoPorId != null && motoristaId != null && !criadoPorId.equals(motoristaId)) {
                 notificacaoSchedulerService.agendarNotificacaoCheckInDisponivel(criadoPorId, reservaId, inicio);
                 notificacaoSchedulerService.agendarNotificacaoFimProximo(criadoPorId, reservaId, fim);
+                notificacaoSchedulerService.agendarNotificacaoNovaReserva(motoristaId, criadoPorNome, reservaId, motoristaId, criadoEm);
             }
             notificacaoSchedulerService.agendarNotificacaoCheckInDisponivel(motoristaId, reservaId,inicio);
             notificacaoSchedulerService.agendarNotificacaoFimProximo(motoristaId, reservaId, fim);
         } catch (SchedulerException e) {
-            throw new RuntimeException("Erro ao agendar finalização da reserva: " + e.getMessage());
+            throw new RuntimeException("Erro ao agendar schedulers da reserva: " + e.getMessage());
         }
     }
 }
