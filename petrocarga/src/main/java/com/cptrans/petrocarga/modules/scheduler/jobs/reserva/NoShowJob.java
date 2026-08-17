@@ -18,7 +18,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class NoShowJob implements Job {
 
-    @Autowired
+    @Autowired //deve usar o @Autowired + @NoArgsConstructor para que o spring injete a dependência corretamente
     private ReservaService reservaService;
 
     /**

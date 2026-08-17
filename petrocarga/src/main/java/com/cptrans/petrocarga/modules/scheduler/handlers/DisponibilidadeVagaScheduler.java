@@ -49,9 +49,7 @@ public class DisponibilidadeVagaScheduler {
         
         Trigger trigger = TriggerBuilder.newTrigger()
             .withIdentity(
-                "trigger-alterar-disponibilidade-vaga-" + disponibilidade.getId().toString() + "-status-" + status.name(),
-                QuartzGroups.DISPONIBILIDADE_VAGA
-            )
+                "trigger-" + jobKey.getName(), jobKey.getGroup())
             .startAt(Date.from(dataAlteracao.toInstant()))
             .build();
 

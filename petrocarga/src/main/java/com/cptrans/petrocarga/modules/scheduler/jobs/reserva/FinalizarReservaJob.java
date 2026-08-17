@@ -6,6 +6,7 @@ import java.util.UUID;
 import org.quartz.DisallowConcurrentExecution;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
+import org.quartz.JobExecutionException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -18,7 +19,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class FinalizarReservaJob implements Job {
 
-    @Autowired
+    @Autowired //deve usar o @Autowired + @NoArgsConstructor para que o spring injete a dependência corretamente
     private ReservaService reservaService;
 
     /**
