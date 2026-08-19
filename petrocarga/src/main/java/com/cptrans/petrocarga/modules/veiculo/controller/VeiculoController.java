@@ -1,8 +1,6 @@
 package com.cptrans.petrocarga.modules.veiculo.controller;
 
-import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -104,19 +102,48 @@ public class VeiculoController {
     )
     @GetResponses
     @DefaultResponses
-    @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR', 'MOTORISTA', 'EMPRESA')")
+    @PreAuthorize("#usuarioId == authentication.principal.id or hasAnyRole('ADMIN', 'GESTOR')")
     @GetMapping("/usuario/{usuarioId}")
-    public ResponseEntity<List<VeiculoResponseDTO>> getVeiculosByUsuarioId(
+    public ResponseEntity<PageResponseDTO> getVeiculosByUsuarioId(
         @Parameter(description = "ID do usuário associado ao veículo")
         @PathVariable UUID usuarioId,
 
+        @Parameter(description = "Placa do veículo")
+        @RequestParam(required = false) String placa,
+
+        @Parameter(description = "Marca do veículo")
+        @RequestParam(required = false) String marca,
+
+        @Parameter(description = "Modelo do veículo")
+        @RequestParam(required = false) String modelo,
+
+        @Parameter(description = "Tipo do veículo")
+        @RequestParam(required = false) TipoVeiculoEnum tipo,
+
+        @Parameter(description = "Telefone do usuário associado ao veículo")
+        @RequestParam(required = false) String telefoneUsuario,
+
+        @Parameter(description = "CPF do proprietário do veículo")
+        @RequestParam(required = false) String cpfProprietario,
+
+        @Parameter(description = "CNPJ do proprietário do veículo")
+        @RequestParam(required = false) String cnpjProprietario,
+
         @Parameter(description = "Status do veículo (ativo/inativo)")
-        @RequestParam(defaultValue = "true") Boolean ativo
+        @RequestParam(required = false) Boolean ativo,
+
+        @Parameter(description = "Número da página", example = "0")
+        @RequestParam(defaultValue = "0") int pagina,
+
+        @Parameter(description = "Quantidade de registros por página", example = "10")
+        @RequestParam(defaultValue = "10") int tamanhoPagina,
+
+        @Parameter(description = "Ordem da listagem", example = "ASC")
+        @RequestParam(defaultValue = "ASC") OrdemEnum ordem
     ) {
-        List<VeiculoResponseDTO> veiculos = veiculoService.findByUsuarioIdAndAtivo(usuarioId, ativo).stream()
-                .map(veiculo -> veiculoMapper.toResponse(veiculo))
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(veiculos);
+        VeiculoFiltrosRequestDTO filtros = new VeiculoFiltrosRequestDTO(placa, marca, modelo, tipo, usuarioId, telefoneUsuario, cpfProprietario, cnpjProprietario, ativo);
+        PageResponseDTO response = veiculoService.findByUsuarioId(filtros, pagina, tamanhoPagina, ordem);
+        return ResponseEntity.ok(response);
     }
 
     //POST /veiculos/{usuarioId}
