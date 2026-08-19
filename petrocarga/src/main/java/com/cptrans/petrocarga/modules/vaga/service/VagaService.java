@@ -1,4 +1,6 @@
 package com.cptrans.petrocarga.modules.vaga.service;
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -8,11 +10,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import com.cptrans.petrocarga.enums.DiaSemanaEnum;
 import com.cptrans.petrocarga.enums.OrdemEnum;
 import com.cptrans.petrocarga.enums.StatusVagaEnum;
 import com.cptrans.petrocarga.enums.TipoVagaEnum;
 import com.cptrans.petrocarga.modules.enderecoVaga.entity.EnderecoVaga;
 import com.cptrans.petrocarga.modules.enderecoVaga.service.EnderecoVagaService;
+import com.cptrans.petrocarga.modules.operacaoVaga.entity.OperacaoVaga;
 import com.cptrans.petrocarga.modules.operacaoVaga.service.OperacaoVagaService;
 import com.cptrans.petrocarga.modules.vaga.dto.mapper.VagaMapper;
 import com.cptrans.petrocarga.modules.vaga.dto.request.VagaFiltrosRequestDTO;
@@ -130,20 +134,45 @@ public class VagaService {
     }
 
     public List<Vaga> buscarPorMapa(
-            Double north,
-            Double south,
-            Double east,
-            Double west,
-            StatusVagaEnum status
+        Double north,
+        Double south,
+        Double east,
+        Double west,
+        StatusVagaEnum status
     ) {
         if (status != null && status.equals(StatusVagaEnum.DISPONIVEL)){
+            OffsetDateTime agora = DateUtils.agora();
             return vagaRepository.buscarDisponiveisPorArea(
-                    south, north, west, east, DateUtils.agora()
-            );
+                south, north, west, east, agora, agora.plusDays(2)
+            ).stream().filter(v -> possuiOperacaoNosProximosDoisDias(v, agora)).toList();
         }
         return vagaRepository.buscarPorArea(
-                south, north, west, east, status
+            south, north, west, east, status
         );
+    }
+
+    private boolean possuiOperacaoNosProximosDoisDias(Vaga vaga, OffsetDateTime agora) {
+        LocalDate hoje = agora.toLocalDate();
+
+        for (int i = 0; i <= 2; i++) {
+            LocalDate data = hoje.plusDays(i);
+
+            DiaSemanaEnum diaSemana = DiaSemanaEnum.fromDayOfWeek(data.getDayOfWeek());
+
+            OperacaoVaga operacao = vaga.getOperacoesVaga()
+                .stream()
+                .filter(op -> op.getDiaSemana() == diaSemana)
+                .findFirst()
+                .orElse(null);
+
+            if (operacao == null) continue;
+
+            if (i == 0) {
+                if (operacao.getHoraFim().isAfter(agora.toLocalTime())) return true;
+            } else return true;
+        }
+
+        return false;
     }
 
 }

@@ -54,16 +54,7 @@ public class VeiculoService {
     public PageResponseDTO findAll(VeiculoFiltrosRequestDTO filtros, int pagina, int tamanhoPagina, OrdemEnum ordem) {
         Pageable pageable = PageRequest.of(pagina, tamanhoPagina, ordem != OrdemEnum.ASC ? SORT_DESC : SORT_ASC);
         
-        if (filtros != null){
-            if (filtros.getTelefoneUsuario() != null){
-                String telefoneHash = hashService.hash(filtros.getTelefoneUsuario().trim());
-                filtros.setTelefoneUsuario(telefoneHash);
-            }
-            if (filtros.getCpfProprietario() != null){
-                String cpfHash = hashService.hash(filtros.getCpfProprietario().trim());
-                filtros.setCpfProprietario(cpfHash);
-            }
-        }
+        encriptarFiltrosDeCpfETelefone(filtros);
        
         Page<Veiculo> page = veiculoRepository.findAll(VeiculoSpecification.filtrar(filtros), pageable);
 
@@ -72,13 +63,21 @@ public class VeiculoService {
         return new PageResponseDTO(pageResponse);
     }
 
-    public List<Veiculo> findByUsuarioIdAndAtivo(UUID usuarioId, boolean ativo) {
-        return veiculoRepository.findByUsuarioIdAndAtivoAndUsuarioAtivoTrue(usuarioId, ativo);
+    public PageResponseDTO findByUsuarioId(VeiculoFiltrosRequestDTO filtros, int pagina, int tamanhoPagina, OrdemEnum ordem) {
+        Pageable pageable = PageRequest.of(pagina, tamanhoPagina, ordem != OrdemEnum.ASC ? SORT_DESC : SORT_ASC);
+        
+        encriptarFiltrosDeCpfETelefone(filtros);
+       
+        Page<Veiculo> page = veiculoRepository.findAll(VeiculoSpecification.filtrar(filtros), pageable);
+
+        if (page == null || page.isEmpty() || page.getContent().isEmpty()) return new PageResponseDTO(page);
+        Page<VeiculoResponseDTO> pageResponse = page.map(veiculoMapper::toResponse);
+        return new PageResponseDTO(pageResponse);
     }
 
-    public List<Veiculo> findAtivosByUsuarioId(UUID usuarioId){
-        return findByUsuarioIdAndAtivo(usuarioId, true);
-    }
+    // public List<Veiculo> findAtivosByUsuarioId(UUID usuarioId){
+    //     return findByUsuarioIdAndAtivo(usuarioId, true);
+    // }
 
     public Veiculo findById(UUID id) {
         Veiculo veiculo = veiculoRepository.findById(id).orElseThrow(() -> new VeiculoExceptions.VeiculoNotFoundException());
@@ -204,5 +203,18 @@ public class VeiculoService {
 
     private Veiculo findAtivoByIdAndUsuarioIdAtivo(UUID id, UUID usuarioId) {
         return veiculoRepository.findByIdAndAtivoTrueAndUsuarioIdAndUsuarioAtivoTrue(id, usuarioId).orElseThrow(() -> new VeiculoExceptions.VeiculoNotFoundException());
+    }
+
+    private void encriptarFiltrosDeCpfETelefone(VeiculoFiltrosRequestDTO filtros) {
+        if (filtros != null){
+            if (filtros.getTelefoneUsuario() != null){
+                String telefoneHash = hashService.hash(filtros.getTelefoneUsuario().trim());
+                filtros.setTelefoneUsuario(telefoneHash);
+            }
+            if (filtros.getCpfProprietario() != null){
+                String cpfHash = hashService.hash(filtros.getCpfProprietario().trim());
+                filtros.setCpfProprietario(cpfHash);
+            }
+        }
     }
 }

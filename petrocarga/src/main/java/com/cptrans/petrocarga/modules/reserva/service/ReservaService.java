@@ -577,7 +577,6 @@ public class ReservaService {
     private void agendarSchedulers(ReservaDTO reservaDTO) {
         UUID reservaId = reservaDTO.getId();
         UUID criadoPorId = reservaDTO.getCriadoPor().getId();
-        System.out.println("criadoPorId: " + criadoPorId);
         String criadoPorNome = reservaDTO.getCriadoPor().getNome();
         UUID motoristaId = reservaDTO.getMotoristaId();
         OffsetDateTime inicio = reservaDTO.getInicio();

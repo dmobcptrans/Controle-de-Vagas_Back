@@ -1,7 +1,6 @@
 package com.cptrans.petrocarga.modules.scheduler.jobs.reserva;
 
 import java.time.OffsetDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 
 import org.quartz.DisallowConcurrentExecution;

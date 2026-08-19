@@ -26,4 +26,8 @@ public class VagaSimplificadoResponseDTO {
     private Integer comprimento;
     private Integer quantidade;
     private StatusVagaEnum status;
+    private Double latitudeInicio;
+    private Double longitudeInicio;
+    private Double latitudeFim;
+    private Double longitudeFim;
 }
