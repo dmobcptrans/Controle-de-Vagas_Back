@@ -106,7 +106,11 @@ public class VagaMapper {
             vaga.getTipoVaga(),
             vaga.getComprimento(),
             vaga.getQuantidade(),
-            vaga.getStatus()
+            vaga.getStatus(),
+            vaga.getLatitudeInicio(),
+            vaga.getLongitudeInicio(),
+            vaga.getLatitudeFim(),
+            vaga.getLongitudeFim()
         );
     }
 
