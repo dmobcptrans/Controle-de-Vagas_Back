@@ -1,10 +1,14 @@
 package com.cptrans.petrocarga.modules.vaga.dto.mapper;
 
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Set;
 
 import org.springframework.stereotype.Component;
 
+import com.cptrans.petrocarga.enums.DiaSemanaEnum;
+import com.cptrans.petrocarga.enums.StatusVagaEnum;
 import com.cptrans.petrocarga.modules.enderecoVaga.dto.mapper.EnderecoVagaMapper;
 import com.cptrans.petrocarga.modules.enderecoVaga.entity.EnderecoVaga;
 import com.cptrans.petrocarga.modules.operacaoVaga.dto.mapper.OperacaoVagaMapper;
@@ -14,6 +18,7 @@ import com.cptrans.petrocarga.modules.vaga.dto.response.VagaCoordenadaResponseDT
 import com.cptrans.petrocarga.modules.vaga.dto.response.VagaResponseDTO;
 import com.cptrans.petrocarga.modules.vaga.dto.response.VagaSimplificadoResponseDTO;
 import com.cptrans.petrocarga.modules.vaga.entity.Vaga;
+import com.cptrans.petrocarga.shared.utils.DateUtils;
 
 import lombok.RequiredArgsConstructor;
 
@@ -74,22 +79,27 @@ public class VagaMapper {
         return vagas.stream().map(this::toResponse).toList();
     }
 
-    public VagaCoordenadaResponseDTO toCoordenadaResponse(Vaga vaga){
+    public VagaCoordenadaResponseDTO toCoordenadaResponse(Vaga vaga, StatusVagaEnum status){
         if (vaga == null) return null;
-        return new VagaCoordenadaResponseDTO(
+        VagaCoordenadaResponseDTO response = new VagaCoordenadaResponseDTO(
             vaga.getId(),
             vaga.getArea(),
             vaga.getStatus(),
             vaga.getLatitudeInicio(),
             vaga.getLongitudeInicio(),
             vaga.getLatitudeFim(),
-            vaga.getLongitudeFim()
+            vaga.getLongitudeFim(),
+            null
         );
+        if (status != null && status.equals(StatusVagaEnum.DISPONIVEL)){
+            response = possuiOperacaoNosProximosDoisDias(vaga, DateUtils.agora(), response) ? response :  null;
+        }
+        return response;
     }
 
-    public List<VagaCoordenadaResponseDTO> toCoordenadaResponseList(List<Vaga> vagas){
+    public List<VagaCoordenadaResponseDTO> toCoordenadaResponseList(List<Vaga> vagas, StatusVagaEnum status){
         if (vagas == null || vagas.isEmpty()) return List.of();
-        return vagas.stream().map(this::toCoordenadaResponse).toList();
+        return vagas.stream().map(v -> toCoordenadaResponse(v, status)).toList();
     }
 
     public VagaSimplificadoResponseDTO toResponseSimplificado(Vaga vaga){
@@ -117,5 +127,30 @@ public class VagaMapper {
     public List<VagaSimplificadoResponseDTO> toResponseSimplificadoList(List<Vaga> vagas){
         if (vagas == null || vagas.isEmpty()) return List.of();
         return vagas.stream().map(this::toResponseSimplificado).toList();
+    }
+
+    private boolean possuiOperacaoNosProximosDoisDias(Vaga vaga, OffsetDateTime agora, VagaCoordenadaResponseDTO response) {
+        LocalDate hoje = agora.toLocalDate();
+
+        for (int i = 0; i <= 2; i++) {
+            LocalDate data = hoje.plusDays(i);
+
+            DiaSemanaEnum diaSemana = DiaSemanaEnum.fromDayOfWeek(data.getDayOfWeek());
+
+            OperacaoVaga operacao = vaga.getOperacoesVaga()
+                .stream()
+                .filter(op -> op.getDiaSemana() == diaSemana)
+                .findFirst()
+                .orElse(null);
+
+            if (operacao == null) continue;
+
+            if (i == 0) {
+                if (operacao.getHoraFim().isAfter(agora.toLocalTime())) return true;
+                response.setDisponivelAgora(true);
+            } else return true;
+        }
+
+        return false;
     }
 }

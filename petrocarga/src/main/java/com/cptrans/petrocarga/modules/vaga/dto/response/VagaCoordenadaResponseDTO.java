@@ -21,4 +21,9 @@ public class VagaCoordenadaResponseDTO {
     private Double longitudeInicio;
     private Double latitudeFim;
     private Double longitudeFim;
+    private Boolean disponivelAgora = null;
+
+    public void setDisponivelAgora(Boolean disponivelAgora) {
+        this.disponivelAgora = disponivelAgora;
+    }
 }
