@@ -35,7 +35,7 @@ public interface  VagaRepository extends JpaRepository<Vaga, UUID>, JpaSpecifica
     Long sumTotalAvailableLengthMeters();
 
     @Query("""
-        SELECT v FROM Vaga v
+        SELECT DISTINCT v FROM Vaga v
         WHERE v.latitudeFim >= :south
         AND v.latitudeInicio <= :north
         AND v.longitudeFim >= :west
@@ -51,21 +51,22 @@ public interface  VagaRepository extends JpaRepository<Vaga, UUID>, JpaSpecifica
     );
 
     @Query("""
-        SELECT v FROM Vaga v
+        SELECT DISTINCT v FROM Vaga v
         INNER JOIN DisponibilidadeVaga dv on dv.vaga.id = v.id
         WHERE v.latitudeFim >= :south
         AND v.latitudeInicio <= :north
         AND v.longitudeFim >= :west
         AND v.longitudeInicio <= :east
         AND v.status = 'DISPONIVEL'
+        AND dv.inicio <= :limite
         AND dv.fim > :agora
-        AND dv.inicio <= :agora
     """)
     List<Vaga> buscarDisponiveisPorArea(
             Double south,
             Double north,
             Double west,
             Double east,
-            OffsetDateTime agora
+            OffsetDateTime agora,
+            OffsetDateTime limite
         );
 }

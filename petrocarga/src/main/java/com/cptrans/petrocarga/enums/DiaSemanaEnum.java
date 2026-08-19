@@ -1,5 +1,12 @@
 package com.cptrans.petrocarga.enums;
 
+import java.time.DayOfWeek;
+
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+
+@AllArgsConstructor
+@Getter
 public enum DiaSemanaEnum {
     DOMINGO (1, "Domingo","SUNDAY"),
     SEGUNDA (2, "Segunda-feira","MONDAY"),
@@ -12,12 +19,6 @@ public enum DiaSemanaEnum {
     private Integer codigo;
     private String descricao;
     private String descricaoIngles;
-
-    private DiaSemanaEnum(Integer codigo, String descricao, String descricaoIngles){
-        this.codigo = codigo;
-        this.descricao = descricao;
-        this.descricaoIngles = descricaoIngles;
-    }
 
     public static DiaSemanaEnum toEnumByCodigo(Integer codigo){
         if(codigo == null || codigo < 1 || codigo > 7){
@@ -47,13 +48,15 @@ public enum DiaSemanaEnum {
         throw new IllegalArgumentException("Dia da semana inválido. Descricao Enviada: " + descricao);
     }
 
-    public Integer getCodigo(){
-        return this.codigo;
-    }
-    public String getDescricao(){
-        return this.descricao;
-    }
-    public String getDescricaoIngles(){
-        return this.descricaoIngles;
+    public static DiaSemanaEnum fromDayOfWeek(DayOfWeek dayOfWeek) {
+        return switch (dayOfWeek) {
+            case SUNDAY -> DOMINGO;
+            case MONDAY -> SEGUNDA;
+            case TUESDAY -> TERCA;
+            case WEDNESDAY -> QUARTA;
+            case THURSDAY -> QUINTA;
+            case FRIDAY -> SEXTA;
+            case SATURDAY -> SABADO;
+        };
     }
 }
