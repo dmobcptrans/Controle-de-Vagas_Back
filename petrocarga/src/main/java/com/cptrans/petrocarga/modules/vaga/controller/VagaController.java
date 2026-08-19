@@ -106,7 +106,7 @@ public class VagaController {
 
         StatusVagaEnum statusBusca = status != null ? status : StatusVagaEnum.DISPONIVEL;
 
-        vagas = vagaMapper.toCoordenadaResponseList(vagaService.buscarPorMapa(north, south, east, west, statusBusca));
+        vagas = vagaService.buscarPorMapa(north, south, east, west, statusBusca);
       
         return ResponseEntity.ok(vagas);
     }

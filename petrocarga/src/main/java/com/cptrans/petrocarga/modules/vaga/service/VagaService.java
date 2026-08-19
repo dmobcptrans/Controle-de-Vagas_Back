@@ -1,5 +1,4 @@
 package com.cptrans.petrocarga.modules.vaga.service;
-import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -10,18 +9,17 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import com.cptrans.petrocarga.enums.DiaSemanaEnum;
 import com.cptrans.petrocarga.enums.OrdemEnum;
 import com.cptrans.petrocarga.enums.StatusVagaEnum;
 import com.cptrans.petrocarga.enums.TipoVagaEnum;
 import com.cptrans.petrocarga.modules.enderecoVaga.entity.EnderecoVaga;
 import com.cptrans.petrocarga.modules.enderecoVaga.service.EnderecoVagaService;
-import com.cptrans.petrocarga.modules.operacaoVaga.entity.OperacaoVaga;
 import com.cptrans.petrocarga.modules.operacaoVaga.service.OperacaoVagaService;
 import com.cptrans.petrocarga.modules.vaga.dto.mapper.VagaMapper;
 import com.cptrans.petrocarga.modules.vaga.dto.request.VagaFiltrosRequestDTO;
 import com.cptrans.petrocarga.modules.vaga.dto.request.VagaPatchDTO;
 import com.cptrans.petrocarga.modules.vaga.dto.request.VagaRequestDTO;
+import com.cptrans.petrocarga.modules.vaga.dto.response.VagaCoordenadaResponseDTO;
 import com.cptrans.petrocarga.modules.vaga.dto.response.VagaResponseDTO;
 import com.cptrans.petrocarga.modules.vaga.entity.Vaga;
 import com.cptrans.petrocarga.modules.vaga.exceptions.VagaExceptions;
@@ -133,7 +131,7 @@ public class VagaService {
         return vagaCadastrada;
     }
 
-    public List<Vaga> buscarPorMapa(
+    public List<VagaCoordenadaResponseDTO> buscarPorMapa(
         Double north,
         Double south,
         Double east,
@@ -144,35 +142,15 @@ public class VagaService {
             OffsetDateTime agora = DateUtils.agora();
             return vagaRepository.buscarDisponiveisPorArea(
                 south, north, west, east, agora, agora.plusDays(2)
-            ).stream().filter(v -> possuiOperacaoNosProximosDoisDias(v, agora)).toList();
+            )
+            .stream()
+            .map(v -> vagaMapper.toCoordenadaResponse(v, status)).filter(v -> v != null).toList();
         }
         return vagaRepository.buscarPorArea(
             south, north, west, east, status
-        );
+        ).stream().map(v -> vagaMapper.toCoordenadaResponse(v, status)).toList();
     }
 
-    private boolean possuiOperacaoNosProximosDoisDias(Vaga vaga, OffsetDateTime agora) {
-        LocalDate hoje = agora.toLocalDate();
-
-        for (int i = 0; i <= 2; i++) {
-            LocalDate data = hoje.plusDays(i);
-
-            DiaSemanaEnum diaSemana = DiaSemanaEnum.fromDayOfWeek(data.getDayOfWeek());
-
-            OperacaoVaga operacao = vaga.getOperacoesVaga()
-                .stream()
-                .filter(op -> op.getDiaSemana() == diaSemana)
-                .findFirst()
-                .orElse(null);
-
-            if (operacao == null) continue;
-
-            if (i == 0) {
-                if (operacao.getHoraFim().isAfter(agora.toLocalTime())) return true;
-            } else return true;
-        }
-
-        return false;
-    }
+    
 
 }
