@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 
 import com.cptrans.petrocarga.enums.DiaSemanaEnum;
 import com.cptrans.petrocarga.enums.StatusVagaEnum;
+import com.cptrans.petrocarga.modules.disponibilidadeVaga.repository.DisponibilidadeVagaRepository;
 import com.cptrans.petrocarga.modules.enderecoVaga.dto.mapper.EnderecoVagaMapper;
 import com.cptrans.petrocarga.modules.enderecoVaga.entity.EnderecoVaga;
 import com.cptrans.petrocarga.modules.operacaoVaga.dto.mapper.OperacaoVagaMapper;
@@ -27,6 +28,7 @@ import lombok.RequiredArgsConstructor;
 public class VagaMapper {
     private final OperacaoVagaMapper operacaoVagaMapper;
     private final EnderecoVagaMapper enderecoVagaMapper;
+    private final DisponibilidadeVagaRepository disponibilidadeVagaRepository;
     
     public Vaga toEntity(VagaRequestDTO request, EnderecoVaga endereco){
         if (request == null) return null;
@@ -145,10 +147,17 @@ public class VagaMapper {
 
             if (operacao == null) continue;
 
-            if (i == 0) {
-                if (operacao.getHoraFim().isAfter(agora.toLocalTime())) return true;
-                response.setDisponivelAgora(true);
-            } else return true;
+            OffsetDateTime inicioOperacao = operacao.getHoraInicio().atDate(data).atOffset(agora.getOffset());
+            OffsetDateTime fimOperacao = operacao.getHoraFim().atDate(data).atOffset(agora.getOffset());
+
+            OffsetDateTime inicioBusca = i == 0 ? agora : inicioOperacao;
+
+            if (i == 0 && !fimOperacao.isAfter(agora)) continue;
+
+            if (disponibilidadeVagaRepository.existsByVagaIdAndFimGreaterThanAndInicioLessThan(vaga.getId(), inicioBusca, fimOperacao)) {
+                if (i == 0) response.setDisponivelAgora(true);
+                return true;
+            }
         }
 
         return false;
