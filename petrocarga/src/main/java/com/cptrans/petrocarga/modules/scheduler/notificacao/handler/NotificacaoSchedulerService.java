@@ -1,4 +1,4 @@
-package com.cptrans.petrocarga.modules.scheduler.handlers;
+package com.cptrans.petrocarga.modules.scheduler.notificacao.handler;
 
 import java.time.OffsetDateTime;
 import java.util.Date;
@@ -14,9 +14,9 @@ import org.quartz.TriggerBuilder;
 import org.springframework.stereotype.Service;
 
 import com.cptrans.petrocarga.config.quartz.QuartzGroups;
-import com.cptrans.petrocarga.modules.scheduler.jobs.notificacao.NotificarCheckInDisponivelJob;
-import com.cptrans.petrocarga.modules.scheduler.jobs.notificacao.NotificarFimProximoJob;
-import com.cptrans.petrocarga.modules.scheduler.jobs.reserva.NovaReservaJob;
+import com.cptrans.petrocarga.modules.scheduler.notificacao.jobs.NotificarCheckInDisponivelJob;
+import com.cptrans.petrocarga.modules.scheduler.notificacao.jobs.NotificarFimProximoJob;
+import com.cptrans.petrocarga.modules.scheduler.reserva.jobs.NovaReservaJob;
 
 import lombok.RequiredArgsConstructor;
 

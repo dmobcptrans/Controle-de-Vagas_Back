@@ -1,4 +1,4 @@
-package com.cptrans.petrocarga.modules.scheduler.jobs.notificacao;
+package com.cptrans.petrocarga.modules.scheduler.notificacao.jobs;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;

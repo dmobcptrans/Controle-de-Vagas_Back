@@ -22,7 +22,7 @@ import com.cptrans.petrocarga.modules.disponibilidadeVaga.dto.response.Disponibi
 import com.cptrans.petrocarga.modules.disponibilidadeVaga.entity.DisponibilidadeVaga;
 import com.cptrans.petrocarga.modules.disponibilidadeVaga.exceptions.DisponibilidadeVagaExceptions;
 import com.cptrans.petrocarga.modules.disponibilidadeVaga.repository.DisponibilidadeVagaRepository;
-import com.cptrans.petrocarga.modules.scheduler.handlers.DisponibilidadeVagaScheduler;
+import com.cptrans.petrocarga.modules.scheduler.disponibilidadeVaga.handler.DisponibilidadeVagaSchedulerService;
 import com.cptrans.petrocarga.modules.vaga.entity.Vaga;
 import com.cptrans.petrocarga.modules.vaga.repository.VagaRepository;
 import com.cptrans.petrocarga.modules.vaga.service.VagaService;
@@ -39,7 +39,7 @@ import lombok.RequiredArgsConstructor;
 public class DisponibilidadeVagaService {
     private final DisponibilidadeVagaRepository disponibilidadeVagaRepository;
     private final VagaService vagaService;
-    private final DisponibilidadeVagaScheduler disponibilidadeVagaScheduler;
+    private final DisponibilidadeVagaSchedulerService disponibilidadeVagaScheduler;
     private final VagaRepository vagaRepository;
     private final DisponibilidadeVagaMapper disponibilidadeVagaMapper;
 

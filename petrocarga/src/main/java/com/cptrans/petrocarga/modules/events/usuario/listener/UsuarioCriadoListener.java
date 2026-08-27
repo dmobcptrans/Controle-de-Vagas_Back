@@ -1,11 +1,11 @@
-package com.cptrans.petrocarga.modules.events.listener;
+package com.cptrans.petrocarga.modules.events.usuario.listener;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
-import com.cptrans.petrocarga.modules.events.UsuarioCriadoEvent;
+import com.cptrans.petrocarga.modules.events.usuario.UsuarioCriadoEvent;
 import com.cptrans.petrocarga.modules.messaging.email.EmailSender;
 
 @Component

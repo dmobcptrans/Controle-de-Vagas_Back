@@ -1,4 +1,4 @@
-package com.cptrans.petrocarga.modules.scheduler.jobs.disponibilidadeVaga;
+package com.cptrans.petrocarga.modules.scheduler.disponibilidadeVaga.job;
 
 import java.util.UUID;
 

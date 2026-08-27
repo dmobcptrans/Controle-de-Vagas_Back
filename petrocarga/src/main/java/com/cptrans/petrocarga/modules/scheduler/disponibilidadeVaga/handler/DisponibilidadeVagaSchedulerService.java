@@ -1,4 +1,4 @@
-package com.cptrans.petrocarga.modules.scheduler.handlers;
+package com.cptrans.petrocarga.modules.scheduler.disponibilidadeVaga.handler;
 
 import java.time.OffsetDateTime;
 import java.util.Date;
@@ -16,13 +16,13 @@ import org.springframework.stereotype.Service;
 import com.cptrans.petrocarga.config.quartz.QuartzGroups;
 import com.cptrans.petrocarga.enums.StatusVagaEnum;
 import com.cptrans.petrocarga.modules.disponibilidadeVaga.entity.DisponibilidadeVaga;
-import com.cptrans.petrocarga.modules.scheduler.jobs.disponibilidadeVaga.AlterarDisponibilidadeJob;
+import com.cptrans.petrocarga.modules.scheduler.disponibilidadeVaga.job.AlterarDisponibilidadeJob;
 
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
-public class DisponibilidadeVagaScheduler {
+public class DisponibilidadeVagaSchedulerService {
 
     private final Scheduler scheduler;
     

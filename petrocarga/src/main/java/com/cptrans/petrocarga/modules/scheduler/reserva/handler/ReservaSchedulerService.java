@@ -1,4 +1,4 @@
-package com.cptrans.petrocarga.modules.scheduler.handlers;
+package com.cptrans.petrocarga.modules.scheduler.reserva.handler;
 
 import java.util.Date;
 import java.util.UUID;
@@ -14,8 +14,8 @@ import org.springframework.stereotype.Service;
 
 import com.cptrans.petrocarga.config.quartz.QuartzGroups;
 import com.cptrans.petrocarga.modules.reserva.dto.response.ReservaDTO;
-import com.cptrans.petrocarga.modules.scheduler.jobs.reserva.FinalizarReservaJob;
-import com.cptrans.petrocarga.modules.scheduler.jobs.reserva.NoShowJob;
+import com.cptrans.petrocarga.modules.scheduler.reserva.jobs.FinalizarReservaJob;
+import com.cptrans.petrocarga.modules.scheduler.reserva.jobs.NoShowJob;
 
 import lombok.RequiredArgsConstructor;
 

@@ -29,7 +29,7 @@ import com.cptrans.petrocarga.modules.reservaRapida.entity.ReservaRapida;
 import com.cptrans.petrocarga.modules.reservaRapida.repository.ReservaRapidaRepository;
 import com.cptrans.petrocarga.modules.reservaRapida.specification.ReservaRapidaSpecification;
 import com.cptrans.petrocarga.modules.reservaRapida.utils.ReservaRapidaUtils;
-import com.cptrans.petrocarga.modules.scheduler.handlers.ReservaSchedulerService;
+import com.cptrans.petrocarga.modules.scheduler.reserva.handler.ReservaSchedulerService;
 import com.cptrans.petrocarga.modules.vaga.entity.Vaga;
 import com.cptrans.petrocarga.modules.vaga.service.VagaService;
 import com.cptrans.petrocarga.security.UserAuthenticated;

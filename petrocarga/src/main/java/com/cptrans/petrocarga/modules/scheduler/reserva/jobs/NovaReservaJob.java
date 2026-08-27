@@ -1,4 +1,4 @@
-package com.cptrans.petrocarga.modules.scheduler.jobs.reserva;
+package com.cptrans.petrocarga.modules.scheduler.reserva.jobs;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
