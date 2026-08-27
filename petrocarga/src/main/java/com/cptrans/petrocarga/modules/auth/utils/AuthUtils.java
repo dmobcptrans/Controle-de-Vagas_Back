@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.security.authorization.AuthorizationDeniedException;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -35,7 +36,10 @@ public class AuthUtils {
     }
 
     public static UserAuthenticated getUsuarioAutenticado(){
-        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null) throw new AuthExceptions.UsuarioNaoAutenticadoException();
+        
+        Object principal = authentication.getPrincipal();            
         if (principal instanceof UserAuthenticated) {
             return (UserAuthenticated) principal;
         } else {
