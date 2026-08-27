@@ -71,6 +71,7 @@ public class AuthService {
      * @return Um objeto AuthResponseDTO com as informações do usuário e o token de acesso.
      * @throws IllegalArgumentException se o token do Google for nulo ou inválido.
      */
+    @Transactional
     public AuthResponseDTO loginWithGoogle(String token)  {
 
         Payload payload = googleAuthService.verifyGoogleToken(token);
@@ -97,6 +98,18 @@ public class AuthService {
         Usuario usuario = usuarioOptional.get();
 
         usuarioService.atualizarCriptografiaDosDadosSeNecessario(usuario);
+        
+        if (usuario.getGoogleId() == null) {
+            usuario.setGoogleId(googleId);
+            usuario.setProvider(UsuarioProviderEnum.GOOGLE);
+            usuarioRepository.save(usuario);
+        }
+        
+        if (usuario.getGoogleId() != null && !usuario.getGoogleId().equals(googleId)) {
+            usuario.setGoogleId(googleId);
+            usuario.setProvider(UsuarioProviderEnum.GOOGLE);
+            usuarioRepository.save(usuario);
+        }
 
         if (!usuario.getAtivo()) {
             if ((usuario.getPermissao().equals(PermissaoEnum.GESTOR) || usuario.getPermissao().equals(PermissaoEnum.AGENTE) || usuario.getPermissao().equals(PermissaoEnum.ADMIN)) && usuario.getDesativadoEm() != null) {
@@ -106,11 +119,6 @@ public class AuthService {
             throw new IllegalArgumentException("Usuário desativado. Se deseja ativar a conta, siga as instruções enviadas para o email '" + email + "'.");
         }
 
-        if (!usuario.getGoogleId().equals(googleId)) {
-            usuario.setGoogleId(googleId);
-            usuario.setProvider(UsuarioProviderEnum.GOOGLE);
-            usuarioRepository.save(usuario);
-        }
         String jwt = jwtService.gerarToken(usuario);
         String cpfOrCnpj = usuarioUtils.getCpfOrCnpjByPermissaoAndId(usuario.getPermissao(), usuario.getId());
         return new AuthResponseDTO(usuarioMapper.toResponse(usuario, cpfOrCnpj), jwt);
