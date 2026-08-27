@@ -1,5 +1,7 @@
 package com.cptrans.petrocarga.modules.messaging.email;
 
+import com.cptrans.petrocarga.modules.conviteMotoristaEmpresa.entity.ConviteMotoristaEmpresa;
+
 /**
  * Interface para serviços de envio de email.
  * Permite alternar entre implementações (SMTP, Resend API, etc.)
@@ -19,4 +21,6 @@ public interface EmailSender {
      * @param code código de recuperação
      */
     void sendPasswordResetCode(String to, String code);
+
+    void sendConviteMotoristaEmpresa(String to, ConviteMotoristaEmpresa convite, String nomeMotorista, String token);
 }
