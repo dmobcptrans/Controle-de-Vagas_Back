@@ -1,6 +1,8 @@
 package com.cptrans.petrocarga.modules.cripto;
 
 import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
+import java.util.Base64;
 import java.util.HexFormat;
 import java.util.Map;
 
@@ -22,6 +24,7 @@ import lombok.Setter;
 public class HashService {
 
     private static final String ALGORITHM = "HmacSHA256";
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     private Map<Integer, String> peppers;
     private Integer activePepperVersion;
@@ -88,5 +91,11 @@ public class HashService {
         } catch (Exception e) {
             throw new CriptoExceptions.HashException();
         }
+    }
+    
+    public static String gerarToken() {
+        byte[] bytes = new byte[32];
+        SECURE_RANDOM.nextBytes(bytes);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
 }

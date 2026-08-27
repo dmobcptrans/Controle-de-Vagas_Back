@@ -18,6 +18,7 @@ public interface UsuarioRepository extends JpaRepository<Usuario, UUID>, JpaSpec
     public Optional<Usuario> findByEmailHashOrGoogleId(String emailHash, String google_id);
     public Boolean existsByEmailHash(String emailHash);
     public Boolean existsByEmailHashAndIdNot(String emailHash, UUID id);
+    public Boolean existsByEmailHashAndPermissaoNot(String emailHash, PermissaoEnum permissao);
     public List<Usuario> findByPermissao(PermissaoEnum permissao);
     public List<Usuario> findByPermissaoAndAtivo(PermissaoEnum permissao, Boolean ativo);
     public Optional<Usuario> findByIdAndAtivo(UUID id, Boolean ativo);

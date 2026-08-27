@@ -1,5 +1,6 @@
 package com.cptrans.petrocarga.modules.messaging.email;
 
+
 /*
  * EmailService (SMTP-based)
  *
@@ -24,7 +25,12 @@ import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import com.cptrans.petrocarga.modules.conviteMotoristaEmpresa.entity.ConviteMotoristaEmpresa;
+
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class EmailService implements EmailSender {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(EmailService.class);
@@ -42,16 +48,6 @@ public class EmailService implements EmailSender {
 
     @Value("${app.mailSender.enabled:true}")
     private Boolean enabled;
-
-
-    public EmailService(JavaMailSender mailSender) {
-        this.mailSender = mailSender;
-        LOGGER.warn("========================================================");
-        LOGGER.warn("  EmailService (SMTP) initialized");
-        LOGGER.warn("  ATENCAO: Railway BLOQUEIA todas as portas SMTP!");
-        LOGGER.warn("  Para emails funcionarem, configure RESEND_API_KEY");
-        LOGGER.warn("========================================================");
-    }
 
     private void logMailEndpointInfo() {
         if(enabled.equals(Boolean.FALSE)){
@@ -71,16 +67,8 @@ public class EmailService implements EmailSender {
     @Override
     @Async("taskExecutor")
     public void sendActivationCode(String to, String code, String randomPassword) {
-        if(enabled.equals(Boolean.FALSE)){
-            LOGGER.info("Mail sender is not enabled");
-            return;
-        }
-        // Ensure 'from' uses configured username when available
-        if ((from == null || from.isBlank()) && mailUsername != null && !mailUsername.isBlank()) {
-            from = mailUsername;
-        }
+        validarMailSender();
 
-        logMailEndpointInfo();
         String text;
         if (randomPassword == null){
             text = "Seu código de ativação é: " + code + "\n\n" +
@@ -116,15 +104,7 @@ public class EmailService implements EmailSender {
     @Override
     @Async("taskExecutor")
     public void sendPasswordResetCode(String to, String code) {
-        if(enabled.equals(Boolean.FALSE)){
-            LOGGER.info("Mail sender is not enabled");
-            return;
-        }
-        if ((from == null || from.isBlank()) && mailUsername != null && !mailUsername.isBlank()) {
-            from = mailUsername;
-        }
-
-        logMailEndpointInfo();
+        validarMailSender();
 
         try {
             SimpleMailMessage message = new SimpleMailMessage();
@@ -146,5 +126,65 @@ public class EmailService implements EmailSender {
             LOGGER.error("[{}] Erro inesperado ao enviar reset para {}: {}", Thread.currentThread().getName(), to, e.getMessage(), e);
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    @Async("taskExecutor")
+    public void sendConviteMotoristaEmpresa(String to, ConviteMotoristaEmpresa convite, String nomeMotorista, String token) {
+        validarMailSender();
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(from);
+            message.setTo(to);
+            message.setSubject("Novo Convite");
+            String text;
+            
+            if (convite.getMotorista() != null){
+                text = """
+                    Ola, ${motorista.nome}!\n\n
+                    A empresa '${empresa.nome}' quer se vincular à você!\n\n
+                    Acesse sua conta para aceitar ou recusar o convite: ${frontendBaseUrl}/convite-motorista-empresa?convite=${token}\n\n
+                    O convite expira em 7 dias.\n\n
+                    Se você nao reconhece este convite, ignore este e-mail.\n
+                """.replace("${motorista.nome}", convite.getMotorista().getUsuario().getNome());
+            } else {
+                text = """
+                    Ola, ${nomeMotorista}!\n\n
+                    A empresa '${empresa.nome}' quer se vincular à você!\n\n
+                    Acesse este link para confirmar ou recusar o convite: ${frontendBaseUrl}/convite-motorista-empresa?convite=${token}\n\n\n
+                    O convite expira em 7 dias.\n\n
+                    Se você não reconhece este convite, ignore este e-mail.\n
+                """.replace("${nomeMotorista}", nomeMotorista);
+            }   
+
+            message.setText(
+                text.replace("${empresa.nome}", convite.getEmpresa().getUsuario().getNome())
+                .replace("${frontendBaseUrl}", frontendBaseUrl)
+                .replace("${token}", token)
+            );
+
+            mailSender.send(message);
+
+        } catch (MailException e) {
+            LOGGER.error("[{}] MailException ao enviar reset para {}: {}", Thread.currentThread().getName(), to, e.getMessage(), e);
+            throw e;
+        } catch (Exception e) {
+            LOGGER.error("[{}] Erro inesperado ao enviar reset para {}: {}", Thread.currentThread().getName(), to, e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+
+    }
+
+
+    private void validarMailSender(){
+        if(enabled.equals(Boolean.FALSE)){
+            LOGGER.info("Mail sender is not enabled");
+            return;
+        }
+        if ((from == null || from.isBlank()) && mailUsername != null && !mailUsername.isBlank()) {
+            from = mailUsername;
+        }
+
+        logMailEndpointInfo();
     }
 }

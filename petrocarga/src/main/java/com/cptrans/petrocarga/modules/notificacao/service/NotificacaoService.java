@@ -20,8 +20,8 @@ import com.cptrans.petrocarga.enums.StatusDenunciaEnum;
 import com.cptrans.petrocarga.enums.TipoNotificacaoEnum;
 import com.cptrans.petrocarga.modules.auth.exceptions.AuthExceptions;
 import com.cptrans.petrocarga.modules.auth.utils.AuthUtils;
-import com.cptrans.petrocarga.modules.events.NotificacaoCriadaEvent;
 import com.cptrans.petrocarga.modules.events.SpringDomainEventPublisher;
+import com.cptrans.petrocarga.modules.events.notificacao.NotificacaoCriadaEvent;
 import com.cptrans.petrocarga.modules.notificacao.entity.Notificacao;
 import com.cptrans.petrocarga.modules.notificacao.exceptions.NotificacaoExceptions;
 import com.cptrans.petrocarga.modules.notificacao.repository.NotificacaoRepository;
@@ -245,6 +245,13 @@ public class NotificacaoService {
         return notificarOcorrido(motoristaId, TITULO, MENSAGEM, TipoNotificacaoEnum.RESERVA, DESCRICAO_DATA, criadoEm);
     }
 
+    public void notificarConviteEmpresaMotorista(String empresaNome, UUID motoristaId) {
+        final String TITULO = "Novo Convite";
+        final String MENSAGEM = "A empresa '" + empresaNome + "' enviou um convite para você. Acesse a aba 'solicitações' para conferir os detalhes.";
+        final String DESCRICAO_DATA = "criadoEm";
+        notificarOcorrido(motoristaId, TITULO, MENSAGEM, TipoNotificacaoEnum.MOTORISTA, DESCRICAO_DATA, DateUtils.agora());
+    }
+    
     private List<Usuario> findUsuariosAtivosByPermissao(PermissaoEnum permissao) {
         List<Usuario> usuarios = usuarioService.findByPermissaoAndAtivo(permissao, true);
         if (usuarios == null || usuarios.isEmpty()) {
@@ -260,5 +267,4 @@ public class NotificacaoService {
         }
         return notificacoes;
     } 
-
 }

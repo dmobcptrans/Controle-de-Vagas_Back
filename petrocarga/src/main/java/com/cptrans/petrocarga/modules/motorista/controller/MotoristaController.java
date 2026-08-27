@@ -23,7 +23,6 @@ import com.cptrans.petrocarga.config.swagger.response.PatchResponses;
 import com.cptrans.petrocarga.config.swagger.response.PostResponses;
 import com.cptrans.petrocarga.enums.OrdemEnum;
 import com.cptrans.petrocarga.modules.motorista.dto.mapper.MotoristaMapper;
-import com.cptrans.petrocarga.modules.motorista.dto.request.MotoristaEmpresaRequestDTO;
 import com.cptrans.petrocarga.modules.motorista.dto.request.MotoristaFiltrosRequestDTO;
 import com.cptrans.petrocarga.modules.motorista.dto.request.MotoristaRequestDTO;
 import com.cptrans.petrocarga.modules.motorista.dto.response.MotoristaResponseDTO;
@@ -169,27 +168,6 @@ public class MotoristaController {
         @Valid @RequestBody MotoristaRequestDTO request
     ) {
         Motorista motorista = motoristaService.createMotorista(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(motoristaMapper.toResponse(motorista));
-
-    }
-
-    //POST /motoristas/cadastroEmpresa/{empresaUsuarioId}
-    @Operation(
-        summary = "Cadastrar motorista por empresa",
-        description = "Realiza o cadastro de um novo motorista associado à uma empresa."
-    )
-    @PostResponses
-    @DefaultResponses
-    @PreAuthorize("#empresaId == authentication.principal.id or hasRole('ADMIN')")
-    @PostMapping("/cadastroEmpresa/{empresaId}")
-    public ResponseEntity<MotoristaResponseDTO> createMotoristaEmpresa(
-        @Parameter(description = "ID da empresa")
-        @PathVariable UUID empresaId,
-
-        @Parameter(description = "Dados do motorista a ser cadastrado")
-        @Valid @RequestBody MotoristaEmpresaRequestDTO request
-    ) {
-        Motorista motorista = motoristaService.createMotoristaByEmpresa(empresaId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(motoristaMapper.toResponse(motorista));
 
     }
