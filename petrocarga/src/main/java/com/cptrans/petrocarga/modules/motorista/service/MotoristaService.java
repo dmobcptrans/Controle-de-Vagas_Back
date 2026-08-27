@@ -16,7 +16,6 @@ import com.cptrans.petrocarga.enums.TipoCnhEnum;
 import com.cptrans.petrocarga.modules.cripto.CriptoService;
 import com.cptrans.petrocarga.modules.cripto.HashService;
 import com.cptrans.petrocarga.modules.empresa.entity.Empresa;
-import com.cptrans.petrocarga.modules.empresa.service.EmpresaService;
 import com.cptrans.petrocarga.modules.motorista.dto.mapper.MotoristaMapper;
 import com.cptrans.petrocarga.modules.motorista.dto.request.MotoristaEmpresaRequestDTO;
 import com.cptrans.petrocarga.modules.motorista.dto.request.MotoristaFiltrosRequestDTO;
@@ -39,6 +38,8 @@ import com.cptrans.petrocarga.shared.dto.response.PageResponseDTO;
 import com.cptrans.petrocarga.shared.dto.response.SystemResponse;
 
 import jakarta.transaction.Transactional;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -49,13 +50,20 @@ public class MotoristaService {
     private final UsuarioService usuarioService;
     private final HashService hashService;
     private final CriptoService criptoService;
-    private final EmpresaService empresaService;
     private final MotoristaMapper motoristaMapper;
     private final ReservaUtils reservaUtils;
     private final VeiculoEmpresaMotoristaService veiculoEmpresaMotoristaService;
 
     private final Sort SORT_ASC = Sort.by("usuario.nome").ascending();
     private final Sort SORT_DESC = Sort.by("usuario.nome").descending();
+
+    public Motorista save(Motorista motorista) {
+        return motoristaRepository.save(motorista);
+    }
+
+    public Motorista findOptionalByEmailHash(String emailHash) {
+        return motoristaRepository.findByUsuarioEmailHash(emailHash).orElse(null);
+    }
     
     public Motorista findById(UUID id) {
         return motoristaRepository.findById(id).orElseThrow(()-> new MotoristaExceptions.MotoristaNotFoundException());
@@ -115,37 +123,16 @@ public class MotoristaService {
     }
 
     @Transactional
-    public Motorista createMotoristaByEmpresa(UUID empresaId, MotoristaEmpresaRequestDTO request) {
-        Empresa empresa = empresaService.findByIdAndAtivoTrue(empresaId);
-        
-        Optional<Motorista> motoristaByCpfOptional = motoristaRepository.findByCpfHash(hashService.hash(request.getCpf().trim()));
-        if (motoristaByCpfOptional.isPresent()) {
-            Motorista motorista = motoristaByCpfOptional.get();
-            if (motorista.getEmpresa() != null && !motorista.getEmpresa().getId().equals(empresa.getId())) throw new MotoristaExceptions.MotoristaJaPossuiEmpresaException();
-            if (!motorista.getUsuario().getAtivo()) throw new MotoristaExceptions.MotoristaCadastradadoInativoException();
-            motorista.setEmpresa(empresa);
-            return motoristaRepository.save(motorista);
-        }
-        
-        Optional<Motorista> motoristaByCnhOptional = motoristaRepository.findByCnhHash(hashService.hash(request.getNumeroCnh().trim()));
-        if (motoristaByCnhOptional.isPresent()) {
-            Motorista motorista = motoristaByCnhOptional.get();
-            if (motorista.getEmpresa() != null && !motorista.getEmpresa().getId().equals(empresa.getId())) throw new MotoristaExceptions.MotoristaJaPossuiEmpresaException();
-            if (!motorista.getUsuario().getAtivo()) throw new MotoristaExceptions.MotoristaCadastradadoInativoException();
-            motorista.setEmpresa(empresa);
-            return motoristaRepository.save(motorista);
-        }
+    public Motorista createMotoristaByConviteEmpresa(
+        @Valid
+        @NotNull(message = "O motorista não pode ser nulo.")
+        MotoristaEmpresaRequestDTO request,
 
-        Optional<Motorista> motoristaByEmailOptional = motoristaRepository.findByUsuarioEmailHash(hashService.hash(request.getEmail().trim().toLowerCase()));
-        if (motoristaByEmailOptional.isPresent()) {
-            Motorista motorista = motoristaByEmailOptional.get();
-            if (motorista.getEmpresa() != null && !motorista.getEmpresa().getId().equals(empresa.getId())) throw new MotoristaExceptions.MotoristaJaPossuiEmpresaException();
-            if (!motorista.getUsuario().getAtivo()) throw new MotoristaExceptions.MotoristaCadastradadoInativoException();
-            motorista.setEmpresa(empresa);
-            return motoristaRepository.save(motorista);
-        }
+        String emailMotorista,
 
-        Usuario usuario = usuarioService.createMotoristaEmpresa(request);
+        Empresa empresa
+    ) {
+        Usuario usuario = usuarioService.createMotoristaEmpresa(request, emailMotorista);
     
         Motorista novoMotorista = instanciarMotorista(
             usuario, 
