@@ -106,14 +106,6 @@ public class Usuario implements UserDetails{
     @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Veiculo> veiculos;
 
-    public Usuario(String nome, String telefone, String email, String senha, PermissaoEnum permissao) {
-        this.nome = nome;
-        this.telefoneHash = telefone;
-        this.emailHash = email;
-        this.senha = senha;
-        this.permissao = permissao;
-    }
-
     public void setNome(String nome) {
         this.nome = nome;
     }

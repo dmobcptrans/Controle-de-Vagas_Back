@@ -33,7 +33,7 @@ import com.cptrans.petrocarga.modules.cripto.HashService;
 import com.cptrans.petrocarga.modules.empresa.entity.Empresa;
 import com.cptrans.petrocarga.modules.empresa.repository.EmpresaRepository;
 import com.cptrans.petrocarga.modules.events.SpringDomainEventPublisher;
-import com.cptrans.petrocarga.modules.events.UsuarioCriadoEvent;
+import com.cptrans.petrocarga.modules.events.usuario.UsuarioCriadoEvent;
 import com.cptrans.petrocarga.modules.gestor.entity.Gestor;
 import com.cptrans.petrocarga.modules.gestor.exceptions.GestorExceptions;
 import com.cptrans.petrocarga.modules.gestor.repository.GestorRepository;
@@ -52,6 +52,7 @@ import com.cptrans.petrocarga.shared.exceptions.GlobalHandlerExceptions;
 import com.cptrans.petrocarga.shared.utils.DateUtils;
 import com.cptrans.petrocarga.shared.utils.StringUtils;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 
 
@@ -371,21 +372,23 @@ public class UsuarioService {
     }
 
     @Transactional
-    public Usuario createMotoristaEmpresa(MotoristaEmpresaRequestDTO request) {
+    public Usuario createMotoristaEmpresa(MotoristaEmpresaRequestDTO request, String email) {
         if (existsByCpf(request.getCpf())) throw new UsuarioExceptions.CpfAlreadyExistsException();
-        String email = request.getEmail().trim().toLowerCase();
-        String senhaAleatoria = gerarCodigoAleatorio();
+        email = email.trim().toLowerCase();
         Usuario novoUsuario = createUsuarioInativo(
             request.getNome(),
-            request.getEmail(),
+            email,
             request.getTelefone(),
-            senhaAleatoria,
+            request.getSenha(),
             PermissaoEnum.MOTORISTA
         );
         Usuario novoUsuarioSalvo = usuarioRepository.save(novoUsuario);
-        eventPublisher.publish(new UsuarioCriadoEvent(email, novoUsuarioSalvo.getVerificationCode(), senhaAleatoria));
-
+        eventPublisher.publish(new UsuarioCriadoEvent(email, novoUsuarioSalvo.getVerificationCode(), null));
         return novoUsuarioSalvo;
+    }
+
+    public boolean existsByEmailAndPermissaoNot(@NotBlank String email, @NotBlank PermissaoEnum permissao) {
+        return usuarioRepository.existsByEmailHashAndPermissaoNot(email.trim().toLowerCase(), permissao);
     }
 
     private String gerarCodigoAleatorio(){
@@ -508,7 +511,7 @@ public class UsuarioService {
         novoUsuario.setTelefoneCripto(telefoneCripto);
         novoUsuario.setTelefoneLast4(telefoneLast4);
         novoUsuario.setCriptoVersion(criptoService.getActiveKeyVersion());
-        novoUsuario.setSenha(senha != null ? passwordEncoder.encode(senha) : null);
+        novoUsuario.setSenha(senha != null ? passwordEncoder.encode(senha.trim()) : null);
         novoUsuario.setAtivo(false);
         novoUsuario.setVerificationCode(gerarCodigoAleatorio());
         novoUsuario.setVerificationCodeExpiresAt(LocalDateTime.now().plusMinutes(10));

@@ -6,6 +6,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Component;
 
 import com.cptrans.petrocarga.enums.PermissaoEnum;
+import com.cptrans.petrocarga.enums.UsuarioProviderEnum;
 import com.cptrans.petrocarga.modules.empresa.entity.Empresa;
 import com.cptrans.petrocarga.modules.empresa.exceptions.EmpresaExceptions;
 import com.cptrans.petrocarga.modules.empresa.repository.EmpresaRepository;
@@ -68,7 +69,7 @@ public class UsuarioMapper {
                 usuario.getCriadoEm(),
                 usuario.getAtivo(),
                 usuario.getDesativadoEm(),
-                resolvePossuiVeiculoAtivo(usuario.getPermissao(), usuario.getId(), usuario.getVeiculosAtivos())
+                isNovoMotoristaCreatedByGoogle(usuario.getProvider(),usuario.getAceitarTermos(), usuario.getGoogleId(), cpf) ? false : resolvePossuiVeiculoAtivo(usuario.getPermissao(), usuario.getId(), usuario.getVeiculosAtivos())
             ), usuario.getCriptoVersion());    
         response.formatarDados();
         return response;
@@ -95,5 +96,9 @@ public class UsuarioMapper {
             ), usuario.getCriptoVersion());
         response.formatarDados();
         return response;
+    }
+
+    private boolean isNovoMotoristaCreatedByGoogle(UsuarioProviderEnum provider, boolean aceitouTermos, String googleId, String cpf) {
+        return (provider.equals(UsuarioProviderEnum.GOOGLE) && !aceitouTermos && googleId != null && cpf == null);
     }
 }
