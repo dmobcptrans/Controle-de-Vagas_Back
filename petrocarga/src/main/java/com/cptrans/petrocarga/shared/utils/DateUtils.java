@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 
 import org.springframework.stereotype.Component;
 
@@ -67,5 +68,10 @@ public class DateUtils {
         Boolean anoBissexto = ((ano % 4 == 0) || (anoTerminaComZeroZero && ano % 400 == 0)); 
         Integer ultimoDiaMes = getInicioMes(mes, ano).getMonth().length(anoBissexto);
         return OffsetDateTime.of(ano, mes, ultimoDiaMes, 23, 59, 59, 0, ZoneOffset.of(FUSO_BRASILIA.toString()));
+    }
+
+    public static String formatarData(OffsetDateTime data) {
+        DateTimeFormatter pattern = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+        return data != null ? data.format(pattern) : null;
     }
 }

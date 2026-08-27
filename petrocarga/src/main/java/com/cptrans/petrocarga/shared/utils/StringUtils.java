@@ -60,4 +60,21 @@ public class StringUtils {
         String parte2 = telefone.length() == 10 ? telefone.substring(6) : telefone.substring(7);
         return "(" + ddd + ") " + parte1 + "-" + parte2;
     }
+
+    public static String mascararEmail(String email) {
+        if (email == null || email.isBlank()) return email;
+
+        int arroba = email.indexOf('@');
+
+        if (arroba <= 0 || arroba == email.length() - 1) return "***";
+
+        String usuario = email.substring(0, arroba);
+        String dominio = email.substring(arroba);
+
+        if (usuario.length() <= 10) {
+            return usuario.charAt(0) + "***" + dominio;
+        }
+
+        return usuario.substring(0, 4) + "***" + dominio;
+    }
 }
