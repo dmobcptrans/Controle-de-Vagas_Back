@@ -472,17 +472,13 @@ public class ReservaService {
         Reserva reserva = reservaRepository.findByIdAndUsuarioId(reservaId, usuarioId).orElseThrow(() -> new ReservaExceptions.ReservaNotFoundException());
         OffsetDateTime agora = DateUtils.agora();
         Integer deltaTempo = (int) agora.toInstant().until(reserva.getInicio().toInstant(), ChronoUnit.MINUTES);
-        if (!reserva.getStatus().equals(StatusReservaEnum.RESERVADA) && !reserva.getStatus().equals(StatusReservaEnum.ATIVA)) throw new IllegalArgumentException("Reserva com status '" + reserva.getStatus() + "' não pode mais ser atualizada.");
         
-        if (!reserva.getCriadoPor().getId().equals(usuarioId) || !reserva.getMotorista().getId().equals(usuarioId) ) throw new EntityNotFoundException("Reserva não encontrada, verifique a reservaId e o usuarioId informados.");
+        if (!reserva.getStatus().equals(StatusReservaEnum.RESERVADA) && !reserva.getStatus().equals(StatusReservaEnum.ATIVA)) throw new IllegalArgumentException("Reserva com status '" + reserva.getStatus() + "' não pode mais ser atualizada.");
         
         if (deltaTempo < TEMPO_LIMITE_ALTERACAO || deltaTempo < 0) throw new ReservaExceptions.TempoAlteracaoEsgotadoException(deltaTempo, TEMPO_LIMITE_ALTERACAO);
         
-        if (!userAuthenticated.id().equals(reserva.getCriadoPor().getId())) {
-            Usuario usuarioLogado = usuarioService.findByIdAndAtivoTrue(userAuthenticated.id());
-            reserva.setCriadoPor(usuarioLogado);
-        }
-        
+        if (reservaRequestDTO.getMotoristaId() != null && !reservaRequestDTO.getMotoristaId().equals(reserva.getMotorista().getId())) reserva.setMotorista(motoristaService.findById(reservaRequestDTO.getMotoristaId()));
+
         if (reservaRequestDTO.getVeiculoId() != null) reserva.setVeiculo(veiculoService.findById(reservaRequestDTO.getVeiculoId()));
         
         if (reservaRequestDTO.getCidadeOrigem() != null) reserva.setCidadeOrigem(reservaRequestDTO.getCidadeOrigem());

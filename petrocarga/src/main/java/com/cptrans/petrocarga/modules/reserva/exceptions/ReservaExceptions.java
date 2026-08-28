@@ -43,6 +43,12 @@ public class ReservaExceptions {
         }
     }
 
+    public static class LimiteDeReservasPorMotoristaException extends DataIntegrityViolationException{
+        public LimiteDeReservasPorMotoristaException(Integer limiteDeReservasPorMotorista) {
+            super("Este motorista já atingiu o limite de " + limiteDeReservasPorMotorista + " reservas 'ativas' ou 'reservadas' ao mesmo tempo.");
+        }
+    }
+
     public static class PlacaComConflitoDeHorarioException extends DataIntegrityViolationException{
         public PlacaComConflitoDeHorarioException() {
             super("Já existe uma reserva com status 'ativa' ou 'reservada' para esta placa com horário conflitante.");
@@ -186,6 +192,11 @@ public class ReservaExceptions {
 
     @ExceptionHandler(TempoAlteracaoEsgotadoException.class)
     public ResponseEntity<SystemResponse> handleTempoAlteracaoEsgotadoException(TempoAlteracaoEsgotadoException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(new SystemResponse(ex.getMessage(), 409));
+    }
+
+    @ExceptionHandler(LimiteDeReservasPorMotoristaException.class)
+    public ResponseEntity<SystemResponse> handleLimiteDeReservasPorMotoristaException(LimiteDeReservasPorMotoristaException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(new SystemResponse(ex.getMessage(), 409));
     }
 }
