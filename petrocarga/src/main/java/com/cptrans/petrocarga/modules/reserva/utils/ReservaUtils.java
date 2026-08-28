@@ -46,6 +46,7 @@ public class ReservaUtils {
     public static final String METODO_POST = "POST";
     public static final String METODO_PATCH = "PATCH";
     public static final Integer LIMITE_DE_RESERVAS_POR_PLACA = 3;
+    public static final Integer LIMITE_DE_RESERVAS_ATIVAS_POR_MOTORISTA = 3;
 
     public static void validarTempoMaximoReserva(OffsetDateTime inicio, OffsetDateTime fim, AreaVagaEnum areaVaga, PermissaoEnum permissaoCriador) {
         validarHorarioReserva(inicio, fim);
@@ -65,7 +66,7 @@ public class ReservaUtils {
         List<ReservaDTO> reservasSobrepostas = getReservasAtivasSobrepostas(novaReserva.getInicio(), novaReserva.getFim());
         
         validarLimiteReservasPorPlaca(novaReservaDTO, reservasSobrepostas, metodoChamador);
-        validarMotoristaReserva(motoristaDaReserva.getUsuario().getId(), motoristaDaReserva.getId(), reservasSobrepostas, metodoChamador);
+        validarMotoristaReserva(motoristaDaReserva.getId(), reservasSobrepostas, metodoChamador);
         
         if (vagaReserva.getTipoVaga().equals(TipoVagaEnum.PERPENDICULAR)){
             Integer posicaoPerpendicular = definirPosicaoVagaPerpendicular(vagaReserva.getTipoVaga(), vagaReserva.getQuantidade(), vagaReserva.getComprimento(), novaReservaDTO);
@@ -131,9 +132,11 @@ public class ReservaUtils {
     }
 
 
-    public void validarMotoristaReserva(UUID motoristaUsuarioId, UUID motoristaId, List<ReservaDTO> reservasSobrepostas, String metodoChamador) {
-        List<ReservaDTO> reservasAtivasSobrepostasPorMotorista = reservasSobrepostas.stream().filter(reserva -> reserva.getCriadoPor().getId().equals(motoristaUsuarioId) || (reserva.getMotoristaId() != null && reserva.getMotoristaId().equals(motoristaId))).toList();
-        if(reservasAtivasSobrepostasPorMotorista != null && !reservasAtivasSobrepostasPorMotorista.isEmpty() && metodoChamador.equals(METODO_POST)) {
+    public void validarMotoristaReserva(UUID motoristaId, List<ReservaDTO> reservasSobrepostas, String metodoChamador) {
+        List<ReservaDTO> reservasAtivasSobrepostasPorMotorista = reservasSobrepostas.stream().filter(reserva -> reserva.getCriadoPor().getId().equals(motoristaId) || (reserva.getMotoristaId() != null && reserva.getMotoristaId().equals(motoristaId))).toList();
+        Integer quantidadeReservasAtivasPorMotorista = reservaRepository.countByMotoristaIdAndStatusIn(motoristaId, List.of(StatusReservaEnum.ATIVA, StatusReservaEnum.RESERVADA));
+        if (quantidadeReservasAtivasPorMotorista >= LIMITE_DE_RESERVAS_ATIVAS_POR_MOTORISTA) throw new ReservaExceptions.LimiteDeReservasPorMotoristaException(LIMITE_DE_RESERVAS_ATIVAS_POR_MOTORISTA);
+        if (reservasAtivasSobrepostasPorMotorista != null && !reservasAtivasSobrepostasPorMotorista.isEmpty() && metodoChamador.equals(METODO_POST)) {
             throw new ReservaExceptions.MotoristaComConflitoDeHorarioException();
         }
     }

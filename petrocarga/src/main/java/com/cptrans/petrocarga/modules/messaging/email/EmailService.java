@@ -143,7 +143,7 @@ public class EmailService implements EmailSender {
                 text = """
                     Ola, ${motorista.nome}!\n\n
                     A empresa '${empresa.nome}' quer se vincular à você!\n\n
-                    Acesse sua conta para aceitar ou recusar o convite: ${frontendBaseUrl}/convite-motorista-empresa?convite=${token}\n\n
+                    Acesse sua conta para aceitar ou recusar o convite: ${frontendBaseUrl}/motorista/solicitacoes\n\n
                     O convite expira em 7 dias.\n\n
                     Se você nao reconhece este convite, ignore este e-mail.\n
                 """.replace("${motorista.nome}", convite.getMotorista().getUsuario().getNome());
@@ -154,13 +154,13 @@ public class EmailService implements EmailSender {
                     Acesse este link para confirmar ou recusar o convite: ${frontendBaseUrl}/convite-motorista-empresa?convite=${token}\n\n\n
                     O convite expira em 7 dias.\n\n
                     Se você não reconhece este convite, ignore este e-mail.\n
-                """.replace("${nomeMotorista}", nomeMotorista);
+                """.replace("${nomeMotorista}", nomeMotorista)
+                    .replace("${token}", token);
             }   
 
             message.setText(
                 text.replace("${empresa.nome}", convite.getEmpresa().getUsuario().getNome())
                 .replace("${frontendBaseUrl}", frontendBaseUrl)
-                .replace("${token}", token)
             );
 
             mailSender.send(message);

@@ -6,6 +6,7 @@ import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -16,13 +17,16 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.cptrans.petrocarga.config.swagger.response.DefaultResponses;
+import com.cptrans.petrocarga.config.swagger.response.DeleteResponses;
 import com.cptrans.petrocarga.config.swagger.response.GetResponses;
+import com.cptrans.petrocarga.config.swagger.response.PatchResponses;
 import com.cptrans.petrocarga.config.swagger.response.PostResponses;
 import com.cptrans.petrocarga.enums.OrdemEnum;
 import com.cptrans.petrocarga.enums.StatusConviteMotoristaEmpresaEnum;
 import com.cptrans.petrocarga.modules.conviteMotoristaEmpresa.dto.request.ConviteMotoristaEmpresaFiltrosRequestDTO;
 import com.cptrans.petrocarga.modules.conviteMotoristaEmpresa.dto.request.ConviteMotoristaEmpresaRequestDTO;
-import com.cptrans.petrocarga.modules.conviteMotoristaEmpresa.dto.request.RespostaConviteMotoristaEmpresaRequestDTO;
+import com.cptrans.petrocarga.modules.conviteMotoristaEmpresa.dto.request.RespostaConviteMotoristaExistenteRequestDTO;
+import com.cptrans.petrocarga.modules.conviteMotoristaEmpresa.dto.request.RespostaConviteNovoMotoristaRequestDTO;
 import com.cptrans.petrocarga.modules.conviteMotoristaEmpresa.dto.response.ConviteMotoristaEmpresaResponseDTO;
 import com.cptrans.petrocarga.modules.conviteMotoristaEmpresa.service.ConviteMotoristaEmpresaService;
 import com.cptrans.petrocarga.shared.dto.response.PageResponseDTO;
@@ -80,14 +84,34 @@ public class ConviteMotoristaEmpresaController {
     //PATCH /convite-motorista-empresa/responder
     @Operation(
         summary = "Responder convite de vínculo entre motorista e empresa",
-        description = "Responde ao convite de vínculo com base no status e dados enviados."
+        description = "Responde ao convite de vínculo e cria um novo motorista associado à empresa, com base no status e dados enviados."
     )
     @PatchMapping("/responder")
-    public ResponseEntity<SystemResponse> responderConvite(
-        @Parameter(description = "Status do convite")
-        @Valid @RequestBody RespostaConviteMotoristaEmpresaRequestDTO request
+    public ResponseEntity<SystemResponse> responderConviteNovoMotorista(
+        @Parameter(description = "Dados da resposta ao convite")
+        @Valid @RequestBody RespostaConviteNovoMotoristaRequestDTO request
     ) {
-        service.responderConvite(request);
+        service.responderConviteNovoMotorista(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(new SystemResponse("Convite respondido com sucesso!", 201));           
+    }
+
+    //PATCH /convite-motorista-empresa/responder/{motoristaId}
+    @Operation(
+        summary = "Responder convite de vínculo entre motorista e empresa",
+        description = "Responde ao convite de vínculo de um motorista existente, com base no status e dados enviados."
+    )
+    @PatchResponses
+    @DefaultResponses
+    @PreAuthorize("#motoristaId == authentication.principal.id")
+    @PatchMapping("/responder/{motoristaId}")
+    public ResponseEntity<SystemResponse> responderConvite(
+        @Parameter(description = "ID do motorista")
+        @PathVariable UUID motoristaId,
+
+        @Parameter(description = "Dados da resposta ao convite")
+        @Valid @RequestBody RespostaConviteMotoristaExistenteRequestDTO request
+    ) {
+        service.responderConviteMotoristaExistente(motoristaId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(new SystemResponse("Convite respondido com sucesso!", 201));           
     }
 
@@ -103,6 +127,9 @@ public class ConviteMotoristaEmpresaController {
     public ResponseEntity<PageResponseDTO> getConvitesByEmpresa(
         @Parameter(description = "ID da empresa")
         @PathVariable UUID empresaId,
+
+        @Parameter(description = "ID do convite")
+        @RequestParam(required = false) UUID conviteId,
 
         @Parameter(description = "Status do convite")
         @RequestParam(required = false) List<StatusConviteMotoristaEmpresaEnum> listaStatus,
@@ -123,6 +150,7 @@ public class ConviteMotoristaEmpresaController {
         @RequestParam(defaultValue = "DESC") OrdemEnum ordem
     ){
         ConviteMotoristaEmpresaFiltrosRequestDTO filtros = new ConviteMotoristaEmpresaFiltrosRequestDTO(
+            conviteId,
             empresaId, 
             null,
             null,
@@ -135,7 +163,7 @@ public class ConviteMotoristaEmpresaController {
         return ResponseEntity.ok(service.getConvitesByEmpresa(filtros, pagina, tamanhoPagina, ordem));
     }
 
-     //GET /convite-motorista-empresa/byMotorista/{motoristaId}
+    //GET /convite-motorista-empresa/byMotorista/{motoristaId}
     @Operation(
         summary = "Visualizar convites de vínculo recebidos pelo motorista",
         description = "Retorna uma lista paginada de convites de vínculo com base no ID do motorista e filtros opcionais."
@@ -147,6 +175,9 @@ public class ConviteMotoristaEmpresaController {
     public ResponseEntity<PageResponseDTO> getConvitesByMotorista(
         @Parameter(description = "ID do motorista")
         @PathVariable UUID motoristaId,
+
+        @Parameter(description = "ID do convite")
+        @RequestParam(required = false) UUID conviteId,
         
         @Parameter(description = "Razão social da empresa")
         @RequestParam(required = false) String razaoSocial,
@@ -167,6 +198,7 @@ public class ConviteMotoristaEmpresaController {
         @RequestParam(defaultValue = "DESC") OrdemEnum ordem
     ){
         ConviteMotoristaEmpresaFiltrosRequestDTO filtros = new ConviteMotoristaEmpresaFiltrosRequestDTO(
+            conviteId,
             null, 
             razaoSocial,
             cnpj,
@@ -177,5 +209,24 @@ public class ConviteMotoristaEmpresaController {
         );
 
         return ResponseEntity.ok(service.getConvitesByMotorista(filtros, pagina, tamanhoPagina, ordem));
+    }
+
+    @Operation(
+        summary = "Cancelar convite de vínculo",
+        description = "Cancela um convite de vínculo enviado pela empresa com base no ID do convite."
+    )
+    @DeleteMapping("/cancelar/{empresaId}")
+    @DeleteResponses
+    @DefaultResponses
+    @PreAuthorize("#empresaId == authentication.principal.id or hasRole('ADMIN')")
+    public ResponseEntity<Void> cancelarConvite(
+        @Parameter(description = "ID da empresa")
+        @PathVariable UUID empresaId,
+
+        @Parameter(description = "ID do convite")
+        @RequestParam UUID conviteId
+    ) {
+        service.cancelarConvite(empresaId, conviteId);
+        return ResponseEntity.noContent().build();
     }
 }

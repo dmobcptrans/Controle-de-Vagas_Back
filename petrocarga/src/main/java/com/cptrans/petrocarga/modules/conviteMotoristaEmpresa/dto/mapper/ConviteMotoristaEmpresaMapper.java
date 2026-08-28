@@ -19,7 +19,7 @@ import lombok.RequiredArgsConstructor;
 public class ConviteMotoristaEmpresaMapper {
     private final CriptoUtils criptoUtils;
     
-    public ConviteMotoristaEmpresaResponseDTO toResponse(ConviteMotoristaEmpresa convite) {
+    public ConviteMotoristaEmpresaResponseDTO toResponse(ConviteMotoristaEmpresa convite, boolean privado) {
         if (convite == null) return null;
         Motorista motorista = convite.getMotorista();
         Usuario usuarioMotorista = motorista != null ? motorista.getUsuario() : null;
@@ -27,6 +27,7 @@ public class ConviteMotoristaEmpresaMapper {
         Usuario usuarioEmpresa = empresa != null ? empresa.getUsuario() : null;
         String email = StringUtils.mascararEmail(criptoUtils.decrypt(convite.getMotoristaEmailCripto(), convite.getCriptoVersion()));
         return new ConviteMotoristaEmpresaResponseDTO(
+            privado ? convite.getId() : null,
             usuarioEmpresa != null ? usuarioEmpresa.getNome() : null,
             usuarioMotorista != null ? usuarioMotorista.getNome() : null,
             email,

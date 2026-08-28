@@ -33,6 +33,7 @@ public interface ReservaRepository extends JpaRepository<Reserva, UUID>, JpaSpec
        public List<Reserva> findByStatusIn(List<StatusReservaEnum> status);
        public List<Reserva> findByVagaIdAndStatusAndInicio(UUID vaga, StatusReservaEnum status, OffsetDateTime data);
        public Integer countByVeiculoPlacaIgnoringCaseAndStatusIn(String placa,List<StatusReservaEnum> status);
+       public Integer countByMotoristaIdAndStatusIn(UUID motoristaId, List<StatusReservaEnum> status);
        public List<Reserva> findByFimGreaterThanAndInicioLessThanAndStatusIn(OffsetDateTime novoInicio, OffsetDateTime novoFim, List<StatusReservaEnum> status);
        public List<Reserva> findByFimGreaterThanAndInicioLessThanAndMotoristaUsuarioIdAndStatusIn(OffsetDateTime novoInicio, OffsetDateTime novoFim, UUID usuarioId, List<StatusReservaEnum> status);
        public Boolean existsByVeiculoIdAndStatusIn(UUID veiculoId, List<StatusReservaEnum> status);
