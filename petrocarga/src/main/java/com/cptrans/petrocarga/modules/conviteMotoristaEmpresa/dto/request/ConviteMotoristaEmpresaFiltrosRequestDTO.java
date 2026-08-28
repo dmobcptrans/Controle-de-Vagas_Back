@@ -14,6 +14,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Getter
 public class ConviteMotoristaEmpresaFiltrosRequestDTO {
+    private UUID conviteId;
     private UUID empresaId;
     private String razaoSocial;
     private String cnpj;

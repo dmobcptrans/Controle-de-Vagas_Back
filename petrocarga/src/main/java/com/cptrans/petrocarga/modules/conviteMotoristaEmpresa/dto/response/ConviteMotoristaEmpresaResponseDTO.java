@@ -1,5 +1,7 @@
 package com.cptrans.petrocarga.modules.conviteMotoristaEmpresa.dto.response;
 
+import java.util.UUID;
+
 import com.cptrans.petrocarga.enums.StatusConviteMotoristaEmpresaEnum;
 
 import lombok.AccessLevel;
@@ -11,6 +13,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Getter
 public class ConviteMotoristaEmpresaResponseDTO {
+    private UUID id;
     private String razaoSocial;
     private String motoristaNome;
     private String motoristaEmail;

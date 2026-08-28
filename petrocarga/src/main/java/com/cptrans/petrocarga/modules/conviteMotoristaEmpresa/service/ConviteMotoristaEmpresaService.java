@@ -11,12 +11,11 @@ import org.springframework.stereotype.Service;
 import com.cptrans.petrocarga.enums.OrdemEnum;
 import com.cptrans.petrocarga.enums.PermissaoEnum;
 import com.cptrans.petrocarga.enums.StatusConviteMotoristaEmpresaEnum;
-import com.cptrans.petrocarga.modules.auth.exceptions.AuthExceptions;
-import com.cptrans.petrocarga.modules.auth.utils.AuthUtils;
 import com.cptrans.petrocarga.modules.conviteMotoristaEmpresa.dto.mapper.ConviteMotoristaEmpresaMapper;
 import com.cptrans.petrocarga.modules.conviteMotoristaEmpresa.dto.request.ConviteMotoristaEmpresaFiltrosRequestDTO;
 import com.cptrans.petrocarga.modules.conviteMotoristaEmpresa.dto.request.ConviteMotoristaEmpresaRequestDTO;
-import com.cptrans.petrocarga.modules.conviteMotoristaEmpresa.dto.request.RespostaConviteMotoristaEmpresaRequestDTO;
+import com.cptrans.petrocarga.modules.conviteMotoristaEmpresa.dto.request.RespostaConviteMotoristaExistenteRequestDTO;
+import com.cptrans.petrocarga.modules.conviteMotoristaEmpresa.dto.request.RespostaConviteNovoMotoristaRequestDTO;
 import com.cptrans.petrocarga.modules.conviteMotoristaEmpresa.dto.response.ConviteMotoristaEmpresaResponseDTO;
 import com.cptrans.petrocarga.modules.conviteMotoristaEmpresa.entity.ConviteMotoristaEmpresa;
 import com.cptrans.petrocarga.modules.conviteMotoristaEmpresa.exceptions.ConviteMotoristaEmpresaExceptions;
@@ -25,6 +24,7 @@ import com.cptrans.petrocarga.modules.conviteMotoristaEmpresa.specification.Conv
 import com.cptrans.petrocarga.modules.cripto.CriptoService;
 import com.cptrans.petrocarga.modules.cripto.HashService;
 import com.cptrans.petrocarga.modules.empresa.entity.Empresa;
+import com.cptrans.petrocarga.modules.empresa.exceptions.EmpresaExceptions;
 import com.cptrans.petrocarga.modules.empresa.repository.EmpresaRepository;
 import com.cptrans.petrocarga.modules.events.SpringDomainEventPublisher;
 import com.cptrans.petrocarga.modules.events.conviteMotoristaEmpresa.ConviteCriadoEvent;
@@ -36,7 +36,6 @@ import com.cptrans.petrocarga.modules.motorista.service.MotoristaService;
 import com.cptrans.petrocarga.modules.notificacao.service.NotificacaoService;
 import com.cptrans.petrocarga.modules.usuario.exceptions.UsuarioExceptions;
 import com.cptrans.petrocarga.modules.usuario.repository.UsuarioRepository;
-import com.cptrans.petrocarga.security.UserAuthenticated;
 import com.cptrans.petrocarga.shared.dto.response.PageResponseDTO;
 import com.cptrans.petrocarga.shared.utils.DateUtils;
 
@@ -63,10 +62,12 @@ public class ConviteMotoristaEmpresaService {
 
     public ConviteMotoristaEmpresaResponseDTO getByToken(String token) {
         ConviteMotoristaEmpresa convite = findValidoByToken(token);
-        return mapper.toResponse(convite);
+        return mapper.toResponse(convite, false);
     }
 
     public PageResponseDTO getConvitesByEmpresa(ConviteMotoristaEmpresaFiltrosRequestDTO filtros, int pagina, int tamanhoPagina, OrdemEnum ordem) {
+        if (filtros == null || filtros.getEmpresaId() == null) throw new EmpresaExceptions.EmpresaNotFoundException();
+        
         if (filtros != null && filtros.getMotoristaEmail() != null && !filtros.getMotoristaEmail().trim().isEmpty()) {
             filtros.setMotoristaEmail(hashService.hash(filtros.getMotoristaEmail().trim().toLowerCase()));
         }
@@ -75,15 +76,16 @@ public class ConviteMotoristaEmpresaService {
         Page<ConviteMotoristaEmpresa> page = repository.findAll(ConviteMotoristaEmpresaSpecification.filtrar(filtros), pageable);
         if (page == null || page.isEmpty()) return new PageResponseDTO(page);
 
-        return new PageResponseDTO(page.map(mapper::toResponse)); 
+        return new PageResponseDTO(page.map(c -> mapper.toResponse(c, true))); 
     }
 
     public PageResponseDTO getConvitesByMotorista(ConviteMotoristaEmpresaFiltrosRequestDTO filtros, int pagina, int tamanhoPagina, OrdemEnum ordem) {
+        if (filtros == null || filtros.getMotoristaId() == null) throw new MotoristaExceptions.MotoristaNotFoundException();
         Pageable pageable = PageRequest.of(pagina, tamanhoPagina, ordem.equals(OrdemEnum.ASC) ? SORT_ASC : SORT_DESC);
         Page<ConviteMotoristaEmpresa> page = repository.findAll(ConviteMotoristaEmpresaSpecification.filtrar(filtros), pageable);
         if (page == null || page.isEmpty()) return new PageResponseDTO(page);
 
-        return new PageResponseDTO(page.map(mapper::toResponse)); 
+        return new PageResponseDTO(page.map(c -> mapper.toResponse(c, true))); 
     }
 
     @Transactional
@@ -134,7 +136,7 @@ public class ConviteMotoristaEmpresaService {
     }
 
     @Transactional
-    public void responderConvite(RespostaConviteMotoristaEmpresaRequestDTO request) {
+    public void responderConviteNovoMotorista(RespostaConviteNovoMotoristaRequestDTO request) {
         ConviteMotoristaEmpresa convite = findValidoByToken(request.getConviteToken());
         Empresa empresa = convite.getEmpresa();
         String emailMotorista = criptoService.decrypt(convite.getMotoristaEmailCripto(), convite.getCriptoVersion());
@@ -142,17 +144,32 @@ public class ConviteMotoristaEmpresaService {
         switch (request.getStatus()) {
             case ACEITO:
                 convite.aceitar();
-                if (convite.getMotorista() != null) {
-                    Motorista motorista = convite.getMotorista();
-                    UserAuthenticated usuarioAutenticado = AuthUtils.getUsuarioAutenticado();
-                    if (!usuarioAutenticado.id().equals(motorista.getId())) throw new AuthExceptions.UsuarioNaoAutorizadoException();
-                    validarMotoristaPertenceAEmpresa(motorista, empresa.getId());
-                    motorista.setEmpresa(empresa);
-                    motoristaService.save(motorista);
-                } else {
-                    Motorista novoMotorista = cadastrarMotoristaByConvite(request.getMotorista(), emailMotorista, empresa);
-                    convite.vincularMotorista(novoMotorista);
-                }
+                Motorista novoMotorista = cadastrarMotoristaByConvite(request.getMotorista(), emailMotorista, empresa);
+                convite.vincularMotorista(novoMotorista);
+                repository.save(convite);
+                break;
+            case RECUSADO:
+                convite.recusar();
+                repository.save(convite);
+                break;
+            default:
+                throw new ConviteMotoristaEmpresaExceptions.RespostaInvalidaExceptions();
+        }
+                
+    }
+
+    @Transactional
+    public void responderConviteMotoristaExistente(UUID motoristaId, RespostaConviteMotoristaExistenteRequestDTO request) {
+        ConviteMotoristaEmpresa convite = findValidoByConviteIdAndMotoristaId(request.getConviteId(), motoristaId);
+        Empresa empresa = convite.getEmpresa();
+        
+        switch (request.getStatus()) {
+            case ACEITO:
+                convite.aceitar();
+                Motorista motorista = convite.getMotorista();
+                validarMotoristaPertenceAEmpresa(motorista, empresa.getId());
+                motorista.setEmpresa(empresa);
+                motoristaService.save(motorista);
                 repository.save(convite);
                 break;
             case RECUSADO:
@@ -169,6 +186,15 @@ public class ConviteMotoristaEmpresaService {
         return repository.findConviteValidoByMotoristaIdAndEmpresaId(motoristaId, empresaId).orElseThrow(() -> new ConviteMotoristaEmpresaExceptions.ConviteNotFoundException());
     }
 
+    public void cancelarConvite(UUID empresaId, UUID conviteId) {
+        ConviteMotoristaEmpresa convite = findPendenteValidoByIdAndEmpresaId(conviteId, empresaId);
+        repository.delete(convite);
+    }
+
+    private ConviteMotoristaEmpresa findPendenteValidoByIdAndEmpresaId(UUID conviteId, UUID empresaId) {
+        return repository.findPendenteValidoByIdAndEmpresaId(conviteId, empresaId).orElseThrow(() -> new ConviteMotoristaEmpresaExceptions.ConviteNotFoundException());
+    }
+
     private ConviteMotoristaEmpresa findValidoByToken(String token) {
         String tokenHash = hashService.hash(token.trim());
         return repository.findValidoByTokenHash(tokenHash).orElseThrow(() -> new ConviteMotoristaEmpresaExceptions.ConviteNotFoundException());
@@ -176,6 +202,10 @@ public class ConviteMotoristaEmpresaService {
 
     private Empresa findEmpresaById(UUID empresaId) {
         return empresaRepository.findByIdAndUsuarioAtivoTrue(empresaId).orElse(null);
+    }
+
+    public ConviteMotoristaEmpresa findValidoByConviteIdAndMotoristaId(UUID conviteId, UUID motoristaId) {
+        return repository.findConviteValidoByIdAndMotoristaId(conviteId, motoristaId).orElseThrow(() -> new ConviteMotoristaEmpresaExceptions.ConviteNotFoundException());
     }
     
     private void validarMotoristaPertenceAEmpresa(Motorista motorista, UUID empresaId) {

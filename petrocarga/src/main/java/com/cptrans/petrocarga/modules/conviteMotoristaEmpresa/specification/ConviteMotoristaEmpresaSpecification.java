@@ -20,6 +20,10 @@ public class ConviteMotoristaEmpresaSpecification {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
+            if (filtros.getConviteId() != null) {
+                predicates.add(cb.equal(root.get("id"), filtros.getConviteId()));
+            }
+
             if (filtros.getEmpresaId() != null) {
                 predicates.add(cb.equal(root.get("empresa").get("id"), filtros.getEmpresaId()));
             }

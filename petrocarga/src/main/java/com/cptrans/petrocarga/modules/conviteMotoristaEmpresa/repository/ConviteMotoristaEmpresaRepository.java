@@ -22,6 +22,15 @@ public interface ConviteMotoristaEmpresaRepository extends JpaRepository<Convite
 
     @Query("""
         SELECT c FROM ConviteMotoristaEmpresa c 
+        WHERE c.id = :id 
+        AND c.empresa.id = :empresaId
+        AND c.status = 'PENDENTE'
+        AND c.validoAte > CURRENT_TIMESTAMP
+    """)
+    public Optional<ConviteMotoristaEmpresa> findPendenteValidoByIdAndEmpresaId(UUID id, UUID empresaId);
+
+    @Query("""
+        SELECT c FROM ConviteMotoristaEmpresa c 
         WHERE c.motoristaEmailHash = :motoristaEmailHash 
         AND c.empresa.id = :empresaId 
         AND c.validoAte > CURRENT_TIMESTAMP
@@ -35,6 +44,14 @@ public interface ConviteMotoristaEmpresaRepository extends JpaRepository<Convite
         AND c.validoAte > CURRENT_TIMESTAMP
     """)
     public Optional<ConviteMotoristaEmpresa> findConviteValidoByMotoristaIdAndEmpresaId(UUID motoristaId, UUID empresaId);
+
+    @Query("""
+        SELECT c FROM ConviteMotoristaEmpresa c 
+        WHERE c.id = :id
+        AND c.motorista.id = :motoristaId 
+        AND c.validoAte > CURRENT_TIMESTAMP
+    """)
+    public Optional<ConviteMotoristaEmpresa> findConviteValidoByIdAndMotoristaId(UUID id, UUID motoristaId);
 
     @Query("""
         SELECT CASE WHEN COUNT(c) > 0 
