@@ -37,7 +37,7 @@ public class StringUtils {
     public static String aplicarMascaraCpf(String cpfLast5){
         if (cpfLast5 == null || cpfLast5.trim().length() != 5) return null;
         cpfLast5 = cpfLast5.trim();
-        return "***.***." + cpfLast5.substring(0,3) + "-" + cpfLast5.substring(3);
+        return "***.***." + cpfLast5.substring(0,3) + "-**";
     }
 
     public static String formatarCnpj(String cnpj){
