@@ -29,8 +29,8 @@ public class UsuarioMapper {
     private final MotoristaRepository motoristaRepository;
     private final EmpresaRepository empresaRepository;
 
-    private Boolean resolvePossuiVeiculoAtivo(PermissaoEnum permissao, UUID id, List<Veiculo> veiculosAtivos){
-        Boolean possuiVeiculos = false;
+    private boolean resolvePossuiVeiculoAtivo(PermissaoEnum permissao, UUID id, List<Veiculo> veiculosAtivos){
+        boolean possuiVeiculos = false;
         
         switch (permissao) {
             case MOTORISTA:
@@ -44,7 +44,7 @@ public class UsuarioMapper {
                 if (veiculosAtivos != null && !veiculosAtivos.isEmpty()) possuiVeiculos = true;
                 break;
             case ADMIN, GESTOR, AGENTE:
-                possuiVeiculos = null;
+                possuiVeiculos = false;
                 break;
             default:
                 break;
@@ -69,7 +69,7 @@ public class UsuarioMapper {
                 usuario.getCriadoEm(),
                 usuario.getAtivo(),
                 usuario.getDesativadoEm(),
-                isNovoMotoristaCreatedByGoogle(usuario.getProvider(),usuario.getAceitarTermos(), usuario.getGoogleId(), cpf) ? false : resolvePossuiVeiculoAtivo(usuario.getPermissao(), usuario.getId(), usuario.getVeiculosAtivos())
+                isNovoMotoristaCreatedByGoogle(usuario.getProvider(), usuario.getAceitarTermos(), usuario.getGoogleId(), cpf) ? false : resolvePossuiVeiculoAtivo(usuario.getPermissao(), usuario.getId(), usuario.getVeiculosAtivos())
             ), usuario.getCriptoVersion());    
         response.formatarDados();
         return response;
