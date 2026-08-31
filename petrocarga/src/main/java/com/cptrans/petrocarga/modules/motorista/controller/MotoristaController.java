@@ -179,7 +179,7 @@ public class MotoristaController {
     )
     @PatchResponses
     @DefaultResponses
-    @PreAuthorize("#empresaId == authentication.principal.id or hasAnyRole('ADMIN', 'GESTOR')")
+    @PreAuthorize("#empresaId == authentication.principal.id or #motoristaId == authentication.principal.id or hasAnyRole('ADMIN', 'GESTOR')")
     @PatchMapping("/desvincularEmpresa/{empresaId}/{motoristaId}")
     public ResponseEntity<SystemResponse> desvincularMotoristaEmpresa(
         @Parameter(description = "ID da empresa")
