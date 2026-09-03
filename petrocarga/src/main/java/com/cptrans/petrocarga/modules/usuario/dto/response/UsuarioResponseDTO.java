@@ -26,7 +26,7 @@ public class UsuarioResponseDTO {
     private OffsetDateTime criadoEm;
     private Boolean ativo;
     private OffsetDateTime desativadoEm;
-    private Boolean possuiVeiculoAtivo;
+    private DadosExtras dadosExtras;
 
     public void setEmail(String email) {
         this.email = email;
@@ -36,8 +36,9 @@ public class UsuarioResponseDTO {
         this.telefone = telefone;
     }
 
-    public void setPossuiVeiculoAtivo(Boolean possuiVeiculoAtivo) {
-        this.possuiVeiculoAtivo = possuiVeiculoAtivo;
+
+    public void setDadosExtras(DadosExtras dadosExtras) {
+        this.dadosExtras = dadosExtras;
     }
 
     public void formatarDados(){
