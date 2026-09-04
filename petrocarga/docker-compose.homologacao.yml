@@ -1,29 +1,20 @@
 services:
-  backend:
+  backend-hml:
     build: .
     container_name: petrocarga-backend-homologacao
     networks:
-      - app-network
+      - petrocarga-backend-hml-network
+      - cptrans-gateway
     environment:
       - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
       - SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL}
       - SPRING_DATASOURCE_USERNAME=${SPRING_DATASOURCE_USERNAME}
       - SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD}
 
-  nginx:
-    image: nginx:latest
-    container_name: petrocarga-nginx-homologacao
-    ports:
-      - "8081:80"
-      - "444:443"
-    volumes:
-      - ./nginx/nginx.homologacao.conf:/etc/nginx/nginx.conf
-      - ./nginx/certs:/etc/nginx/certs
-    depends_on:
-      - backend
-    networks:
-      - app-network
-
 networks:
-  app-network:
+  petrocarga-backend-hml-network:
     driver: bridge
+  
+  cptrans-gateway:
+    external: true
+    name: cptrans-gateway

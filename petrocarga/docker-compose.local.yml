@@ -1,29 +1,20 @@
 services:
-  backend:
+  backend-local:
     build: .
     container_name: petrocarga-backend-local
     networks:
-      - app-network
+      - petrocarga-backend-network
+      - cptrans-gateway
     environment:
       - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
       - SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL}
       - SPRING_DATASOURCE_USERNAME=${SPRING_DATASOURCE_USERNAME}
       - SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD}
 
-  nginx:
-    image: nginx:latest
-    container_name: petrocarga-nginx-local
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx/nginx.local.conf:/etc/nginx/nginx.conf
-      - ./nginx/certs:/etc/nginx/certs
-    depends_on:
-      - backend
-    networks:
-      - app-network
-
 networks:
-  app-network:
+  petrocarga-backend-network:
     driver: bridge
+  
+  cptrans-gateway:
+    external: true
+    name: cptrans-gateway
