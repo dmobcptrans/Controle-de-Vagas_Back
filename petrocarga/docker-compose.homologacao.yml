@@ -1,10 +1,12 @@
 services:
-  backend-hml:
+  backend:
     build: .
     container_name: petrocarga-backend-homologacao
     networks:
-      - petrocarga-backend-hml-network
-      - cptrans-gateway
+      petrocarga-backend-hml-network:
+      cptrans-gateway:
+        aliases:
+          - petrocarga-back-hml
     environment:
       - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
       - SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL}
