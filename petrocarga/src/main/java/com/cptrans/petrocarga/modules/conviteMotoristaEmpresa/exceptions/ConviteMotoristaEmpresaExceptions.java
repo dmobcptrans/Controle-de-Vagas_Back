@@ -56,6 +56,12 @@ public class ConviteMotoristaEmpresaExceptions {
         }
     }
 
+    public static class MotoristaRequestNullException extends DataIntegrityViolationException {
+        public MotoristaRequestNullException() {
+            super("O motorista não pode ser nulo quando o status do convite for ACEITO.");
+        }
+    }
+
     @ExceptionHandler(ConviteInvalidoException.class)
     public ResponseEntity<SystemResponse> handleConviteInvalidoException(ConviteInvalidoException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(new SystemResponse(ex.getMessage(), 409));
@@ -88,6 +94,11 @@ public class ConviteMotoristaEmpresaExceptions {
 
     @ExceptionHandler(MotoristaJaVinculadoException.class)
     public ResponseEntity<SystemResponse> handleMotoristaJaVinculadoException(MotoristaJaVinculadoException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(new SystemResponse(ex.getMessage(), 409));
+    }
+
+    @ExceptionHandler(MotoristaRequestNullException.class)
+    public ResponseEntity<SystemResponse> handleMotoristaRequestNullException(MotoristaRequestNullException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(new SystemResponse(ex.getMessage(), 409));
     }
 }

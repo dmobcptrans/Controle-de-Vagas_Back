@@ -83,7 +83,7 @@ public class ConviteMotoristaEmpresaController {
 
     //PATCH /convite-motorista-empresa/responder
     @Operation(
-        summary = "Responder convite de vínculo entre motorista e empresa",
+        summary = "Responder convite de vínculo entre novo motorista e empresa",
         description = "Responde ao convite de vínculo e cria um novo motorista associado à empresa, com base no status e dados enviados."
     )
     @PatchMapping("/responder")
@@ -97,7 +97,7 @@ public class ConviteMotoristaEmpresaController {
 
     //PATCH /convite-motorista-empresa/responder/{motoristaId}
     @Operation(
-        summary = "Responder convite de vínculo entre motorista e empresa",
+        summary = "Responder convite de vínculo entre motorista existente e empresa",
         description = "Responde ao convite de vínculo de um motorista existente, com base no status e dados enviados."
     )
     @PatchResponses
