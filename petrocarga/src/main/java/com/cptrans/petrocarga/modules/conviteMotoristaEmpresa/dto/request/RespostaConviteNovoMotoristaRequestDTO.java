@@ -20,6 +20,5 @@ public class RespostaConviteNovoMotoristaRequestDTO {
     private StatusConviteMotoristaEmpresaEnum status;
 
     @Valid
-    @NotNull(message = "O motorista não pode ser nulo.")
     private MotoristaEmpresaRequestDTO motorista;
 }

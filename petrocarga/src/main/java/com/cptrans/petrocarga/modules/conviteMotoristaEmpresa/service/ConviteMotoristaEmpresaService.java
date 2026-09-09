@@ -143,6 +143,7 @@ public class ConviteMotoristaEmpresaService {
 
         switch (request.getStatus()) {
             case ACEITO:
+                if (request.getMotorista() == null) throw new ConviteMotoristaEmpresaExceptions.MotoristaRequestNullException();
                 convite.aceitar();
                 Motorista novoMotorista = cadastrarMotoristaByConvite(request.getMotorista(), emailMotorista, empresa);
                 convite.vincularMotorista(novoMotorista);
