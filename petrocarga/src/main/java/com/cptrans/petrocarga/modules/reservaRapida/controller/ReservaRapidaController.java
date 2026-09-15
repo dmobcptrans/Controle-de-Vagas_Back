@@ -48,7 +48,7 @@ public class ReservaRapidaController {
     )
     @PostResponses
     @DefaultResponses
-    @PreAuthorize("hasAnyRole('ADMIN', 'AGENTE')")
+    @PreAuthorize("hasAnyRole('AGENTE')")
     @PostMapping()
     public ResponseEntity<ReservaRapidaResponseDTO> createReservaRapida(
         @Parameter(description = "Dados da reserva rápida")

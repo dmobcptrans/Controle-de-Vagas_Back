@@ -131,6 +131,7 @@ public class ReservaMapper {
         ReservaDTO response = new ReservaDTO(
             reserva.getId(),
             vaga != null ? vaga.getId() : null,
+            vaga != null ? vaga.getArea() : null,
             motorista != null ? motorista.getId() : null,
             usuarioMotorista != null ? usuarioMotorista.getNome() : null,
             motorista != null ? motorista.getCpfCripto() : null,
@@ -139,6 +140,7 @@ public class ReservaMapper {
             enderecoVagaMapper.toResponse(enderecoVaga),
             reserva.getInicio(),
             reserva.getFim(),
+            veiculo != null ? veiculo.getId() : null,
             veiculo != null ? veiculo.getTipo().getComprimento() : null,
             veiculo != null ? veiculo.getPlaca() : null,
             veiculo != null ? veiculo.getModelo() : null,

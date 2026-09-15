@@ -24,6 +24,7 @@ public interface ReservaRepository extends JpaRepository<Reserva, UUID>, JpaSpec
        public Optional<Reserva> findByIdAndStatusIn(UUID id, List<StatusReservaEnum> status);
        public List<Reserva> findByVagaId(UUID vaga);
        public List<Reserva> findByVagaIdAndStatusIn(UUID vagaId, List<StatusReservaEnum> status);
+       public List<Reserva> findByVagaIdAndVeiculoPlacaIgnoringCaseAndStatusIn(UUID vagaId, String placa, List<StatusReservaEnum> status);
        public List<Reserva> findByVagaIdAndStatus(UUID vaga, StatusReservaEnum status);
        public List<Reserva> findByCriadoPorId(UUID criadoPorId);
        public Page<Reserva> findByCriadoPorId(UUID criadoPorId, Pageable pageable);
@@ -33,13 +34,28 @@ public interface ReservaRepository extends JpaRepository<Reserva, UUID>, JpaSpec
        public List<Reserva> findByStatusIn(List<StatusReservaEnum> status);
        public List<Reserva> findByVagaIdAndStatusAndInicio(UUID vaga, StatusReservaEnum status, OffsetDateTime data);
        public Integer countByVeiculoPlacaIgnoringCaseAndStatusIn(String placa,List<StatusReservaEnum> status);
+       public Integer countByVeiculoPlacaIgnoringCaseAndStatusInAndIdNot(String placa,List<StatusReservaEnum> status, UUID id);
+       public Integer countByVeiculoIdAndStatusIn(UUID veiculoId, List<StatusReservaEnum> status);
+       public Integer countByVeiculoIdAndStatusInAndIdNot(UUID veiculoId, List<StatusReservaEnum> status, UUID id);
        public Integer countByMotoristaIdAndStatusIn(UUID motoristaId, List<StatusReservaEnum> status);
+       public Integer countByMotoristaIdAndStatusInAndIdNot(UUID motoristaId, List<StatusReservaEnum> status, UUID id);
        public List<Reserva> findByFimGreaterThanAndInicioLessThanAndStatusIn(OffsetDateTime novoInicio, OffsetDateTime novoFim, List<StatusReservaEnum> status);
+       public List<Reserva> findByIdNotAndFimGreaterThanAndInicioLessThanAndStatusIn(UUID id, OffsetDateTime novoInicio, OffsetDateTime novoFim, List<StatusReservaEnum> status);
+       public List<Reserva> findByVagaIdAndFimGreaterThanAndInicioLessThanAndStatusIn(UUID vagaId, OffsetDateTime novoInicio, OffsetDateTime novoFim, List<StatusReservaEnum> status);
+       public List<Reserva> findByIdNotAndVagaIdAndFimGreaterThanAndInicioLessThanAndStatusIn(UUID id, UUID vagaId, OffsetDateTime novoInicio, OffsetDateTime novoFim, List<StatusReservaEnum> status);
        public List<Reserva> findByFimGreaterThanAndInicioLessThanAndMotoristaUsuarioIdAndStatusIn(OffsetDateTime novoInicio, OffsetDateTime novoFim, UUID usuarioId, List<StatusReservaEnum> status);
        public Boolean existsByVeiculoIdAndStatusIn(UUID veiculoId, List<StatusReservaEnum> status);
+       public Boolean existsByVeiculoPlacaIgnoringCaseAndStatusIn(String placa, List<StatusReservaEnum> status);
+       public Boolean existsByVeiculoIdAndStatusInAndFimGreaterThanAndInicioLessThan(UUID veiculoId, List<StatusReservaEnum> status, OffsetDateTime inicio, OffsetDateTime fim);
+       public Boolean existsByMotoristaIdAndStatusInAndFimGreaterThanAndInicioLessThan(UUID motoristaId, List<StatusReservaEnum> status, OffsetDateTime inicio, OffsetDateTime fim);
+       public Boolean existsByVeiculoPlacaIgnoringCaseAndStatusInAndFimGreaterThanAndInicioLessThan(String placa, List<StatusReservaEnum> status, OffsetDateTime inicio, OffsetDateTime fim);
+       public Boolean existsByIdNotAndVeiculoIdAndStatusInAndFimGreaterThanAndInicioLessThan(UUID id, UUID veiculoId, List<StatusReservaEnum> status, OffsetDateTime inicio, OffsetDateTime fim);
+       public Boolean existsByIdNotAndMotoristaIdAndStatusInAndFimGreaterThanAndInicioLessThan(UUID id, UUID motoristaId, List<StatusReservaEnum> status, OffsetDateTime inicio, OffsetDateTime fim);
+       public Boolean existsByIdNotAndVeiculoPlacaIgnoringCaseAndStatusInAndFimGreaterThanAndInicioLessThan(UUID id, String placa, List<StatusReservaEnum> status, OffsetDateTime inicio, OffsetDateTime fim);
        public Boolean existsByCriadoPorIdAndMotoristaIdAndStatusIn(UUID criadoPorId, UUID motoristaId, List<StatusReservaEnum> status);
        public Boolean existsByVeiculoUsuarioIdAndMotoristaIdAndStatusIn(UUID veiculoUsuarioId, UUID motoristaId, List<StatusReservaEnum> status);
        
+
        @Query("SELECT r FROM Reserva r WHERE UPPER(r.veiculo.placa) ILIKE %:placa% AND r.status IN :status")
        public List<Reserva> findByVeiculoPlacaIgnoringCaseAndStatusIn(String placa, List<StatusReservaEnum> status);
        

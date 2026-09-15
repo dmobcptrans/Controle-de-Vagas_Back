@@ -18,17 +18,14 @@ import com.cptrans.petrocarga.enums.TipoVagaEnum;
 import com.cptrans.petrocarga.modules.agente.entity.Agente;
 import com.cptrans.petrocarga.modules.agente.service.AgenteService;
 import com.cptrans.petrocarga.modules.auth.utils.AuthUtils;
-import com.cptrans.petrocarga.modules.disponibilidadeVaga.service.DisponibilidadeVagaService;
-import com.cptrans.petrocarga.modules.operacaoVaga.utils.OperacaoVagaUtils;
 import com.cptrans.petrocarga.modules.reserva.dto.response.ReservaDTO;
-import com.cptrans.petrocarga.modules.reserva.utils.ReservaUtils;
 import com.cptrans.petrocarga.modules.reservaRapida.dto.mapper.ReservaRapidaMapper;
 import com.cptrans.petrocarga.modules.reservaRapida.dto.request.ReservaRapidaRequestDTO;
 import com.cptrans.petrocarga.modules.reservaRapida.dto.response.ReservaRapidaResponseDTO;
 import com.cptrans.petrocarga.modules.reservaRapida.entity.ReservaRapida;
 import com.cptrans.petrocarga.modules.reservaRapida.repository.ReservaRapidaRepository;
 import com.cptrans.petrocarga.modules.reservaRapida.specification.ReservaRapidaSpecification;
-import com.cptrans.petrocarga.modules.reservaRapida.utils.ReservaRapidaUtils;
+import com.cptrans.petrocarga.modules.reservaRules.ReservaRules;
 import com.cptrans.petrocarga.modules.scheduler.reserva.handler.ReservaSchedulerService;
 import com.cptrans.petrocarga.modules.vaga.entity.Vaga;
 import com.cptrans.petrocarga.modules.vaga.service.VagaService;
@@ -44,11 +41,9 @@ import lombok.RequiredArgsConstructor;
 public class ReservaRapidaService {
     private final ReservaRapidaRepository reservaRapidaRepository;
     private final VagaService vagaService;
-    private final ReservaRapidaUtils reservaRapidaUtils;
-    private final ReservaUtils reservaUtils;
+    private final ReservaRules reservaRules;
     private final AgenteService agenteService;
     private final ReservaSchedulerService reservaSchedulerService;
-    private final DisponibilidadeVagaService disponibilidadeVagaService;
     private final ReservaRapidaMapper reservaRapidaMapper;
 
     private final Sort SORT_ASC = Sort.by("inicio").ascending();
@@ -124,32 +119,27 @@ public class ReservaRapidaService {
     }
 
     public ReservaRapida create(ReservaRapidaRequestDTO request) {
-        if (!disponibilidadeVagaService.existsByVagaIdAndInicioAndFim(request.getVagaId(), request.getInicio(), request.getFim())) {
-            throw new IllegalArgumentException("A vaga não está disponível para o período selecionado.");
-        }
+        reservaRules.validacoesTemporais(request.getInicio(), request.getFim());
 
         Vaga vaga = vagaService.findById(request.getVagaId());
-        OperacaoVagaUtils.verificarLimiteHorarioOperacaoVaga(vaga.getOperacoesVaga(), request.getInicio(), request.getFim());
+
+        reservaRules.validacoesDaVaga(vaga, request.getInicio(), request.getFim());
         
         UserAuthenticated userAuthenticated = AuthUtils.getUsuarioAutenticado();
 
         ReservaRapida novaReservaRapida = reservaRapidaMapper.toEntity(request, vaga);
         Agente agenteLogado = agenteService.findByIdAndAtivoTrue(userAuthenticated.id());
         novaReservaRapida.setAgente(agenteLogado);
-
-        if (novaReservaRapida.getCidadeOrigem() == null ) novaReservaRapida.setCidadeOrigem("Petrópolis - RJ");
         
-        ReservaDTO novaReservaDTO = reservaRapidaMapper.toReservaDTO(novaReservaRapida, novaReservaRapida.getAgente().getCpfCripto());
-        List<ReservaDTO> reservasSoprepostasNaVaga = reservaUtils.getReservasAtivasSobrepostas(request.getInicio(), request.getFim());
-        ReservaUtils.validarTempoMaximoReserva(novaReservaRapida.getInicio(), novaReservaRapida.getFim(), novaReservaRapida.getVaga().getArea(), novaReservaRapida.getAgente().getUsuario().getPermissao());
-        reservaRapidaUtils.validarQuantidadeReservasPorPlaca(novaReservaDTO, reservasSoprepostasNaVaga);
+        ReservaDTO dto = reservaRapidaMapper.toReservaDTO(novaReservaRapida, novaReservaRapida.getAgente().getCpfCripto());
+        
+        reservaRules.validarLimiteIntrodutorioReservasRapidas(request.getPlaca());
+        reservaRules.validacoesDeConflito(vaga, dto);
 
-        if (vaga.getTipoVaga().equals(TipoVagaEnum.PERPENDICULAR)) {
-            Integer novaPosicao = ReservaUtils.encontrarPosicaoDisponivel(vaga.getQuantidade(), vaga.getComprimento(), novaReservaDTO, reservasSoprepostasNaVaga);
-            novaReservaRapida.setPosicaoPerpendicular(novaPosicao);
+        if (vaga.getTipoVaga().equals(TipoVagaEnum.PERPENDICULAR)){
+            novaReservaRapida.setPosicaoPerpendicular(dto.getPosicaoPerpendicular());
         }
         
-        reservaRapidaUtils.validarEspacoDisponivelNaVaga(novaReservaRapida, vaga, reservasSoprepostasNaVaga);
         ReservaRapida reservaRapidaCriada = reservaRapidaRepository.save(novaReservaRapida);
         try {
             reservaSchedulerService.agendarFinalizacaoReserva(reservaRapidaMapper.toReservaDTO(reservaRapidaCriada, reservaRapidaCriada.getAgente().getCpfCripto()));

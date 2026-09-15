@@ -225,7 +225,7 @@ public class ReservaController {
     )
     @PostResponses
     @DefaultResponses
-    @PreAuthorize("hasAnyRole('ADMIN','MOTORISTA', 'EMPRESA')")
+    @PreAuthorize("hasAnyRole('MOTORISTA', 'EMPRESA')")
     @PostMapping()
     public ResponseEntity<ReservaResponseDTO> createReserva(
         @Parameter(description = "Dados da reserva")

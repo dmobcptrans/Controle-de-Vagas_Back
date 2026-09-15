@@ -75,10 +75,6 @@ public class VeiculoService {
         return new PageResponseDTO(pageResponse);
     }
 
-    // public List<Veiculo> findAtivosByUsuarioId(UUID usuarioId){
-    //     return findByUsuarioIdAndAtivo(usuarioId, true);
-    // }
-
     public Veiculo findById(UUID id) {
         Veiculo veiculo = veiculoRepository.findById(id).orElseThrow(() -> new VeiculoExceptions.VeiculoNotFoundException());
         if (
@@ -98,6 +94,10 @@ public class VeiculoService {
         ) throw new AuthExceptions.UsuarioNaoAutorizadoException();
 
         return veiculo;
+    }
+
+    public Veiculo findAtivoByIdAndUsuarioId(UUID id, UUID usuarioId) {
+        return veiculoRepository.findByIdAndAtivoTrueAndUsuarioIdAndUsuarioAtivoTrue(id, usuarioId).orElseThrow(() -> new VeiculoExceptions.VeiculoNotFoundException());
     }
 
     public Veiculo createVeiculo (VeiculoRequestDTO request, UUID usuarioId) {
