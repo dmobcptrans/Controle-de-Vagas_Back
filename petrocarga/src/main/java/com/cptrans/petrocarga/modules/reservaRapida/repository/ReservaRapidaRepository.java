@@ -21,14 +21,22 @@ import com.cptrans.petrocarga.modules.reservaRapida.entity.ReservaRapida;
 public interface ReservaRapidaRepository extends JpaRepository<ReservaRapida, UUID>, JpaSpecificationExecutor<ReservaRapida> {
     public List<ReservaRapida> findByStatusIn(List<StatusReservaEnum> status);
     public List<ReservaRapida> findByVagaId(UUID vagaId);
+    public List<ReservaRapida> findByVagaIdAndPlacaIgnoringCaseAndStatusIn(UUID vagaId, String placaVeiculo, List<StatusReservaEnum> status);
     public List<ReservaRapida> findByVagaIdAndStatusIn(UUID vagaId, List<StatusReservaEnum> status);
     public Page<ReservaRapida> findByAgenteId(UUID agenteId, Pageable pageable);
     public List<ReservaRapida> findByAgenteIdAndVagaId(UUID agenteId, UUID vagaId);
     public List<ReservaRapida> findByAgenteIdAndPlacaIgnoringCase(UUID agenteId, String placaVeiculo);
     public List<ReservaRapida> findByAgenteIdAndStatusIn(UUID agenteId, List<StatusReservaEnum> listaStatus);
     public List<ReservaRapida> findByFimGreaterThanAndInicioLessThanAndStatusIn(OffsetDateTime novoInicio, OffsetDateTime novoFim, List<StatusReservaEnum> status);
+    public List<ReservaRapida> findByIdNotAndFimGreaterThanAndInicioLessThanAndStatusIn(UUID id, OffsetDateTime novoInicio, OffsetDateTime novoFim, List<StatusReservaEnum> status);
+    public List<ReservaRapida> findByVagaIdAndFimGreaterThanAndInicioLessThanAndStatusIn(UUID vagaId, OffsetDateTime novoInicio, OffsetDateTime novoFim, List<StatusReservaEnum> status);
+    public List<ReservaRapida> findByIdNotAndVagaIdAndFimGreaterThanAndInicioLessThanAndStatusIn(UUID id, UUID vagaId, OffsetDateTime novoInicio, OffsetDateTime novoFim, List<StatusReservaEnum> status);
     public List<ReservaRapida> findByAgenteIdAndVagaIdAndPlacaIgnoringCaseAndStatusIn(UUID agenteId, UUID vagaId, String placaVeiculo, List<StatusReservaEnum> status);
     public Integer countByPlacaIgnoringCase(String placa);
+    public Integer countByPlacaIgnoringCaseAndStatusIn(String placa, List<StatusReservaEnum> status);
+    public Integer countByPlacaIgnoringCaseAndStatusInAndIdNot(String placa, List<StatusReservaEnum> status, UUID id);
+    public boolean existsByPlacaIgnoringCaseAndStatusInAndFimGreaterThanAndInicioLessThan(String placa, List<StatusReservaEnum> status, OffsetDateTime inicio, OffsetDateTime fim);
+    public boolean existsByIdNotAndPlacaIgnoringCaseAndStatusInAndFimGreaterThanAndInicioLessThan(UUID id, String placa, List<StatusReservaEnum> status, OffsetDateTime inicio, OffsetDateTime fim);
     
     @Query("SELECT rr FROM ReservaRapida rr WHERE UPPER(rr.placa) ILIKE %:placa% AND rr.status = :status")
     public List<ReservaRapida> findByPlacaIgnoringCaseAndStatus(String placa, StatusReservaEnum status);

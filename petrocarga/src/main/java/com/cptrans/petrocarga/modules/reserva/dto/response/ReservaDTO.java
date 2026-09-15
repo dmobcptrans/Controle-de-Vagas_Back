@@ -3,6 +3,7 @@ package com.cptrans.petrocarga.modules.reserva.dto.response;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
+import com.cptrans.petrocarga.enums.AreaVagaEnum;
 import com.cptrans.petrocarga.enums.StatusReservaEnum;
 import com.cptrans.petrocarga.modules.enderecoVaga.dto.response.EnderecoVagaResponseDTO;
 import com.cptrans.petrocarga.modules.usuario.dto.response.UsuarioSimplificadoResponseDTO;
@@ -23,6 +24,7 @@ import lombok.Setter;
 public class ReservaDTO {
     private UUID id;
     private UUID vagaId;
+    private AreaVagaEnum areaVaga;
     private UUID motoristaId;
     private String motoristaNome;
     private String motoristaCpf;
@@ -31,6 +33,7 @@ public class ReservaDTO {
     private EnderecoVagaResponseDTO enderecoVaga;
     private OffsetDateTime inicio;
     private OffsetDateTime fim;
+    private UUID veiculoId;
     private Integer tamanhoVeiculo;
     private String placaVeiculo;
     private String modeloVeiculo;

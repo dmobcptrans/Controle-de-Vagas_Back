@@ -43,6 +43,12 @@ public class ReservaExceptions {
         }
     }
 
+    public static class LimiteDeReservasPorVeiculoException extends DataIntegrityViolationException{
+        public LimiteDeReservasPorVeiculoException(Integer limiteDeReservasPorVeiculo) {
+            super("Esta veículo já atingiu o limite de " + limiteDeReservasPorVeiculo + " reservas 'ativas' ou 'reservadas' ao mesmo tempo.");
+        }
+    }
+
     public static class LimiteDeReservasPorMotoristaException extends DataIntegrityViolationException{
         public LimiteDeReservasPorMotoristaException(Integer limiteDeReservasPorMotorista) {
             super("Este motorista já atingiu o limite de " + limiteDeReservasPorMotorista + " reservas 'ativas' ou 'reservadas' ao mesmo tempo.");
@@ -52,6 +58,12 @@ public class ReservaExceptions {
     public static class PlacaComConflitoDeHorarioException extends DataIntegrityViolationException{
         public PlacaComConflitoDeHorarioException() {
             super("Já existe uma reserva com status 'ativa' ou 'reservada' para esta placa com horário conflitante.");
+        }
+    }
+
+    public static class VeiculoComConflitoDeHorarioException extends DataIntegrityViolationException{
+        public VeiculoComConflitoDeHorarioException() {
+            super("Já existe uma reserva com status 'ativa' ou 'reservada' para este veículo com horário conflitante.");
         }
     }
 
@@ -140,8 +152,18 @@ public class ReservaExceptions {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(new SystemResponse(ex.getMessage(), 409));
     }
 
+    @ExceptionHandler(LimiteDeReservasPorVeiculoException.class)
+    public ResponseEntity<SystemResponse> handleLimiteDeReservasPorVeiculoException(LimiteDeReservasPorVeiculoException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(new SystemResponse(ex.getMessage(), 409));
+    }
+
     @ExceptionHandler(PlacaComConflitoDeHorarioException.class)
     public ResponseEntity<SystemResponse> handlePlacaComConflitoDeHorarioException(PlacaComConflitoDeHorarioException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(new SystemResponse(ex.getMessage(), 409));
+    }
+
+    @ExceptionHandler(VeiculoComConflitoDeHorarioException.class)
+    public ResponseEntity<SystemResponse> handleVeiculoComConflitoDeHorarioException(VeiculoComConflitoDeHorarioException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(new SystemResponse(ex.getMessage(), 409));
     }
 

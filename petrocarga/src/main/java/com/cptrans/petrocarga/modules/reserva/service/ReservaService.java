@@ -3,7 +3,6 @@ package com.cptrans.petrocarga.modules.reserva.service;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -28,12 +27,10 @@ import com.cptrans.petrocarga.enums.TipoVeiculoEnum;
 import com.cptrans.petrocarga.modules.agente.entity.Agente;
 import com.cptrans.petrocarga.modules.auth.exceptions.AuthExceptions;
 import com.cptrans.petrocarga.modules.auth.utils.AuthUtils;
-import com.cptrans.petrocarga.modules.disponibilidadeVaga.service.DisponibilidadeVagaService;
 import com.cptrans.petrocarga.modules.motorista.entity.Motorista;
 import com.cptrans.petrocarga.modules.motorista.service.MotoristaService;
 import com.cptrans.petrocarga.modules.notificacao.entity.Notificacao;
 import com.cptrans.petrocarga.modules.notificacao.service.NotificacaoService;
-import com.cptrans.petrocarga.modules.operacaoVaga.utils.OperacaoVagaUtils;
 import com.cptrans.petrocarga.modules.reserva.dto.mapper.ReservaMapper;
 import com.cptrans.petrocarga.modules.reserva.dto.request.ReservaPATCHRequestDTO;
 import com.cptrans.petrocarga.modules.reserva.dto.request.ReservaRequestDTO;
@@ -45,7 +42,9 @@ import com.cptrans.petrocarga.modules.reserva.specification.ReservaSpecification
 import com.cptrans.petrocarga.modules.reserva.utils.ReservaUtils;
 import com.cptrans.petrocarga.modules.reservaRapida.dto.mapper.ReservaRapidaMapper;
 import com.cptrans.petrocarga.modules.reservaRapida.entity.ReservaRapida;
+import com.cptrans.petrocarga.modules.reservaRapida.repository.ReservaRapidaRepository;
 import com.cptrans.petrocarga.modules.reservaRapida.service.ReservaRapidaService;
+import com.cptrans.petrocarga.modules.reservaRules.ReservaRules;
 import com.cptrans.petrocarga.modules.scheduler.notificacao.handler.NotificacaoSchedulerService;
 import com.cptrans.petrocarga.modules.scheduler.reserva.handler.ReservaSchedulerService;
 import com.cptrans.petrocarga.modules.usuario.entity.Usuario;
@@ -54,7 +53,6 @@ import com.cptrans.petrocarga.modules.usuario.utils.UsuarioUtils;
 import com.cptrans.petrocarga.modules.vaga.entity.Vaga;
 import com.cptrans.petrocarga.modules.vaga.service.VagaService;
 import com.cptrans.petrocarga.modules.veiculo.entity.Veiculo;
-import com.cptrans.petrocarga.modules.veiculo.exceptions.VeiculoExceptions;
 import com.cptrans.petrocarga.modules.veiculo.service.VeiculoService;
 import com.cptrans.petrocarga.security.UserAuthenticated;
 import com.cptrans.petrocarga.shared.utils.DateUtils;
@@ -72,6 +70,7 @@ import lombok.Setter;
 @RequiredArgsConstructor
 public class ReservaService {
     private final ReservaRepository reservaRepository;
+    private final ReservaRapidaRepository reservaRapidaRepository;
     private final MotoristaService motoristaService;
     private final VeiculoService veiculoService;
     private final UsuarioService usuarioService;
@@ -82,9 +81,9 @@ public class ReservaService {
     private final ReservaUtils reservaUtils;
     private final ReservaSchedulerService reservaSchedulerService;
     private final NotificacaoSchedulerService notificacaoSchedulerService;
-    private final DisponibilidadeVagaService disponibilidadeVagaService;
     private final ReservaMapper reservaMapper;
     private final ReservaRapidaMapper reservaRapidaMapper;
+    private final ReservaRules reservaRules;
 
     public List<ReservaDTO> findAll(List<StatusReservaEnum> status, UUID vagaId, String placa, LocalDate data,  UUID usuarioId, Integer mes, Integer ano) {
         if(status == null) status = new ArrayList<>();
@@ -95,26 +94,6 @@ public class ReservaService {
         return reservasDTO;
     }
     
-    public List<Reserva> findByVagaIdAndDataAndStatusIn(UUID vagaId, LocalDate data, List<StatusReservaEnum> status) {
-        Vaga vaga = vagaService.findById(vagaId);
-        List<Reserva> reservas = List.of();
-
-        if (status != null && !status.isEmpty()) {
-            reservas = reservaRepository.findByVagaIdAndStatusIn(vaga.getId(), status);
-        } else{
-            reservas = reservaRepository.findByVagaId(vaga.getId());
-        }
-
-        if (reservas.isEmpty()) return reservas;
-
-        if (data != null) {
-            return reservas.stream().filter(reserva -> 
-                DateUtils.toLocalDateInBrazil(reserva.getInicio()).equals(data) || 
-                DateUtils.toLocalDateInBrazil(reserva.getFim()).equals(data)
-            ).toList();
-        }
-        return reservas;
-    }
 
     public Reserva findById(UUID reservaId) {
         Reserva reserva = reservaRepository.findByIdWithJoins(reservaId);
@@ -146,39 +125,32 @@ public class ReservaService {
     }
 
     public Reserva createReserva(ReservaRequestDTO request) {
-        if (!disponibilidadeVagaService.existsByVagaIdAndInicioAndFim(request.getVagaId(), request.getInicio(), request.getFim())) throw new ReservaExceptions.VagaIndisponivelException();
+        reservaRules.validacoesTemporais(request.getInicio(), request.getFim());
 
         Vaga vaga = vagaService.findById(request.getVagaId());
-        OperacaoVagaUtils.verificarLimiteHorarioOperacaoVaga(vaga.getOperacoesVaga(), request.getInicio(), request.getFim());
+        reservaRules.validacoesDaVaga(vaga, request.getInicio(), request.getFim());
         
         UserAuthenticated userAuthenticated = AuthUtils.getUsuarioAutenticado();
-
         Usuario usuarioLogado = usuarioService.findByIdAndAtivoTrue(userAuthenticated.id());
 
         Motorista motorista = motoristaService.findByIdAndAtivoTrue(request.getMotoristaId());
+        Veiculo veiculo = veiculoService.findAtivoByIdAndUsuarioId(request.getVeiculoId(), userAuthenticated.id());
 
-        if (AuthUtils.containsAuthority(List.of(PermissaoEnum.EMPRESA.getRole()))) {
-            if (motorista.getEmpresa() == null || (motorista.getEmpresa() != null && !motorista.getEmpresa().getId().equals(usuarioLogado.getId()))){ 
-                throw new ReservaExceptions.MotoristaNaoPertenceEmpresaException();
-            }
-        }
-
-        Veiculo veiculo = veiculoService.findByIdAndAtivoTrue(request.getVeiculoId());
-
-        if (usuarioLogado.getPermissao().equals(PermissaoEnum.EMPRESA)) {
-            if (!veiculo.getMotoristasIds().stream().anyMatch((id) -> id.equals(motorista.getId()))){
-                throw new VeiculoExceptions.MotoristaNaoVinculadoAoVeiculoException();
-            }
-        }
-
+        reservaRules.validacoesDeAutorizacao(userAuthenticated.id(), motorista, veiculo);
+        
         Reserva novaReserva = reservaMapper.toEntity(request, vaga, motorista, veiculo, usuarioLogado);
-
-        checarExcecoesReserva(novaReserva, novaReserva.getMotorista(), novaReserva.getVeiculo(), ReservaUtils.METODO_POST);
-        Reserva reservaSalva = reservaRepository.save(novaReserva);
-        Usuario criadoPor = reservaSalva.getCriadoPor();
+        Usuario criadoPor = novaReserva.getCriadoPor();
         String cpfOrCnpjCriador = usuarioUtils.getCpfOrCnpjByPermissaoAndId(criadoPor.getPermissao(), criadoPor.getId());
-        ReservaDTO reservaDTO = reservaMapper.toReservaDTO(reservaSalva, cpfOrCnpjCriador);
-        agendarSchedulers(reservaDTO);
+        ReservaDTO dto = reservaMapper.toReservaDTO(novaReserva, cpfOrCnpjCriador);
+        
+        reservaRules.validacoesDeConflito(vaga, dto);
+
+        if (vaga.getTipoVaga().equals(TipoVagaEnum.PERPENDICULAR)){
+            novaReserva.setPosicaoPerpendicular(dto.getPosicaoPerpendicular());
+        }
+
+        Reserva reservaSalva = reservaRepository.save(novaReserva);
+        agendarSchedulers(reservaMapper.toReservaDTO(reservaSalva, cpfOrCnpjCriador));
         return reservaSalva;
     }
 
@@ -186,25 +158,75 @@ public class ReservaService {
         reservaRepository.deleteById(id);
     }
 
-    public void checarExcecoesReserva(Reserva novaReserva, Motorista motoristaDaReserva, Veiculo veiculoDaReserva, String metodoChamador) {
-        Vaga vagaNovaReserva = novaReserva.getVaga();
-        ReservaUtils.validarTempoMaximoReserva(novaReserva.getInicio(), novaReserva.getFim(), vagaNovaReserva.getArea(), novaReserva.getCriadoPor().getPermissao());
-        reservaUtils.validarEspacoDisponivelNaVaga(novaReserva, metodoChamador);
-        reservaUtils.validarPermissoesReserva(motoristaDaReserva, veiculoDaReserva);
+    public List<ReservaDTO> getReservasByVagaIdAndData(UUID vagaId, LocalDate data, List<StatusReservaEnum> status) {
+        List<Reserva> reservasNormais = reservaRepository.findByVagaIdAndStatusIn(
+            vagaId,
+            status
+        );
+
+        List<ReservaRapida> reservasRapidas = reservaRapidaRepository.findByVagaIdAndStatusIn(
+            vagaId,
+            status
+        );
+       
+        List<ReservaDTO> reservas = reservaUtils.juntarReservas(reservasNormais, reservasRapidas);
+
+        Instant inicioDoDia = data
+            .atStartOfDay(DateUtils.FUSO_BRASILIA)
+            .toInstant();
+
+        Instant fimDoDia = data
+            .plusDays(1)
+            .atStartOfDay(DateUtils.FUSO_BRASILIA)
+            .toInstant();
+
+        return reservas.stream()
+            .filter(reserva -> {
+                Instant inicioReserva = reserva.getInicio().toInstant();
+                Instant fimReserva = reserva.getFim().toInstant();
+
+                return fimReserva.isAfter(inicioDoDia)
+                    && inicioReserva.isBefore(fimDoDia);
+            })
+            .toList();
     }
 
-    public List<ReservaDTO> getReservasByVagaIdAndData(UUID vagaId, LocalDate data, List<StatusReservaEnum> status) {
-        List<Reserva> reservas = findByVagaIdAndDataAndStatusIn(vagaId, data, status);
-        List<ReservaRapida> reservasRapidas = reservaRapidaService.findByVagaIdAndDataAndStatusIn(vagaId, data, status);
-        List<ReservaDTO> listaFinalReservas = reservaUtils.juntarReservas(reservas, reservasRapidas);
-        return listaFinalReservas;
-    }
 
     public List<ReservaDTO> getReservasByVagaIdDataAndPlaca(UUID vagaId, LocalDate data, String placa, List<StatusReservaEnum> status) {
-        List<ReservaDTO> reservas = getReservasByVagaIdAndData(vagaId, data, status);
+        if (placa == null) throw new IllegalArgumentException("Placa não pode ser nula ou vazia.");
+        placa = placa.trim().toUpperCase();
+        List<Reserva> reservasNormais = reservaRepository.findByVagaIdAndVeiculoPlacaIgnoringCaseAndStatusIn(
+            vagaId,
+            placa,
+            status
+        );
+
+        List<ReservaRapida> reservasRapidas = reservaRapidaRepository.findByVagaIdAndPlacaIgnoringCaseAndStatusIn(
+            vagaId,
+            placa,
+            status
+        );
+       
+        List<ReservaDTO> reservas = reservaUtils.juntarReservas(reservasNormais, reservasRapidas);
+
+        Instant inicioDoDia = data
+            .atStartOfDay(DateUtils.FUSO_BRASILIA)
+            .toInstant();
+
+        Instant fimDoDia = data
+            .plusDays(1)
+            .atStartOfDay(DateUtils.FUSO_BRASILIA)
+            .toInstant();
+
         return reservas.stream()
-                .filter(r -> r.getPlacaVeiculo().equalsIgnoreCase(placa))
-                .toList();
+            .filter(reserva -> {
+                Instant inicioReserva = reserva.getInicio().toInstant();
+                Instant fimReserva = reserva.getFim().toInstant();
+
+                return fimReserva.isAfter(inicioDoDia)
+                    && inicioReserva.isBefore(fimDoDia);
+            })
+            .toList();
     }
 
     public List<ReservaDTO> getReservasAtivasByPlaca(String placa){
@@ -216,27 +238,91 @@ public class ReservaService {
         return listaReservasAtivasPorPlaca;
     }
 
-    public List<Intervalo> getIntervalosBloqueados(UUID vagaId, LocalDate data, TipoVeiculoEnum tipoVeiculo  ) {
+    public List<Intervalo> getIntervalosBloqueados(
+        UUID vagaId,
+        LocalDate data,
+        TipoVeiculoEnum tipoVeiculo
+    ) {
+        if (data == null) {
+            throw new IllegalArgumentException("A data da reserva é obrigatória.");
+        }
+
+        if (tipoVeiculo == null) {
+            throw new IllegalArgumentException("O tipo de veículo é obrigatório.");
+        }
+
         Vaga vaga = vagaService.findById(vagaId);
-        if (vaga.getTipoVaga().equals(TipoVagaEnum.PERPENDICULAR)) return getIntervalosBloqueadosPerpendicular(vaga, data, tipoVeiculo);
-        else return getIntervalosBloqueadosParalela(vaga, data, tipoVeiculo);
+
+        if (vaga.getTipoVaga().equals(TipoVagaEnum.PERPENDICULAR)) {
+            return getIntervalosBloqueadosPerpendicular(vaga, data, tipoVeiculo);
+        }
+
+        return getIntervalosBloqueadosParalela(vaga, data, tipoVeiculo);
     }
 
-    private List<Intervalo> getIntervalosBloqueadosParalela(Vaga vaga, LocalDate data, TipoVeiculoEnum tipoVeiculo) {
+
+    private List<Intervalo> getIntervalosBloqueadosParalela(
+        Vaga vaga,
+        LocalDate data,
+        TipoVeiculoEnum tipoVeiculo
+    ) {
+        if (vaga.getComprimento() == null || vaga.getComprimento() <= 0) {
+            throw new IllegalArgumentException(
+                "Vaga do tipo paralela deve ter o campo 'comprimento' preenchido."
+            );
+        }
+
         int capacidadeTotal = vaga.getComprimento();
         int comprimentoVeiculoDesejado = tipoVeiculo.getComprimento();
-        
-        if (comprimentoVeiculoDesejado > capacidadeTotal)  throw new IllegalArgumentException("O veículo selecionado é maior do que o tamanho da vaga.");
 
-        List<ReservaDTO> reservas = getReservasByVagaIdAndData(vaga.getId(), data, new ArrayList<>(List.of(StatusReservaEnum.RESERVADA, StatusReservaEnum.ATIVA)));
-        if (reservas.isEmpty()) {
-            return List.of(); // nada reservado → nenhum bloqueio
+        if (comprimentoVeiculoDesejado > capacidadeTotal) {
+            throw new IllegalArgumentException(
+                "O veículo selecionado é maior do que o tamanho da vaga."
+            );
         }
-        
+
+        List<ReservaDTO> reservas = getReservasByVagaIdAndData(
+            vaga.getId(),
+            data,
+            new ArrayList<>(
+                List.of(
+                    StatusReservaEnum.RESERVADA,
+                    StatusReservaEnum.ATIVA
+                )
+            )
+        );
+
+        if (reservas.isEmpty()) {
+            return List.of();
+        }
+
+
+        Instant inicioDoDia = data
+            .atStartOfDay(DateUtils.FUSO_BRASILIA)
+            .toInstant();
+
+        Instant fimDoDia = data
+            .plusDays(1)
+            .atStartOfDay(DateUtils.FUSO_BRASILIA)
+            .toInstant();
+
         TreeSet<Instant> pontos = new TreeSet<>();
-        reservas.forEach(r -> {
-            pontos.add(r.getInicio().toInstant());
-            pontos.add(r.getFim().toInstant());
+
+        reservas.forEach(reserva -> {
+            Instant inicioReserva = reserva.getInicio().toInstant();
+            Instant fimReserva = reserva.getFim().toInstant();
+
+            pontos.add(
+                inicioReserva.isBefore(inicioDoDia)
+                    ? inicioDoDia
+                    : inicioReserva
+            );
+
+            pontos.add(
+                fimReserva.isAfter(fimDoDia)
+                    ? fimDoDia
+                    : fimReserva
+            );
         });
 
         List<Instant> timeline = new ArrayList<>(pontos);
@@ -248,72 +334,134 @@ public class ReservaService {
             Instant inicio = timeline.get(i);
             Instant fim = timeline.get(i + 1);
 
-            if (inicio.equals(fim)) continue;
+            if (!inicio.isBefore(fim)) {
+                continue;
+            }
 
             int ocupacaoAtual = 0;
 
-            for (ReservaDTO res : reservas) {
-                boolean sobrepoe = res.getInicio().toInstant().isBefore(fim)
-                        && res.getFim().toInstant().isAfter(inicio);
+            for (ReservaDTO reserva : reservas) {
+                Instant inicioReserva = reserva.getInicio().toInstant();
+                Instant fimReserva = reserva.getFim().toInstant();
 
-                if (sobrepoe) ocupacaoAtual += res.getTamanhoVeiculo();
+                boolean sobrepoe =
+                    inicioReserva.isBefore(fim) &&
+                    fimReserva.isAfter(inicio);
+
+                if (sobrepoe) {
+                    ocupacaoAtual += reserva.getTamanhoVeiculo();
+                }
             }
 
             int espacoRestante = capacidadeTotal - ocupacaoAtual;
+
             boolean cabe = espacoRestante >= comprimentoVeiculoDesejado;
 
             if (!cabe) {
-                OffsetDateTime dtoIni = OffsetDateTime.ofInstant(inicio, ZoneOffset.of("-03:00"));
-                OffsetDateTime dtoFim = OffsetDateTime.ofInstant(fim, ZoneOffset.of("-03:00"));
+                OffsetDateTime dtoInicio = OffsetDateTime.ofInstant(
+                    inicio,
+                    DateUtils.FUSO_BRASILIA
+                );
 
-                if (atual == null) atual = new Intervalo(dtoIni, dtoFim);
-                else atual.setFim(dtoFim);
+                OffsetDateTime dtoFim = OffsetDateTime.ofInstant(
+                    fim,
+                    DateUtils.FUSO_BRASILIA
+                );
 
-            } else {
-                if (atual != null) {
-                    intervalosBloqueados.add(atual);
-                    atual = null;
+                if (atual == null) {
+                    atual = new Intervalo(dtoInicio, dtoFim);
+                } else {
+                    atual.setFim(dtoFim);
                 }
+
+            } else if (atual != null) {
+                intervalosBloqueados.add(atual);
+                atual = null;
             }
         }
 
-        if (atual != null) intervalosBloqueados.add(atual);
+        if (atual != null) {
+            intervalosBloqueados.add(atual);
+        }
 
         return intervalosBloqueados;
     }
+
 
     private List<Intervalo> getIntervalosBloqueadosPerpendicular(
         Vaga vaga,
         LocalDate data,
         TipoVeiculoEnum tipoVeiculo
     ) {
-        if (vaga.getComprimento() == null || vaga.getComprimento() <= 0 ||
-            vaga.getQuantidade() == null || vaga.getQuantidade() <= 0 ||
-            vaga.getTipoVaga() == null || !vaga.getTipoVaga().equals(TipoVagaEnum.PERPENDICULAR)) {
-            throw new IllegalArgumentException("Vaga do tipo perpendicular deve ter os campos 'comprimento' e 'quantidade' preenchidos.");
+        if (
+            vaga.getComprimento() == null ||
+            vaga.getComprimento() <= 0 ||
+            vaga.getQuantidade() == null ||
+            vaga.getQuantidade() <= 0
+        ) {
+            throw new IllegalArgumentException(
+                "Vaga do tipo perpendicular deve ter os campos " +
+                "'comprimento' e 'quantidade' preenchidos."
+            );
         }
 
         int comprimentoPorPosicao = vaga.getComprimento();
         int quantidadePosicoes = vaga.getQuantidade();
         int comprimentoVeiculoDesejado = tipoVeiculo.getComprimento();
 
-        if (comprimentoVeiculoDesejado > comprimentoPorPosicao) throw new IllegalArgumentException("O veículo selecionado é maior do que o tamanho permitido por posição nesta vaga.");
+        if (comprimentoVeiculoDesejado > comprimentoPorPosicao) {
+            throw new IllegalArgumentException(
+                "O veículo selecionado é maior do que o tamanho permitido " +
+                "por posição nesta vaga."
+            );
+        }
 
         List<ReservaDTO> reservas = getReservasByVagaIdAndData(
             vaga.getId(),
             data,
-            new ArrayList<>(List.of(StatusReservaEnum.RESERVADA, StatusReservaEnum.ATIVA))
+            new ArrayList<>(
+                List.of(
+                    StatusReservaEnum.RESERVADA,
+                    StatusReservaEnum.ATIVA
+                )
+            )
         );
 
-        if (reservas.isEmpty()) return List.of();
+        if (reservas.isEmpty()) {
+            return List.of();
+        }
+
+
+        Instant inicioDoDia = data
+            .atStartOfDay(DateUtils.FUSO_BRASILIA)
+            .toInstant();
+
+        Instant fimDoDia = data
+            .plusDays(1)
+            .atStartOfDay(DateUtils.FUSO_BRASILIA)
+            .toInstant();
 
         TreeSet<Instant> pontos = new TreeSet<>();
-        reservas.forEach(r -> {
-            pontos.add(r.getInicio().toInstant());
-            pontos.add(r.getFim().toInstant());
+
+        reservas.forEach(reserva -> {
+            Instant inicioReserva = reserva.getInicio().toInstant();
+            Instant fimReserva = reserva.getFim().toInstant();
+
+            pontos.add(
+                inicioReserva.isBefore(inicioDoDia)
+                    ? inicioDoDia
+                    : inicioReserva
+            );
+
+            pontos.add(
+                fimReserva.isAfter(fimDoDia)
+                    ? fimDoDia
+                    : fimReserva
+            );
         });
 
         List<Instant> timeline = new ArrayList<>(pontos);
+
         List<Intervalo> intervalosBloqueados = new ArrayList<>();
         Intervalo atual = null;
 
@@ -321,21 +469,41 @@ public class ReservaService {
             Instant inicio = timeline.get(i);
             Instant fim = timeline.get(i + 1);
 
-            if (inicio.equals(fim)) continue;
+            if (!inicio.isBefore(fim)) {
+                continue;
+            }
 
             Map<Integer, Integer> ocupacaoPorPosicao = new HashMap<>();
 
-            for (ReservaDTO res : reservas) {
+            for (ReservaDTO reserva : reservas) {
+                Instant inicioReserva = reserva.getInicio().toInstant();
+                Instant fimReserva = reserva.getFim().toInstant();
+
                 boolean sobrepoe =
-                    res.getInicio().toInstant().isBefore(fim) &&
-                    res.getFim().toInstant().isAfter(inicio);
+                    inicioReserva.isBefore(fim) &&
+                    fimReserva.isAfter(inicio);
 
-                if (sobrepoe) {
-                    Integer posicao = res.getPosicaoPerpendicular();
-                    if (posicao == null) throw new IllegalArgumentException("Reserva perpendicular sem posição definida.");
-
-                    ocupacaoPorPosicao.merge(posicao, res.getTamanhoVeiculo(), Integer::sum);
+                if (!sobrepoe) {
+                    continue;
                 }
+
+                Integer posicao = reserva.getPosicaoPerpendicular();
+
+                if (
+                    posicao == null ||
+                    posicao <= 0 ||
+                    posicao > quantidadePosicoes
+                ) {
+                    throw new IllegalArgumentException(
+                        "Reserva perpendicular possui posição inválida."
+                    );
+                }
+
+                ocupacaoPorPosicao.merge(
+                    posicao,
+                    reserva.getTamanhoVeiculo(),
+                    Integer::sum
+                );
             }
 
             boolean cabeEmAlgumaPosicao = false;
@@ -343,29 +511,45 @@ public class ReservaService {
             for (int posicao = 1; posicao <= quantidadePosicoes; posicao++) {
                 int ocupado = ocupacaoPorPosicao.getOrDefault(posicao, 0);
 
-                if (ocupado + comprimentoVeiculoDesejado <= comprimentoPorPosicao) {
+                if (
+                    ocupado + comprimentoVeiculoDesejado
+                        <= comprimentoPorPosicao
+                ) {
                     cabeEmAlgumaPosicao = true;
                     break;
                 }
             }
 
             if (!cabeEmAlgumaPosicao) {
-                OffsetDateTime dtoIni = OffsetDateTime.ofInstant(inicio, ZoneOffset.of("-03:00"));
-                OffsetDateTime dtoFim = OffsetDateTime.ofInstant(fim, ZoneOffset.of("-03:00"));
+                OffsetDateTime dtoInicio = OffsetDateTime.ofInstant(
+                    inicio,
+                    DateUtils.FUSO_BRASILIA
+                );
 
-                if (atual == null) atual = new Intervalo(dtoIni, dtoFim);
-                else atual.setFim(dtoFim);
-                
+                OffsetDateTime dtoFim = OffsetDateTime.ofInstant(
+                    fim,
+                    DateUtils.FUSO_BRASILIA
+                );
+
+                if (atual == null) {
+                    atual = new Intervalo(dtoInicio, dtoFim);
+                } else {
+                    atual.setFim(dtoFim);
+                }
+
             } else if (atual != null) {
                 intervalosBloqueados.add(atual);
                 atual = null;
             }
         }
 
-        if (atual != null) intervalosBloqueados.add(atual);
+        if (atual != null) {
+            intervalosBloqueados.add(atual);
+        }
 
         return intervalosBloqueados;
     }
+
 
     @NoArgsConstructor(access = AccessLevel.PRIVATE)
     @AllArgsConstructor
@@ -477,9 +661,9 @@ public class ReservaService {
         
         if (deltaTempo < TEMPO_LIMITE_ALTERACAO || deltaTempo < 0) throw new ReservaExceptions.TempoAlteracaoEsgotadoException(deltaTempo, TEMPO_LIMITE_ALTERACAO);
         
-        if (reservaRequestDTO.getMotoristaId() != null && !reservaRequestDTO.getMotoristaId().equals(reserva.getMotorista().getId())) reserva.setMotorista(motoristaService.findById(reservaRequestDTO.getMotoristaId()));
+        if (reservaRequestDTO.getMotoristaId() != null && !reservaRequestDTO.getMotoristaId().equals(reserva.getMotorista().getId())) reserva.setMotorista(motoristaService.findByIdAndAtivoTrue(reservaRequestDTO.getMotoristaId()));
 
-        if (reservaRequestDTO.getVeiculoId() != null) reserva.setVeiculo(veiculoService.findById(reservaRequestDTO.getVeiculoId()));
+        if (reservaRequestDTO.getVeiculoId() != null) reserva.setVeiculo(veiculoService.findAtivoByIdAndUsuarioId(reservaRequestDTO.getVeiculoId(), userAuthenticated.id()));
         
         if (reservaRequestDTO.getCidadeOrigem() != null) reserva.setCidadeOrigem(reservaRequestDTO.getCidadeOrigem());
        
@@ -487,12 +671,24 @@ public class ReservaService {
 
         if (reservaRequestDTO.getFim() != null) reserva.setFim(reservaRequestDTO.getFim());
 
-        checarExcecoesReserva(reserva, reserva.getMotorista(), reserva.getVeiculo(), ReservaUtils.METODO_PATCH);
-        Reserva reservaSalva = reservaRepository.save(reserva);
-        Usuario criadoPor = reservaSalva.getCriadoPor();
+        Vaga vaga = reserva.getVaga();
+
+        reservaRules.validacoesTemporais(reserva.getInicio(), reserva.getFim());
+        reservaRules.validacoesDaVaga(vaga, reserva.getInicio(), reserva.getFim());
+        reservaRules.validacoesDeAutorizacao(usuarioId, reserva.getMotorista(), reserva.getVeiculo());
+        
+        Usuario criadoPor = reserva.getCriadoPor();
         String cpfOrCnpjCriador = usuarioUtils.getCpfOrCnpjByPermissaoAndId(criadoPor.getPermissao(), criadoPor.getId());
-        ReservaDTO reservaDTO = reservaMapper.toReservaDTO(reservaSalva, cpfOrCnpjCriador);
-        agendarSchedulers(reservaDTO);
+        ReservaDTO dto = reservaMapper.toReservaDTO(reserva, cpfOrCnpjCriador);
+        
+        reservaRules.validacoesDeConflito(vaga, dto);
+
+        if (vaga.getTipoVaga().equals(TipoVagaEnum.PERPENDICULAR)){
+            reserva.setPosicaoPerpendicular(dto.getPosicaoPerpendicular());
+        }
+
+        Reserva reservaSalva = reservaRepository.save(reserva);
+        agendarSchedulers(reservaMapper.toReservaDTO(reservaSalva, cpfOrCnpjCriador));
         return reservaSalva;
     }
 

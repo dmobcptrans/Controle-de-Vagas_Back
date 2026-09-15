@@ -33,8 +33,8 @@ public class ReservaRapidaMapper {
             DateUtils.fusoHorarioBrasilia(request.getInicio()),
             DateUtils.fusoHorarioBrasilia(request.getFim()),
             request.getPosicaoPerpendicular(),
-            request.getCidadeOrigem(),
-            request.getEntradaCidade()
+            request.getCidadeOrigem() != null ? request.getCidadeOrigem() : "Petrópolis - RJ",
+            request.getEntradaCidade() 
         );
     }
 
@@ -76,6 +76,7 @@ public class ReservaRapidaMapper {
         ReservaDTO response = new ReservaDTO(
             reserva.getId(),
             vaga != null ? vaga.getId() : null,
+            vaga != null ? vaga.getArea() : null,
             null,
             null,
             null,
@@ -84,6 +85,7 @@ public class ReservaRapidaMapper {
             enderecoVagaMapper.toResponse(enderecoVaga),
             reserva.getInicio(),
             reserva.getFim(),
+            null,
             reserva.getTipoVeiculo().getComprimento(),
             reserva.getPlaca(),
             null,

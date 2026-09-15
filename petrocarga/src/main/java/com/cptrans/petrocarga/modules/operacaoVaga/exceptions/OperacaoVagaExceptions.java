@@ -22,8 +22,24 @@ public class OperacaoVagaExceptions {
         }
     }
 
+    public static class InicioOuFImInvalidoException extends DataIntegrityViolationException {
+        public InicioOuFImInvalidoException() {
+            super("As datas de início e/ou fim da reserva são inválidas.");
+        }
+    }
+
     @ExceptionHandler(VagaSemOperacaoNoPeriodoException.class)
     public ResponseEntity<SystemResponse> handleVagaSemOperacaoNoPeriodoException(VagaSemOperacaoNoPeriodoException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(new SystemResponse(ex.getMessage(), 409));
+    }
+
+    @ExceptionHandler(InicioEFimObrigatoriosException.class)
+    public ResponseEntity<SystemResponse> handleInicioEFimObrigatoriosException(InicioEFimObrigatoriosException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(new SystemResponse(ex.getMessage(), 409));
+    }
+
+    @ExceptionHandler(InicioOuFImInvalidoException.class)
+    public ResponseEntity<SystemResponse> handleInicioOuFImInvalidoException(InicioOuFImInvalidoException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(new SystemResponse(ex.getMessage(), 409));
     }
 }
