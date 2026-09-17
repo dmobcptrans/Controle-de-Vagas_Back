@@ -29,9 +29,9 @@ import com.cptrans.petrocarga.modules.vaga.dto.mapper.VagaMapper;
 import com.cptrans.petrocarga.modules.vaga.dto.request.VagaFiltrosRequestDTO;
 import com.cptrans.petrocarga.modules.vaga.dto.request.VagaPatchDTO;
 import com.cptrans.petrocarga.modules.vaga.dto.request.VagaRequestDTO;
-import com.cptrans.petrocarga.modules.vaga.dto.response.VagaCoordenadaResponseDTO;
 import com.cptrans.petrocarga.modules.vaga.dto.response.VagaResponseDTO;
 import com.cptrans.petrocarga.modules.vaga.dto.response.VagaSimplificadoResponseDTO;
+import com.cptrans.petrocarga.modules.vaga.dto.response.VagasMapaResponseDTO;
 import com.cptrans.petrocarga.modules.vaga.entity.Vaga;
 import com.cptrans.petrocarga.modules.vaga.exceptions.VagaExceptions;
 import com.cptrans.petrocarga.modules.vaga.service.VagaService;
@@ -43,6 +43,10 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor; 
 
 @RestController
@@ -84,29 +88,45 @@ public class VagaController {
     @DefaultResponses
     @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR','AGENTE','MOTORISTA','EMPRESA')")
     @GetMapping("/mapa")
-    public ResponseEntity<List<VagaCoordenadaResponseDTO>> buscarPorMapa(
+    public ResponseEntity<VagasMapaResponseDTO> buscarPorMapa(
+        @Valid
+        @DecimalMin(value = "-90", message = "O campo 'north' deve estar entre -90 e 90.")
+        @DecimalMax(value = "90", message = "O campo 'north' deve estar entre -90 e 90.")
         @Parameter(description = "Norte")
         @RequestParam Double north,
 
+        @Valid
+        @DecimalMin(value = "-90", message = "O campo 'south' deve estar entre -90 e 90.")
+        @DecimalMax(value = "90", message = "O campo 'south' deve estar entre -90 e 90.")
         @Parameter(description = "Sul")
         @RequestParam Double south,
 
+        @Valid
+        @DecimalMin(value = "-180", message = "O campo 'east' deve estar entre -180 e 180.")
+        @DecimalMax(value = "180", message = "O campo 'east' deve estar entre -180 e 180.")
         @Parameter(description = "Leste")
         @RequestParam Double east,
 
+        @Valid
+        @DecimalMin(value = "-180", message = "O campo 'west' deve estar entre -180 e 180.")
+        @DecimalMax(value = "180", message = "O campo 'west' deve estar entre -180 e 180.")
         @Parameter(description = "Oeste")
         @RequestParam Double west,
+
+        @Valid 
+        @Min(value = 0, message = "O campo 'zoom' deve ser um inteiro e estar entre 0 e 22.")
+        @Max(value = 22, message = "O campo 'zoom' deve ser um inteiro e estar entre 0 e 22.")
+        @Parameter(description = "Nível de zoom do mapa.")
+        @RequestParam(defaultValue = "14") Double zoom,
 
         @Parameter(description = "Status da vaga")
         @RequestParam(required = false) StatusVagaEnum status
     ) {
-        List<VagaCoordenadaResponseDTO> vagas;
-
         if (north < south || east < west) throw new VagaExceptions.BoundingBoxInvalidoException();
 
         StatusVagaEnum statusBusca = status != null ? status : StatusVagaEnum.DISPONIVEL;
 
-        vagas = vagaService.buscarPorMapa(north, south, east, west, statusBusca);
+        VagasMapaResponseDTO vagas = vagaService.buscarPorMapa(north, south, east, west, zoom, statusBusca);
       
         return ResponseEntity.ok(vagas);
     }

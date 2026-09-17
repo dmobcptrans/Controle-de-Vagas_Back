@@ -1,25 +1,26 @@
 package com.cptrans.petrocarga.modules.vaga.dto.mapper;
 
-import java.time.LocalDate;
-import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 import org.springframework.stereotype.Component;
 
-import com.cptrans.petrocarga.enums.DiaSemanaEnum;
+import com.cptrans.petrocarga.enums.TipoMapaVagasEnum;
 import com.cptrans.petrocarga.enums.StatusVagaEnum;
-import com.cptrans.petrocarga.modules.disponibilidadeVaga.repository.DisponibilidadeVagaRepository;
 import com.cptrans.petrocarga.modules.enderecoVaga.dto.mapper.EnderecoVagaMapper;
 import com.cptrans.petrocarga.modules.enderecoVaga.entity.EnderecoVaga;
 import com.cptrans.petrocarga.modules.operacaoVaga.dto.mapper.OperacaoVagaMapper;
 import com.cptrans.petrocarga.modules.operacaoVaga.entity.OperacaoVaga;
+import com.cptrans.petrocarga.modules.vaga.dto.projection.ClusterMapaProjection;
 import com.cptrans.petrocarga.modules.vaga.dto.request.VagaRequestDTO;
 import com.cptrans.petrocarga.modules.vaga.dto.response.VagaCoordenadaResponseDTO;
 import com.cptrans.petrocarga.modules.vaga.dto.response.VagaResponseDTO;
 import com.cptrans.petrocarga.modules.vaga.dto.response.VagaSimplificadoResponseDTO;
+import com.cptrans.petrocarga.modules.vaga.dto.response.VagasClusterResponseDTO;
+import com.cptrans.petrocarga.modules.vaga.dto.response.VagasMapaResponseDTO;
 import com.cptrans.petrocarga.modules.vaga.entity.Vaga;
-import com.cptrans.petrocarga.shared.utils.DateUtils;
+import com.cptrans.petrocarga.modules.vaga.service.VagaService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -28,7 +29,6 @@ import lombok.RequiredArgsConstructor;
 public class VagaMapper {
     private final OperacaoVagaMapper operacaoVagaMapper;
     private final EnderecoVagaMapper enderecoVagaMapper;
-    private final DisponibilidadeVagaRepository disponibilidadeVagaRepository;
     
     public Vaga toEntity(VagaRequestDTO request, EnderecoVaga endereco){
         if (request == null) return null;
@@ -78,10 +78,10 @@ public class VagaMapper {
 
     public List<VagaResponseDTO> toResponseList(List<Vaga> vagas){
         if (vagas == null || vagas.isEmpty()) return List.of();
-        return vagas.stream().map(this::toResponse).toList();
+        return vagas.stream().map(this::toResponse).filter(v -> v != null).toList();
     }
 
-    public VagaCoordenadaResponseDTO toCoordenadaResponse(Vaga vaga, StatusVagaEnum status){
+    public VagaCoordenadaResponseDTO toCoordenadaResponse(Vaga vaga, StatusVagaEnum status, Set<UUID> idsDisponiveisHoje){
         if (vaga == null) return null;
         VagaCoordenadaResponseDTO response = new VagaCoordenadaResponseDTO(
             vaga.getId(),
@@ -94,14 +94,18 @@ public class VagaMapper {
             null
         );
         if (status != null && status.equals(StatusVagaEnum.DISPONIVEL)){
-            response = possuiOperacaoNosProximosDoisDias(vaga, DateUtils.agora(), response) ? response :  null;
+            if (idsDisponiveisHoje != null && !idsDisponiveisHoje.isEmpty()){
+                response.setDisponivelHoje(idsDisponiveisHoje.contains(vaga.getId()));
+            } else {
+                response.setDisponivelHoje(false);
+            }
         }
         return response;
     }
 
-    public List<VagaCoordenadaResponseDTO> toCoordenadaResponseList(List<Vaga> vagas, StatusVagaEnum status){
+    public List<VagaCoordenadaResponseDTO> toCoordenadaResponseList(List<Vaga> vagas, StatusVagaEnum status, Set<UUID> idsDisponiveisHoje){
         if (vagas == null || vagas.isEmpty()) return List.of();
-        return vagas.stream().map(v -> toCoordenadaResponse(v, status)).toList();
+        return vagas.stream().map(v -> toCoordenadaResponse(v, status, idsDisponiveisHoje)).filter(v -> v != null).toList();
     }
 
     public VagaSimplificadoResponseDTO toResponseSimplificado(Vaga vaga){
@@ -131,35 +135,23 @@ public class VagaMapper {
         return vagas.stream().map(this::toResponseSimplificado).toList();
     }
 
-    private boolean possuiOperacaoNosProximosDoisDias(Vaga vaga, OffsetDateTime agora, VagaCoordenadaResponseDTO response) {
-        LocalDate hoje = agora.toLocalDate();
+    public VagasClusterResponseDTO toClusterResponse(ClusterMapaProjection projection){
+        return new VagasClusterResponseDTO(
+            projection.getLatitude(),
+            projection.getLongitude(),
+            projection.getQuantidade()
+        );
+    }
 
-        for (int i = 0; i <= 2; i++) {
-            LocalDate data = hoje.plusDays(i);
+    public List<VagasClusterResponseDTO> toClusterResponseList(List<ClusterMapaProjection> clusters){
+        if (clusters == null || clusters.isEmpty()) return List.of();
+        return clusters.stream().map(this::toClusterResponse).filter(c -> c != null).toList();
+    }
 
-            DiaSemanaEnum diaSemana = DiaSemanaEnum.fromDayOfWeek(data.getDayOfWeek());
-
-            OperacaoVaga operacao = vaga.getOperacoesVaga()
-                .stream()
-                .filter(op -> op.getDiaSemana() == diaSemana)
-                .findFirst()
-                .orElse(null);
-
-            if (operacao == null) continue;
-
-            OffsetDateTime inicioOperacao = operacao.getHoraInicio().atDate(data).atOffset(agora.getOffset());
-            OffsetDateTime fimOperacao = operacao.getHoraFim().atDate(data).atOffset(agora.getOffset());
-
-            OffsetDateTime inicioBusca = i == 0 ? agora : inicioOperacao;
-
-            if (i == 0 && !fimOperacao.isAfter(agora)) continue;
-
-            if (disponibilidadeVagaRepository.existsByVagaIdAndFimGreaterThanAndInicioLessThan(vaga.getId(), inicioBusca, fimOperacao)) {
-                if (i == 0) response.setDisponivelAgora(true);
-                return true;
-            }
-        }
-
-        return false;
+    public VagasMapaResponseDTO toVagasMapaResponse(List<VagaCoordenadaResponseDTO> vagas, List<VagasClusterResponseDTO> clusters){
+        boolean limiteAtingido = (vagas != null && vagas.size() == VagaService.LIMITE_VAGAS_MAPA);
+        TipoMapaVagasEnum tipo = TipoMapaVagasEnum.VAGAS;
+        if (clusters != null && !clusters.isEmpty()) tipo = TipoMapaVagasEnum.CLUSTERS;
+        return new VagasMapaResponseDTO(tipo, vagas, clusters, limiteAtingido);
     }
 }
