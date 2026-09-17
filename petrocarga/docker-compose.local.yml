@@ -2,6 +2,7 @@ services:
   backend:
     build: .
     container_name: petrocarga-backend-local
+    restart: unless-stopped
     networks:
       petrocarga-backend-network:
       cptrans-gateway:
