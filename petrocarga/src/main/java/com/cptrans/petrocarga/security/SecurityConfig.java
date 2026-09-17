@@ -63,7 +63,10 @@ public class SecurityConfig {
                     "/motoristas/cadastro/",
                     "/motoristas/cadastro",
                     "/notificacoes/stream/",
-                    "/notificacoes/stream"
+                    "/notificacoes/stream",
+                    "/convite-motorista-empresa/byToken/**",
+                    "/convite-motorista-empresa/responder",
+                    "/convite-motorista-empresa/responder/"
                 ).permitAll()
                 .anyRequest().authenticated()
             )
