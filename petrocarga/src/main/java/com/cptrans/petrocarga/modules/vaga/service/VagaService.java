@@ -182,7 +182,7 @@ public class VagaService {
         List<Vaga> vagas;
         Set<UUID> idsDisponiveisHoje = Set.of();
 
-        if (status == StatusVagaEnum.DISPONIVEL) {
+        if (status != null && status.equals(StatusVagaEnum.DISPONIVEL)) {
 
             OffsetDateTime agora = DateUtils.agora();
 
@@ -218,15 +218,24 @@ public class VagaService {
             }
 
         } else {
-
-            vagas = vagaRepository.buscarPorArea(
-                north,
-                south,
-                east,
-                west,
-                status,
-                limite
-            );
+            if (status != null) {
+                 vagas = vagaRepository.buscarPorAreaEStatus(
+                    north,
+                    south,
+                    east,
+                    west,
+                    status,
+                    limite
+                );
+            } else {
+                vagas = vagaRepository.buscarPorArea(
+                    north,
+                    south,
+                    east,
+                    west,
+                    limite
+                );
+            }
         }
         
         List<VagaCoordenadaResponseDTO> response = vagaMapper.toCoordenadaResponseList(vagas, status, idsDisponiveisHoje);
@@ -247,7 +256,7 @@ public class VagaService {
 
         List<ClusterMapaProjection> clusters;
 
-        if (status == StatusVagaEnum.DISPONIVEL) {
+        if (status != null && status.equals((StatusVagaEnum.DISPONIVEL))) {
             OffsetDateTime agora = DateUtils.agora();
 
             LocalDate dataHoje = agora.toLocalDate();
@@ -268,14 +277,25 @@ public class VagaService {
             );
 
         } else {
-            clusters = vagaRepository.buscarClustersPorArea(
-                north,
-                south,
-                east,
-                west,
-                status,
-                tamanhoCelula
-            );
+            if (status != null) {
+                clusters = vagaRepository.buscarClustersPorAreaEStatus(
+                    north,
+                    south,
+                    east,
+                    west,
+                    status.name(),
+                    tamanhoCelula
+                );
+            } else {
+                clusters = vagaRepository.buscarClustersPorArea(
+                    north,
+                    south,
+                    east,
+                    west,
+                    tamanhoCelula
+                );
+            }
+            
         }
 
         List<VagasClusterResponseDTO> response = vagaMapper.toClusterResponseList(clusters);
