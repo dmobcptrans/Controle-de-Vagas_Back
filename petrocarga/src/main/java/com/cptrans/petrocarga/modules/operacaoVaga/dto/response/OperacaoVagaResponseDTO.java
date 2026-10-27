@@ -7,12 +7,14 @@ import com.cptrans.petrocarga.enums.DiaSemanaEnum;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Getter
+@EqualsAndHashCode(of = "id")
 public class OperacaoVagaResponseDTO {
     private UUID id;
     private DiaSemanaEnum diaSemanaAsEnum;

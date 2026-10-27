@@ -1,8 +1,10 @@
 package com.cptrans.petrocarga.modules.operacaoVaga.utils;
 
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
-import java.time.temporal.ChronoUnit;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Set;
 
 import org.springframework.stereotype.Component;
@@ -13,7 +15,7 @@ import com.cptrans.petrocarga.modules.operacaoVaga.exceptions.OperacaoVagaExcept
 @Component
 public class OperacaoVagaUtils {
     
-    public static final void verificarLimiteHorarioOperacaoVaga(
+    public static void verificarLimiteHorarioOperacaoVaga(
         Set<OperacaoVaga> listaOperacaoVaga,
         OffsetDateTime inicioReserva,
         OffsetDateTime fimReserva
@@ -30,86 +32,102 @@ public class OperacaoVagaUtils {
             throw new OperacaoVagaExceptions.InicioOuFImInvalidoException();
         }
 
-        String diaInicio = inicioReserva.getDayOfWeek().toString();
-        String diaFim = fimReserva.getDayOfWeek().toString();
+        OffsetDateTime cursor = inicioReserva;
 
-        LocalTime horaInicioReserva = inicioReserva.toLocalTime();
-        LocalTime horaFimReserva = fimReserva.toLocalTime();
+        while (cursor.isBefore(fimReserva)) {
 
-        // Reserva iniciando e terminando no mesmo dia.
-        if (diaInicio.equals(diaFim)) {
+            LocalDate dataAtual = cursor.toLocalDate();
+            LocalDate proximaData = dataAtual.plusDays(1);
 
-            OperacaoVaga operacaoVaga = listaOperacaoVaga.stream()
+            OffsetDateTime inicioProximoDia = proximaData
+                .atStartOfDay(cursor.getOffset()).toOffsetDateTime();
+
+            OffsetDateTime fimTrecho = fimReserva.isBefore(inicioProximoDia)
+                ? fimReserva
+                : inicioProximoDia;
+
+            LocalTime horaInicio = cursor.toLocalTime();
+
+            /*
+            * Se chegou exatamente à meia-noite, o trecho atual
+            * representa o restante do dia.
+            */
+            boolean terminaNoFimDoDia = fimTrecho.equals(inicioProximoDia);
+
+            LocalTime horaFim = terminaNoFimDoDia
+                ? LocalTime.of(23, 59)
+                : fimTrecho.toLocalTime();
+
+            String diaSemana = dataAtual
+                .getDayOfWeek()
+                .toString();
+
+            List<OperacaoVaga> operacoesDoDia = listaOperacaoVaga.stream()
                 .filter(op ->
                     op.getDiaSemana()
                         .getDescricaoIngles()
-                        .equals(diaInicio)
+                        .equals(diaSemana)
                 )
-                .findFirst()
-                .orElse(null);
+                .sorted(
+                    Comparator.comparing(OperacaoVaga::getHoraInicio)
+                )
+                .toList();
 
-            if (
-                operacaoVaga != null &&
-                !operacaoVaga.getHoraInicio().isAfter(horaInicioReserva) &&
-                !operacaoVaga.getHoraFim().isBefore(horaFimReserva)
-            ) {
-                return;
+            if (operacoesDoDia.isEmpty()) {
+                throw new OperacaoVagaExceptions.VagaSemOperacaoNoPeriodoException();
             }
 
-            throw new OperacaoVagaExceptions.VagaSemOperacaoNoPeriodoException();
-        }
+            /*
+            * Verifica se todo o trecho do dia está continuamente coberto
+            * pelos intervalos de operação.
+            */
+            LocalTime cursorHorario = horaInicio;
 
-        // Reserva atravessando para o dia seguinte.
-        long diasEntre =
-            ChronoUnit.DAYS.between(
-                inicioReserva.toLocalDate(),
-                fimReserva.toLocalDate()
-            );
+            for (OperacaoVaga operacao : operacoesDoDia) {
 
-        if (diasEntre != 1) {
-            throw new OperacaoVagaExceptions.InicioOuFImInvalidoException();
-        }
+                /*
+                * Ignora operações que terminam antes do ponto
+                * que precisamos cobrir.
+                */
+                if (!operacao.getHoraFim().isAfter(cursorHorario)) {
+                    continue;
+                }
 
-        OperacaoVaga operacaoVagaInicio = listaOperacaoVaga.stream()
-            .filter(op ->
-                op.getDiaSemana()
-                    .getDescricaoIngles()
-                    .equals(diaInicio)
-            )
-            .findFirst()
-            .orElse(null);
+                /*
+                * Existe um buraco entre o cursor e o início
+                * desta operação.
+                */
+                if (operacao.getHoraInicio().isAfter(cursorHorario)) {
+                    break;
+                }
 
-        OperacaoVaga operacaoVagaFim = listaOperacaoVaga.stream()
-            .filter(op ->
-                op.getDiaSemana()
-                    .getDescricaoIngles()
-                    .equals(diaFim)
-            )
-            .findFirst()
-            .orElse(null);
+                /*
+                * A operação cobre o cursor.
+                */
+                if (operacao.getHoraFim().isAfter(cursorHorario)) {
+                    cursorHorario = operacao.getHoraFim();
+                }
 
-        if (operacaoVagaInicio == null || operacaoVagaFim == null) {
-            throw new OperacaoVagaExceptions.VagaSemOperacaoNoPeriodoException();
-        }
+                /*
+                * Todo o trecho do dia já foi coberto.
+                */
+                if (!cursorHorario.isBefore(horaFim)) {
+                    break;
+                }
+            }
 
-        /*
-        * No dia inicial, a reserva precisa começar dentro
-        * do horário de operação.
-        */
-        boolean inicioValido =
-            !horaInicioReserva.isBefore(operacaoVagaInicio.getHoraInicio()) &&
-            !horaInicioReserva.isAfter(operacaoVagaInicio.getHoraFim());
+            /*
+            * Se ainda existe horário não coberto, significa que
+            * existe um intervalo sem operação dentro da reserva.
+            */
+            if (cursorHorario.isBefore(horaFim)) {
+                throw new OperacaoVagaExceptions.VagaSemOperacaoNoPeriodoException();
+            }
 
-        /*
-        * No dia final, a reserva precisa terminar dentro
-        * do horário de operação.
-        */
-        boolean fimValido =
-            !horaFimReserva.isBefore(operacaoVagaFim.getHoraInicio()) &&
-            !horaFimReserva.isAfter(operacaoVagaFim.getHoraFim());
-
-        if (!inicioValido || !fimValido) {
-            throw new OperacaoVagaExceptions.VagaSemOperacaoNoPeriodoException();
+            /*
+            * Avança para o próximo dia.
+            */
+            cursor = fimTrecho;
         }
     }
 }

@@ -1,7 +1,6 @@
 package com.cptrans.petrocarga.modules.reservaRules;
 
 import java.time.Duration;
-import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -96,7 +95,7 @@ public class ReservaRulesImpl implements ReservaRules {
     @Override 
     public void validacoesTemporais(OffsetDateTime inicio, OffsetDateTime fim) {
         validarInicioEFim(inicio, fim);
-        verificarExcecaoHorarioInicio(inicio, fim);
+        verificarExcecaoHorarioInicio(inicio);
     }
 
     @Override 
@@ -121,15 +120,10 @@ public class ReservaRulesImpl implements ReservaRules {
         }
     }
 
-    private void verificarExcecaoHorarioInicio(OffsetDateTime inicio, OffsetDateTime fim){
+    private void verificarExcecaoHorarioInicio(OffsetDateTime inicio) {
         OffsetDateTime agora = DateUtils.agora();
-        LocalDate dataAgora = agora.toLocalDate();
-        LocalDate dataInicio =  inicio.toLocalDate();
-        if (dataAgora.equals(dataInicio)) {
-            long diferencaMinutos = Duration.between(agora, inicio).toMinutes();
-            if (diferencaMinutos >= -2) return;
-            else throw new ReservaExceptions.InicioEFimInvalidosException();
-        }
+        long diferencaMinutos = Duration.between(agora, inicio).toMinutes();
+        if (diferencaMinutos < -2) throw new ReservaExceptions.InicioEFimInvalidosException();
     }
     
     private void validarLimiteDeReservasAtivas (ReservaDTO reserva){

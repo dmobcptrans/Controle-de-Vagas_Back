@@ -23,8 +23,10 @@ import com.cptrans.petrocarga.config.swagger.response.PatchResponses;
 import com.cptrans.petrocarga.config.swagger.response.PostResponses;
 import com.cptrans.petrocarga.enums.AreaVagaEnum;
 import com.cptrans.petrocarga.enums.OrdemEnum;
+import com.cptrans.petrocarga.enums.PermissaoEnum;
 import com.cptrans.petrocarga.enums.StatusVagaEnum;
 import com.cptrans.petrocarga.enums.TipoVagaEnum;
+import com.cptrans.petrocarga.modules.auth.utils.AuthUtils;
 import com.cptrans.petrocarga.modules.vaga.dto.mapper.VagaMapper;
 import com.cptrans.petrocarga.modules.vaga.dto.request.VagaFiltrosRequestDTO;
 import com.cptrans.petrocarga.modules.vaga.dto.request.VagaPatchDTO;
@@ -117,16 +119,22 @@ public class VagaController {
         @Min(value = 0, message = "O campo 'zoom' deve ser um inteiro e estar entre 0 e 22.")
         @Max(value = 22, message = "O campo 'zoom' deve ser um inteiro e estar entre 0 e 22.")
         @Parameter(description = "Nível de zoom do mapa.")
-        @RequestParam(defaultValue = "14") Double zoom,
+        @RequestParam(defaultValue = "13") Double zoom,
 
         @Parameter(description = "Status da vaga")
         @RequestParam(required = false) StatusVagaEnum status
     ) {
         if (north < south || east < west) throw new VagaExceptions.BoundingBoxInvalidoException();
 
-        StatusVagaEnum statusBusca = status != null ? status : StatusVagaEnum.DISPONIVEL;
+        Boolean isAdminOrGestor = AuthUtils.containsAuthority(
+            List.of(
+                PermissaoEnum.ADMIN.getRole(),
+                PermissaoEnum.GESTOR.getRole()
+            )
+        );
 
-        VagasMapaResponseDTO vagas = vagaService.buscarPorMapa(north, south, east, west, zoom, statusBusca);
+        if (!isAdminOrGestor) status = status == null ? StatusVagaEnum.DISPONIVEL : status;
+        VagasMapaResponseDTO vagas = vagaService.buscarPorMapa(north, south, east, west, zoom, status);
       
         return ResponseEntity.ok(vagas);
     }

@@ -36,7 +36,22 @@ public interface  VagaRepository extends JpaRepository<Vaga, UUID>, JpaSpecifica
     public List<Vaga> buscarDisponiveis();
 
     @Query("SELECT COALESCE(SUM(v.comprimento), 0) FROM Vaga v")
-    Long sumTotalAvailableLengthMeters();
+    public Long sumTotalAvailableLengthMeters();
+
+    @Query("""
+        SELECT DISTINCT v FROM Vaga v
+        WHERE v.latitudeFim >= :south
+        AND v.latitudeInicio <= :north
+        AND v.longitudeFim >= :west
+        AND v.longitudeInicio <= :east
+    """)
+    public List<Vaga> buscarPorArea(
+        Double north,
+        Double south,
+        Double east,
+        Double west,
+        Pageable pageable
+    );
 
     @Query("""
         SELECT DISTINCT v FROM Vaga v
@@ -46,7 +61,7 @@ public interface  VagaRepository extends JpaRepository<Vaga, UUID>, JpaSpecifica
         AND v.longitudeInicio <= :east
         AND v.status = :status
     """)
-    public List<Vaga> buscarPorArea(
+    public List<Vaga> buscarPorAreaEStatus(
         Double north,
         Double south,
         Double east,
@@ -139,31 +154,61 @@ public interface  VagaRepository extends JpaRepository<Vaga, UUID>, JpaSpecifica
 
     @Query(value = """
         SELECT
-            FLOOR(((v.latitude_inicio + v.latitude_fim) / 2) / :tamanhoCelula) AS grid_lat,
-            FLOOR(((v.longitude_inicio + v.longitude_fim) / 2) / :tamanhoCelula) AS grid_lng,
-            AVG((v.latitude_inicio + v.latitude_fim) / 2) AS latitude,
-            AVG((v.longitude_inicio + v.longitude_fim) / 2) AS longitude,
+            FLOOR(v.latitude / :tamanhoCelula) AS grid_lat,
+            FLOOR(v.longitude / :tamanhoCelula) AS grid_lng,
+            AVG(v.latitude) AS latitude,
+            AVG(v.longitude) AS longitude,
             COUNT(*) AS quantidade
-        FROM vaga v
-        WHERE v.latitude_fim >= :south
-        AND v.latitude_inicio <= :north
-        AND v.longitude_fim >= :west
-        AND v.longitude_inicio <= :east
-        AND v.status = :status
-        GROUP BY
-            FLOOR(((v.latitude_inicio + v.latitude_fim) / 2) / :tamanhoCelula),
-            FLOOR(((v.longitude_inicio + v.longitude_fim) / 2) / :tamanhoCelula)
-        """,
-        nativeQuery = true)
+        FROM (
+            SELECT
+                (latitude_inicio + latitude_fim) / 2 AS latitude,
+                (longitude_inicio + longitude_fim) / 2 AS longitude
+            FROM vaga
+            WHERE latitude_fim >= :south
+            AND latitude_inicio <= :north
+            AND longitude_fim >= :west
+            AND longitude_inicio <= :east
+        ) v
+        GROUP BY 1, 2
+    """,
+    nativeQuery = true)
     public List<ClusterMapaProjection> buscarClustersPorArea(
         Double north,
         Double south,
         Double east,
         Double west,
-        StatusVagaEnum status,
         Double tamanhoCelula
     );
 
+    @Query(value = """
+        SELECT
+            FLOOR(v.latitude / :tamanhoCelula) AS grid_lat,
+            FLOOR(v.longitude / :tamanhoCelula) AS grid_lng,
+            AVG(v.latitude) AS latitude,
+            AVG(v.longitude) AS longitude,
+            COUNT(*) AS quantidade
+        FROM (
+            SELECT
+                (latitude_inicio + latitude_fim) / 2 AS latitude,
+                (longitude_inicio + longitude_fim) / 2 AS longitude
+            FROM vaga
+            WHERE latitude_fim >= :south
+            AND latitude_inicio <= :north
+            AND longitude_fim >= :west
+            AND longitude_inicio <= :east
+            AND status = :status
+        ) v
+        GROUP BY 1, 2
+    """,
+    nativeQuery = true)
+    public List<ClusterMapaProjection> buscarClustersPorAreaEStatus(
+        Double north,
+        Double south,
+        Double east,
+        Double west,
+        String status,
+        Double tamanhoCelula
+    );
     @Query(value = """
         WITH vagas_elegiveis AS (
 

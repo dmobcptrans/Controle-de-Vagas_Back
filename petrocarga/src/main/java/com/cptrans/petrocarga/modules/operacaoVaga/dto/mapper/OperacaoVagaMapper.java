@@ -17,7 +17,11 @@ import com.cptrans.petrocarga.modules.vaga.entity.Vaga;
 
 @Component
 public class OperacaoVagaMapper {
-    private Comparator<OperacaoVagaResponseDTO> compararPorCodigoEnum = Comparator.comparingInt(op -> op.getDiaSemanaAsEnum().getCodigo());
+    Comparator<OperacaoVagaResponseDTO> compararPorDiaEHorario =
+        Comparator
+            .comparing(OperacaoVagaResponseDTO::getDiaSemanaAsEnum)
+            .thenComparing(OperacaoVagaResponseDTO::getHoraInicio)
+            .thenComparing(OperacaoVagaResponseDTO::getHoraFim);
     
     public OperacaoVaga toEntity(OperacaoVagaRequestDTO request, Vaga vaga) {
         if (request == null) return null;
@@ -47,7 +51,16 @@ public class OperacaoVagaMapper {
 
     public Set<OperacaoVagaResponseDTO> toResponseSet(Set<OperacaoVaga> operacoesVaga) {
         if (operacoesVaga == null || operacoesVaga.isEmpty()) return null;
-        return operacoesVaga.stream().map(this::toResponse).collect(Collectors.toCollection(() -> new TreeSet<>(compararPorCodigoEnum)));
+        Set<OperacaoVagaResponseDTO> response = 
+            operacoesVaga
+                .stream()
+                .map(this::toResponse)
+                .collect(
+                    Collectors.toCollection(
+                        () -> new TreeSet<>(compararPorDiaEHorario)
+                    )
+                );
+        return response;
     }
 
     private Set<OperacaoVaga> operacoesVagaDefault(Vaga vaga) {

@@ -92,15 +92,12 @@ public class NotificacaoSchedulerService {
     }
 
     public void agendarNotificacaoNovaReserva(UUID empresaId, String empresaNome, UUID reservaId, UUID motoristaId, OffsetDateTime criadoEm) throws SchedulerException {
-        System.out.println("agendarNotificacaoNovaReserva - entrei");
-        
         JobKey jobKey = JobKey.jobKey(
             "envia-notificacao-" + NOVA_RESERVA + "-empresa-" + empresaId.toString() + "-reserva-" + reservaId.toString() + "-motorista-" + motoristaId.toString(),
             QuartzGroups.NOTIFICACAO
         );
 
         if (scheduler.checkExists(jobKey)) return;
-        System.out.println("criadoEm.toString(): " + criadoEm.toString());
         JobDetail job = JobBuilder.newJob(NovaReservaJob.class)
             .withIdentity(jobKey)
             .usingJobData("empresaId", empresaId.toString())
