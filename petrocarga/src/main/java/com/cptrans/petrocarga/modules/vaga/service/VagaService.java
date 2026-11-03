@@ -86,6 +86,14 @@ public class VagaService {
     public Vaga updateById(UUID id, VagaPatchDTO request) {
         Vaga vagaExistente = findById(id);
 
+        if (request.getCodigoPmp() != null && !request.getCodigoPmp().isBlank()){
+            String codigoPmpFormatado = request.getCodigoPmp().trim().toUpperCase();
+            if (vagaRepository.existsByIdNotAndCodigoPmpIgnoreCase(id, codigoPmpFormatado)){
+                throw new VagaExceptions.VagaAlreadyExistsException();
+            }
+            vagaExistente.setCodigoPmp(codigoPmpFormatado);
+        }
+
         if (request.getEndereco() != null){
             EnderecoVaga novoEndereco = enderecoVagaService.cadastrarEnderecoVaga(request.getEndereco());
             vagaExistente.setEndereco(novoEndereco);
@@ -126,6 +134,10 @@ public class VagaService {
 
     @Transactional()
     public Vaga createVaga(VagaRequestDTO request){
+
+        if (vagaRepository.existsByCodigoPmpIgnoreCase(request.getCodigoPmp().trim())) {
+            throw new VagaExceptions.VagaAlreadyExistsException();
+        }
 
         if (!request.getTipoVaga().equals(TipoVagaEnum.PERPENDICULAR)) request.setQuantidade(null);
 

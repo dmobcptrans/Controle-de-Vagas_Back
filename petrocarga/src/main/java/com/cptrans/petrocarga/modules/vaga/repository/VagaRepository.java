@@ -21,6 +21,8 @@ import com.cptrans.petrocarga.modules.vaga.entity.Vaga;
 
 @Repository
 public interface  VagaRepository extends JpaRepository<Vaga, UUID>, JpaSpecificationExecutor<Vaga> {
+    public boolean existsByCodigoPmpIgnoreCase(String codigoPmp);
+    public boolean existsByIdNotAndCodigoPmpIgnoreCase(UUID id, String codigoPmp);
     public List<Vaga> findByIdIn(List<UUID> ids);
     public List<Vaga> findByStatus(StatusVagaEnum status);
     public Page<Vaga> findByStatus(StatusVagaEnum status, Pageable pageable);

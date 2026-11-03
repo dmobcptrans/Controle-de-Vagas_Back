@@ -15,6 +15,7 @@ import lombok.NoArgsConstructor;
 @Getter
 public class VagaCoordenadaResponseDTO {
     private UUID id;
+    private String codigoPmp;
     private AreaVagaEnum area;
     private StatusVagaEnum status;
     private Double latitudeInicio;

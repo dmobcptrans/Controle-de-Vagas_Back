@@ -16,6 +16,7 @@ import lombok.NoArgsConstructor;
 @Getter
 public class VagaSimplificadoResponseDTO {
     private UUID id;
+    private String codigoPmp;
     private UUID enderecoId;
     private String logradouro;
     private String bairro;

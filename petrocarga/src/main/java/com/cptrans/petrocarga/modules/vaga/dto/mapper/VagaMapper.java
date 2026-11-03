@@ -35,6 +35,7 @@ public class VagaMapper {
         Set<OperacaoVaga> operacoesVaga = null;
         
         Vaga vaga = new Vaga(
+            request.getCodigoPmp() != null ? request.getCodigoPmp().trim().toUpperCase() : null,
             endereco,
             request.getArea(),
             request.getNumeroEndereco().trim(),
@@ -60,6 +61,7 @@ public class VagaMapper {
         if (vaga == null) return null;
         return new VagaResponseDTO(
             vaga.getId(),
+            vaga.getCodigoPmp(),
             enderecoVagaMapper.toResponse(vaga.getEndereco()),
             vaga.getArea(),
             vaga.getNumeroEndereco(),
@@ -85,6 +87,7 @@ public class VagaMapper {
         if (vaga == null) return null;
         VagaCoordenadaResponseDTO response = new VagaCoordenadaResponseDTO(
             vaga.getId(),
+            vaga.getCodigoPmp(),
             vaga.getArea(),
             vaga.getStatus(),
             vaga.getLatitudeInicio(),
@@ -113,6 +116,7 @@ public class VagaMapper {
         EnderecoVaga enderecoVaga = vaga.getEndereco();
         return new VagaSimplificadoResponseDTO(
             vaga.getId(),
+            vaga.getCodigoPmp(),
             enderecoVaga != null ? enderecoVaga.getId() : null,
             enderecoVaga != null ? enderecoVaga.getLogradouro() : null,
             enderecoVaga != null ? enderecoVaga.getBairro() : null,

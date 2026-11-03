@@ -1,11 +1,8 @@
 package com.cptrans.petrocarga.modules.vaga.exceptions;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import com.cptrans.petrocarga.shared.dto.response.SystemResponse;
 
 import jakarta.persistence.EntityNotFoundException;
 
@@ -41,28 +38,10 @@ public class VagaExceptions {
         }
     }
 
-    @ExceptionHandler(VagaNotFoundException.class)
-    public ResponseEntity<SystemResponse> handleVagaNotFoundException(VagaNotFoundException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new SystemResponse(ex.getMessage(), 404));
+    public static class VagaAlreadyExistsException extends DataIntegrityViolationException {
+        public VagaAlreadyExistsException(){
+            super("Já existe uma vaga cadastrada com o mesmo código PMP.");
+        }
     }
-
-    @ExceptionHandler(ComprimentoInvalidoException.class)
-    public ResponseEntity<SystemResponse> handleComprimentoInvalidoException(ComprimentoInvalidoException ex) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new SystemResponse(ex.getMessage(), 400));
-    }
-
-    @ExceptionHandler(QuantidadePosicoesInvalidaException.class)
-    public ResponseEntity<SystemResponse> handleQuantidadePosicoesInvalidaException(QuantidadePosicoesInvalidaException ex) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new SystemResponse(ex.getMessage(), 400));
-    }
-
-    @ExceptionHandler(TempoPermanenciaInvalidoExcpetion.class)
-    public ResponseEntity<SystemResponse> handleTempoPermanenciaInvalidoExcpetion(TempoPermanenciaInvalidoExcpetion ex) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new SystemResponse(ex.getMessage(), 400));
-    }
-
-    @ExceptionHandler(BoundingBoxInvalidoException.class)
-    public ResponseEntity<SystemResponse> handleBoundingBoxInvalidoException(BoundingBoxInvalidoException ex) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new SystemResponse(ex.getMessage(), 400));
-    }
+   
 }

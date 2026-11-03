@@ -34,14 +34,9 @@ public class EnderecoVaga {
     @Size(min = 3, max = 50)
     private String bairro;
 
-    @Column(nullable = false, length = 6, unique = true, name = "codigo_pmp")
-    @Size(min = 1, max = 6)
-    private String codigoPmp;
-
-    public EnderecoVaga(String logradouro, String bairro, String codigoPmp) {
+    public EnderecoVaga(String logradouro, String bairro) {
         this.logradouro = logradouro;
         this.bairro = bairro;
-        this.codigoPmp = codigoPmp;
     }
 
     public void setLogradouro(String logradouro) {
@@ -52,7 +47,4 @@ public class EnderecoVaga {
         this.bairro = bairro;
     }
 
-    public void setCodigoPmp(String codigoPmp) {
-        this.codigoPmp = codigoPmp;
-    }
 }

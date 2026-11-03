@@ -40,6 +40,9 @@ public class Vaga {
     @Column(name = "id")
     private UUID id;
 
+    @Column(name = "codigo_pmp", nullable = false, length = 6, unique = true)
+    private String codigoPmp;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "endereco_id", nullable = false)
     @JsonManagedReference
@@ -89,6 +92,7 @@ public class Vaga {
     private Integer quantidade;
 
     public Vaga(
+        String codigoPmp,
         EnderecoVaga endereco,
         AreaVagaEnum area,
         String numeroEndereco,
@@ -102,6 +106,7 @@ public class Vaga {
         Integer quantidade,
         Set<OperacaoVaga> operacoesVaga
     ){
+        this.codigoPmp = codigoPmp;
         this.endereco = endereco;
         this.area = area;
         this.numeroEndereco = numeroEndereco;
@@ -114,6 +119,10 @@ public class Vaga {
         this.comprimento = comprimento;
         this.quantidade = quantidade;
         this.operacoesVaga = operacoesVaga;
+    }
+
+    public void setCodigoPmp(String codigoPmp) {
+        this.codigoPmp = codigoPmp;
     }
 
     public void setEndereco(EnderecoVaga endereco) {
