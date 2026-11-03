@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -35,6 +36,19 @@ public class EnderecoVagaController {
     @GetMapping
     public ResponseEntity<List<EnderecoVagaResponseDTO>> getEnderecosVaga() {
         return ResponseEntity.ok(enderecoVagaService.getEnderecosVaga());
+    }
+
+    @Operation(
+        summary = "Listar os endereços das vagas por logradouro",
+        description = "Retorna todos os endereços cadastrados no sistema de acordo com o logradouro informado."
+    )
+    @GetResponses
+    @DefaultResponses
+    @GetMapping("/byLogradouro/{logradouro}")
+    public ResponseEntity<List<EnderecoVagaResponseDTO>> getEnderecosVagaByLogradouro(
+        @PathVariable String logradouro
+    ) {
+        return ResponseEntity.ok(enderecoVagaService.getEnderecosVagaByLogradouro(logradouro));
     }
 
 }

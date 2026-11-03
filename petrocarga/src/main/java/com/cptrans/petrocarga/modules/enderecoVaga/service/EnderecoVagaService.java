@@ -48,4 +48,8 @@ public class EnderecoVagaService {
     
         return enderecoVagaRepository.save(novoEndereco);
     }
+
+    public List<EnderecoVagaResponseDTO> getEnderecosVagaByLogradouro(String logradouro) {
+        return enderecoVagaMapper.toResponseList(enderecoVagaRepository.findByLogradouro(logradouro));
+    }
 }
