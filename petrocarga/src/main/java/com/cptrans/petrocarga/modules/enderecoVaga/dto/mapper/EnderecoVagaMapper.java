@@ -16,8 +16,7 @@ public class EnderecoVagaMapper {
         if (request == null) return null;
         return new EnderecoVaga(
             StringUtils.formatarNome(request.getLogradouro().trim()), 
-            StringUtils.formatarNome(request.getBairro().trim()), 
-            request.getCodigoPmp().trim().toUpperCase()
+            StringUtils.formatarNome(request.getBairro().trim())
         );
     }
 
@@ -25,7 +24,6 @@ public class EnderecoVagaMapper {
         if (enderecoVaga == null) return null;
         return new EnderecoVagaResponseDTO(
             enderecoVaga.getId(),
-            enderecoVaga.getCodigoPmp(),
             enderecoVaga.getLogradouro(),
             enderecoVaga.getBairro());
     }

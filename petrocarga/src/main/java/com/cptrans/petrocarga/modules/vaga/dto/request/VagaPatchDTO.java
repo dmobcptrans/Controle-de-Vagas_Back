@@ -10,7 +10,9 @@ import com.cptrans.petrocarga.enums.TipoVagaEnum;
 import com.cptrans.petrocarga.modules.enderecoVaga.dto.request.EnderecoVagaRequestDTO;
 import com.cptrans.petrocarga.modules.operacaoVaga.dto.request.OperacaoVagaRequestDTO;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Size;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -42,6 +44,13 @@ public class VagaPatchDTO {
     private Integer quantidade;
 
     private StatusVagaEnum status;
+
+    @Size(min = 6, max = 6, message="O campo 'codigoPMP' deve ter 6 caracteres.")
+    @Schema(
+        description = "Código PMP do endereço da vaga",
+        example = "Pb-123"
+    )
+    private String codigoPmp;
 
     public void setQuantidade(Integer quantidade) {
         this.quantidade = quantidade;

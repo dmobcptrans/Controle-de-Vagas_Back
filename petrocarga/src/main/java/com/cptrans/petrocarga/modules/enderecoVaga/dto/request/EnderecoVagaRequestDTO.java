@@ -10,14 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
 public class EnderecoVagaRequestDTO {
-    @NotNull(message = "O campo 'codigoPMP' é obrigatório.")
-    @Size(min = 6, max = 6, message="O campo 'codigoPMP' deve ter 6 caracteres.")
-    @Schema(
-        description = "Código PMP do endereço da vaga",
-        example = "Pb-123"
-    )
-    private String codigoPmp;
-
+    
     @NotNull(message = "O campo 'logradouro' é obrigatório.")
     @Size(min = 10, max = 255, message="O campo 'logradouro' deve ter entre 10 e 255 caracteres.")
     @Schema(

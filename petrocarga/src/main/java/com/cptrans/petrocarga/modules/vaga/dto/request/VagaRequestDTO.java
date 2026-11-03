@@ -12,6 +12,7 @@ import com.cptrans.petrocarga.modules.operacaoVaga.dto.request.OperacaoVagaReque
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -19,6 +20,14 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
 public class VagaRequestDTO {
+
+    @NotNull(message = "O campo 'codigoPMP' é obrigatório.")
+    @Size(min = 6, max = 6, message="O campo 'codigoPMP' deve ter 6 caracteres.")
+    @Schema(
+        description = "Código PMP do endereço da vaga",
+        example = "Pb-123"
+    )
+    private String codigoPmp;
 
     @Valid
     @NotNull(message = "O endereço é obrigatório.")

@@ -16,7 +16,7 @@ public interface DisponibilidadeVagaRepository extends JpaRepository<Disponibili
     public List<DisponibilidadeVaga> findByIdIn(List<UUID> listaIds);
     public List<DisponibilidadeVaga> findByVagaId(UUID vagaId);
     public Page<DisponibilidadeVaga> findByVagaId(UUID vagaId, Pageable pageable);
-    public List<DisponibilidadeVaga> findByVagaEnderecoCodigoPmp(String codigoPMP);
+    public List<DisponibilidadeVaga> findByVagaCodigoPmp(String codigoPMP);
     public List<DisponibilidadeVaga> findByFimGreaterThanAndInicioLessThan(OffsetDateTime inicio, OffsetDateTime fim);
     public List<DisponibilidadeVaga> findByVagaIdAndFimGreaterThanAndInicioLessThan(UUID vagaId, OffsetDateTime inicio, OffsetDateTime fim);
     public boolean existsByVagaIdAndFimGreaterThanAndInicioLessThan(UUID vagaId, OffsetDateTime inicio, OffsetDateTime fim);
