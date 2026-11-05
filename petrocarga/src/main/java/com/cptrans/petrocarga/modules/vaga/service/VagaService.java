@@ -6,6 +6,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -49,7 +50,9 @@ public class VagaService {
     private final Sort SORT_ASC = Sort.by("endereco.logradouro").ascending();
     private final Sort SORT_DESC = Sort.by("endereco.logradouro").descending();
 
-    private static final int ZOOM_MINIMO_VAGAS_INDIVIDUAIS = 13;
+    @Value("${app.mapa.zoom-min}")
+    private int zoomMinimo;
+
     public static final int LIMITE_VAGAS_MAPA = 500;
 
     public List<Vaga> findAll() {
@@ -134,7 +137,6 @@ public class VagaService {
 
     @Transactional()
     public Vaga createVaga(VagaRequestDTO request){
-
         if (vagaRepository.existsByCodigoPmpIgnoreCase(request.getCodigoPmp().trim())) {
             throw new VagaExceptions.VagaAlreadyExistsException();
         }
@@ -161,7 +163,7 @@ public class VagaService {
         Double zoom,
         StatusVagaEnum status
     ) {
-        if (zoom < ZOOM_MINIMO_VAGAS_INDIVIDUAIS) {
+        if (zoom < zoomMinimo) {
             return buscarClustersVagas(
                 north,
                 south,
