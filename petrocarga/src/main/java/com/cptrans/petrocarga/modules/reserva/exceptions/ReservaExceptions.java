@@ -1,13 +1,9 @@
 package com.cptrans.petrocarga.modules.reserva.exceptions;
 
-
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import com.cptrans.petrocarga.shared.dto.response.SystemResponse;
+import com.cptrans.petrocarga.modules.reservaRules.ReservaRules;
 
 import jakarta.persistence.EntityNotFoundException;
 
@@ -127,98 +123,10 @@ public class ReservaExceptions {
         }
     }
 
-    @ExceptionHandler(VagaIndisponivelException.class)
-    public ResponseEntity<SystemResponse> handleVagaIndisponivelException(VagaIndisponivelException ex) {
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(new SystemResponse(ex.getMessage(), 409));
+    public static class FimReservaExcedeLimiteException extends DataIntegrityViolationException{
+        public FimReservaExcedeLimiteException() {
+            super("O fim da reserva não pode exceder o limite de " + ReservaRules.LIMITE_DE_DIAS_PARA_RESERVA + " dias após o horário atual.");
+        }
     }
 
-    @ExceptionHandler(MotoristaNaoPertenceEmpresaException.class)
-    public ResponseEntity<SystemResponse> handleMotoristaNaoPertenceEmpresaException(MotoristaNaoPertenceEmpresaException ex) {
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(new SystemResponse(ex.getMessage(), 409));
-    }
-
-    @ExceptionHandler(InicioEFimObrigatoriosException.class)
-    public ResponseEntity<SystemResponse> handleInicioEFimObrigatoriosException(InicioEFimObrigatoriosException ex) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new SystemResponse(ex.getMessage(), 400));
-    }
-
-    @ExceptionHandler(InicioEFimInvalidosException.class)
-    public ResponseEntity<SystemResponse> handleInicioEFimInvalidosException(InicioEFimInvalidosException ex) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new SystemResponse(ex.getMessage(), 400));
-    }
-
-    @ExceptionHandler(LimiteDeReservasPorPlacaException.class)
-    public ResponseEntity<SystemResponse> handleLimiteDeReservasPorPlacaException(LimiteDeReservasPorPlacaException ex) {
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(new SystemResponse(ex.getMessage(), 409));
-    }
-
-    @ExceptionHandler(LimiteDeReservasPorVeiculoException.class)
-    public ResponseEntity<SystemResponse> handleLimiteDeReservasPorVeiculoException(LimiteDeReservasPorVeiculoException ex) {
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(new SystemResponse(ex.getMessage(), 409));
-    }
-
-    @ExceptionHandler(PlacaComConflitoDeHorarioException.class)
-    public ResponseEntity<SystemResponse> handlePlacaComConflitoDeHorarioException(PlacaComConflitoDeHorarioException ex) {
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(new SystemResponse(ex.getMessage(), 409));
-    }
-
-    @ExceptionHandler(VeiculoComConflitoDeHorarioException.class)
-    public ResponseEntity<SystemResponse> handleVeiculoComConflitoDeHorarioException(VeiculoComConflitoDeHorarioException ex) {
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(new SystemResponse(ex.getMessage(), 409));
-    }
-
-    @ExceptionHandler(VeiculoNaoPertenceException.class)
-    public ResponseEntity<SystemResponse> handleVeiculoNaoPertenceException(VeiculoNaoPertenceException ex) {
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(new SystemResponse(ex.getMessage(), 409));
-    }
-
-    @ExceptionHandler(MotoristaInvalidoException.class)
-    public ResponseEntity<SystemResponse> handleMotoristaInvalidoException(MotoristaInvalidoException ex) {
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(new SystemResponse(ex.getMessage(), 409));
-    }
-
-    @ExceptionHandler(MotoristaComConflitoDeHorarioException.class)
-    public ResponseEntity<SystemResponse> handleMotoristaComConflitoDeHorarioException(MotoristaComConflitoDeHorarioException ex) {
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(new SystemResponse(ex.getMessage(), 409));
-    }
-
-    @ExceptionHandler(VeiculoMaiorQueVagaException.class)
-    public ResponseEntity<SystemResponse> handleVeiculoMaiorQueVagaException(VeiculoMaiorQueVagaException ex) {
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(new SystemResponse(ex.getMessage(), 409));
-    }
-
-    @ExceptionHandler(EspacoInsuficienteNoPeriodoException.class)
-    public ResponseEntity<SystemResponse> handleEspacoInsuficienteNoPeriodoException(EspacoInsuficienteNoPeriodoException ex) {
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(new SystemResponse(ex.getMessage(), 409));
-    }
-
-    @ExceptionHandler(PosicaoPerpendicularProibidaException.class)
-    public ResponseEntity<SystemResponse> handlePosicaoPerpendicularProibidaException(PosicaoPerpendicularProibidaException ex) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new SystemResponse(ex.getMessage(), 400));
-    }
-
-    @ExceptionHandler(PosicaoPerpendicularInvalidaException.class)
-    public ResponseEntity<SystemResponse> handlePosicaoPerpendicularInvalidaException(PosicaoPerpendicularInvalidaException ex) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new SystemResponse(ex.getMessage(), 400));
-    }
-
-    @ExceptionHandler(TodasPosicoesOcupadasException.class)
-    public ResponseEntity<SystemResponse> handleTodasPosicoesOcupadasException(TodasPosicoesOcupadasException ex) {
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(new SystemResponse(ex.getMessage(), 409));
-    }
-
-    @ExceptionHandler(ReservaNotFoundException.class)
-    public ResponseEntity<SystemResponse> handleReservaNotFoundException(ReservaNotFoundException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new SystemResponse(ex.getMessage(), 404));
-    }
-
-    @ExceptionHandler(TempoAlteracaoEsgotadoException.class)
-    public ResponseEntity<SystemResponse> handleTempoAlteracaoEsgotadoException(TempoAlteracaoEsgotadoException ex) {
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(new SystemResponse(ex.getMessage(), 409));
-    }
-
-    @ExceptionHandler(LimiteDeReservasPorMotoristaException.class)
-    public ResponseEntity<SystemResponse> handleLimiteDeReservasPorMotoristaException(LimiteDeReservasPorMotoristaException ex) {
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(new SystemResponse(ex.getMessage(), 409));
-    }
 }

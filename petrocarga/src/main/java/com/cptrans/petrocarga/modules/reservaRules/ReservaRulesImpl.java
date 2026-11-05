@@ -38,11 +38,6 @@ public class ReservaRulesImpl implements ReservaRules {
     private final ReservaRapidaRepository reservaRapidaRepository;
     private final ReservaUtils reservaUtils;
 
-    private final int LIMITE_DE_RESERVAS_ATIVAS_POR_PLACA = 3;
-    private final int LIMITE_DE_RESERVAS_ATIVAS_POR_VEICULO = 3;
-    private final int LIMITE_DE_RESERVAS_ATIVAS_POR_MOTORISTA = 3;
-    private final int LIMITE_DE_RESERVAS_RAPIDAS_POR_PLACA = 3;
-
     
     @Override
     public void validacoesDaVaga(Vaga vaga, OffsetDateTime inicio, OffsetDateTime fim) {
@@ -96,6 +91,7 @@ public class ReservaRulesImpl implements ReservaRules {
     public void validacoesTemporais(OffsetDateTime inicio, OffsetDateTime fim) {
         validarInicioEFim(inicio, fim);
         verificarExcecaoHorarioInicio(inicio);
+        validarDataFimReserva(fim);
     }
 
     @Override 
@@ -125,7 +121,13 @@ public class ReservaRulesImpl implements ReservaRules {
         long diferencaMinutos = Duration.between(agora, inicio).toMinutes();
         if (diferencaMinutos < -2) throw new ReservaExceptions.InicioEFimInvalidosException();
     }
+
+    private void validarDataFimReserva(OffsetDateTime fim) {
+        OffsetDateTime agora = DateUtils.agora();
+        if (fim.toInstant().isAfter(agora.plusDays(LIMITE_DE_DIAS_PARA_RESERVA).toInstant())) throw new ReservaExceptions.FimReservaExcedeLimiteException();
+    }  
     
+
     private void validarLimiteDeReservasAtivas (ReservaDTO reserva){
         List<StatusReservaEnum> listaStatus = List.of(StatusReservaEnum.ATIVA, StatusReservaEnum.RESERVADA);
         String placa = reserva.getPlacaVeiculo().trim().toUpperCase();
