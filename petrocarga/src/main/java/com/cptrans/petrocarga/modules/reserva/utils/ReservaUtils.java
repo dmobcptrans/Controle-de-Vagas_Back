@@ -3,6 +3,7 @@ package com.cptrans.petrocarga.modules.reserva.utils;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.stereotype.Component;
@@ -20,6 +21,7 @@ import com.cptrans.petrocarga.modules.usuario.entity.Usuario;
 import com.cptrans.petrocarga.modules.usuario.utils.UsuarioUtils;
 import com.cptrans.petrocarga.modules.vaga.exceptions.VagaExceptions;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Component
@@ -126,5 +128,24 @@ public class ReservaUtils {
         }
 
         throw new ReservaExceptions.TodasPosicoesOcupadasException();
+    }
+
+    public boolean existeReservaAtivaNaVaga(UUID vagaId) {
+        List<StatusReservaEnum> listaStatus = List.of(StatusReservaEnum.ATIVA, StatusReservaEnum.RESERVADA);
+        return reservaRepository.existsByVagaIdAndStatusIn(vagaId, listaStatus) || reservaRapidaRepository.existsByVagaIdAndStatusIn(vagaId, listaStatus);
+    }
+
+    @Transactional 
+    public void excluirReservasDaVaga(UUID vagaId) {
+        Set<UUID> reservasNormais = reservaRepository.findIdsByVagaId(vagaId);
+        Set<UUID> reservasRapidas = reservaRapidaRepository.findIdsByVagaId(vagaId);
+
+        if (reservasNormais != null && !reservasNormais.isEmpty()) {
+            reservaRepository.deleteAllById(reservasNormais);
+        }
+
+        if (reservasRapidas != null && !reservasRapidas.isEmpty()) {
+            reservaRapidaRepository.deleteAllById(reservasRapidas);
+        }
     }
 }

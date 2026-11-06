@@ -17,9 +17,11 @@ import com.cptrans.petrocarga.enums.DiaSemanaEnum;
 import com.cptrans.petrocarga.enums.OrdemEnum;
 import com.cptrans.petrocarga.enums.StatusVagaEnum;
 import com.cptrans.petrocarga.enums.TipoVagaEnum;
+import com.cptrans.petrocarga.modules.denuncia.utils.DenunciaUtils;
 import com.cptrans.petrocarga.modules.enderecoVaga.entity.EnderecoVaga;
 import com.cptrans.petrocarga.modules.enderecoVaga.service.EnderecoVagaService;
 import com.cptrans.petrocarga.modules.operacaoVaga.service.OperacaoVagaService;
+import com.cptrans.petrocarga.modules.reserva.utils.ReservaUtils;
 import com.cptrans.petrocarga.modules.vaga.dto.mapper.VagaMapper;
 import com.cptrans.petrocarga.modules.vaga.dto.projection.ClusterMapaProjection;
 import com.cptrans.petrocarga.modules.vaga.dto.request.VagaFiltrosRequestDTO;
@@ -46,6 +48,8 @@ public class VagaService {
     private final EnderecoVagaService enderecoVagaService;
     private final OperacaoVagaService operacaoVagaService;
     private final VagaMapper vagaMapper;
+    private final ReservaUtils reservaUtils;
+    private final DenunciaUtils denunciaUtils;
 
     private final Sort SORT_ASC = Sort.by("codigoPmp").ascending();
     private final Sort SORT_DESC = Sort.by("codigoPmp").descending();
@@ -82,9 +86,17 @@ public class VagaService {
         return vagaRepository.findByIdIn(listaIds);
     }
     
+    @Transactional 
     public void deleteById(UUID id) {
-        Vaga vaga = findById(id);
-        vagaRepository.deleteById(vaga.getId());
+        if (denunciaUtils.existeDenunciaAtivaNaVaga(id)){
+            throw new VagaExceptions.VagaPossuiDenunciaAtivaException();
+        }
+        if (reservaUtils.existeReservaAtivaNaVaga(id)){
+            throw new VagaExceptions.VagaPossuiReservaAtivaException();
+        }
+        denunciaUtils.excluirDenunciasDaVaga(id);
+        reservaUtils.excluirReservasDaVaga(id);
+        vagaRepository.deleteById(id);
     }
 
     @Transactional

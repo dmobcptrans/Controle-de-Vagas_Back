@@ -43,5 +43,17 @@ public class VagaExceptions {
             super("Já existe uma vaga cadastrada com o mesmo código PMP.");
         }
     }
+
+    public static class VagaPossuiReservaAtivaException extends DataIntegrityViolationException {
+        public VagaPossuiReservaAtivaException(){
+            super("Não é possível excluir a vaga, pois existem reservas ativas associadas à ela.");
+        }
+    }
+
+    public static class VagaPossuiDenunciaAtivaException extends DataIntegrityViolationException {
+        public VagaPossuiDenunciaAtivaException(){
+            super("Não é possível excluir a vaga, pois existem denúncias ativas associadas à ela.");
+        }
+    }
    
 }

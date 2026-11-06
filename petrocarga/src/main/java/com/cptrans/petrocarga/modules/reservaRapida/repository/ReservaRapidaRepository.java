@@ -3,6 +3,7 @@ package com.cptrans.petrocarga.modules.reservaRapida.repository;
 import java.time.OffsetDateTime;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
@@ -37,7 +38,14 @@ public interface ReservaRapidaRepository extends JpaRepository<ReservaRapida, UU
     public Integer countByPlacaIgnoringCaseAndStatusInAndIdNot(String placa, List<StatusReservaEnum> status, UUID id);
     public boolean existsByPlacaIgnoringCaseAndStatusInAndFimGreaterThanAndInicioLessThan(String placa, List<StatusReservaEnum> status, OffsetDateTime inicio, OffsetDateTime fim);
     public boolean existsByIdNotAndPlacaIgnoringCaseAndStatusInAndFimGreaterThanAndInicioLessThan(UUID id, String placa, List<StatusReservaEnum> status, OffsetDateTime inicio, OffsetDateTime fim);
+    public boolean existsByVagaIdAndStatusIn(UUID vagaId, List<StatusReservaEnum> status);
     
+    @Query("""
+        SELECT rr.id FROM ReservaRapida rr
+        WHERE rr.vaga.id = :vagaId    
+       """)
+    public Set<UUID> findIdsByVagaId(UUID vagaId);
+
     @Query("SELECT rr FROM ReservaRapida rr WHERE UPPER(rr.placa) ILIKE %:placa% AND rr.status = :status")
     public List<ReservaRapida> findByPlacaIgnoringCaseAndStatus(String placa, StatusReservaEnum status);
 

@@ -2,12 +2,14 @@ package com.cptrans.petrocarga.modules.denuncia.repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import com.cptrans.petrocarga.enums.StatusDenunciaEnum;
@@ -26,5 +28,11 @@ public interface DenunciaRepository extends JpaRepository<Denuncia, UUID>, JpaSp
     public List<Denuncia> findByStatusIn(List<StatusDenunciaEnum> status);
     public List<Denuncia> findByTipoIn(List<TipoDenunciaEnum> tipo);
     public List<Denuncia> findByVagaIdAndStatusInAndTipoIn(UUID vagaId, List<StatusDenunciaEnum> status, List<TipoDenunciaEnum> tipo);
+    public boolean existsByVagaIdAndStatusIn(UUID vagaId, List<StatusDenunciaEnum> status);
 
+    @Query("""
+        SELECT d.id FROM Denuncia d
+        WHERE d.vaga.id = :vagaId    
+    """)
+    public Set<UUID> findIdsByVagaId(UUID vagaId);
 }
