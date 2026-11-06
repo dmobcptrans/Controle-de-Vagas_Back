@@ -168,7 +168,7 @@ public class VagaController {
         @RequestParam(required = false) StatusVagaEnum status,
         
         @Parameter(description = "Página", example = "0")
-        @RequestParam(defaultValue = "0") Integer numeroPagina, 
+        @RequestParam(defaultValue = "0") Integer pagina, 
 
         @Parameter(description = "Quantidade de registros por página", example = "10")
         @RequestParam(defaultValue = "10") Integer tamanhoPagina, 
@@ -178,7 +178,7 @@ public class VagaController {
 
     ) {
         VagaFiltrosRequestDTO filtros = new VagaFiltrosRequestDTO(codigoPmp, logradouro, bairro, area, tipo, status);
-    	PageResponseDTO vagasPaginadas = vagaService.findAllPaginadas(filtros, numeroPagina, tamanhoPagina, ordem);
+    	PageResponseDTO vagasPaginadas = vagaService.findAllPaginadas(filtros, pagina, tamanhoPagina, ordem);
         return ResponseEntity.ok(vagasPaginadas);
     }
 

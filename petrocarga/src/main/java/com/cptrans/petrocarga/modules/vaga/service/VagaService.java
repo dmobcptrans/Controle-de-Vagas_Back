@@ -47,8 +47,8 @@ public class VagaService {
     private final OperacaoVagaService operacaoVagaService;
     private final VagaMapper vagaMapper;
 
-    private final Sort SORT_ASC = Sort.by("endereco.logradouro").ascending();
-    private final Sort SORT_DESC = Sort.by("endereco.logradouro").descending();
+    private final Sort SORT_ASC = Sort.by("codigoPmp").ascending();
+    private final Sort SORT_DESC = Sort.by("codigoPmp").descending();
 
     @Value("${app.mapa.zoom-min}")
     private int zoomMinimo;
@@ -68,8 +68,10 @@ public class VagaService {
     
     public PageResponseDTO findAllPaginadas(VagaFiltrosRequestDTO filtros, Integer numeroPagina, Integer tamanhoPagina, OrdemEnum ordem) {
         Pageable pageable = PageRequest.of(numeroPagina, tamanhoPagina, !ordem.equals(OrdemEnum.ASC) ? SORT_DESC : SORT_ASC);
-        Page<VagaResponseDTO> vagasPage = vagaRepository.findAll(VagaSpecification.filtrar(filtros),pageable).map(vagaMapper::toResponse);
-        return new PageResponseDTO(vagasPage);
+        Page<Vaga> page = vagaRepository.findAll(VagaSpecification.filtrar(filtros), pageable);
+        if (page == null || page.isEmpty()) return new PageResponseDTO(page);
+        Page<VagaResponseDTO> pageResponse = page.map(vagaMapper::toResponse);
+        return new PageResponseDTO(pageResponse);
     }
 
     public Vaga findById(UUID id) {

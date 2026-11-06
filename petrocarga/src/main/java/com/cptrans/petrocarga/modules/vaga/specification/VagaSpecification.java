@@ -21,11 +21,14 @@ import jakarta.persistence.criteria.Predicate;
 public class VagaSpecification {
     public static Specification<Vaga> filtrar(VagaFiltrosRequestDTO filtros) {
         return (root, query, cb) -> {
+            
+            query.distinct(true);
+
             List<Predicate> predicates = new ArrayList<>();
 
             if (filtros.getCodigoPmp() != null && !filtros.getCodigoPmp().trim().isEmpty()) {
                 predicates.add(
-                    cb.like(cb.lower(root.get("endereco").get("codigoPmp")), "%" + filtros.getCodigoPmp().trim().toLowerCase() + "%")
+                    cb.like(cb.lower(root.get("codigoPmp")), "%" + filtros.getCodigoPmp().trim().toLowerCase() + "%")
                 );
             }
 
