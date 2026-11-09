@@ -37,7 +37,7 @@ public class VagaPatchDTO {
 
     private String referenciaEndereco;
     
-    @Range(min = 1, max = 100, message = "O comprimento deve ser um número inteiro positivo entre 1 e 100.")
+    @Range(min = 1, max = 140, message = "O comprimento deve ser um número inteiro positivo entre 1 e 140.")
     private Integer comprimento;
 
     @Range(min = 1, max = 15, message = "A quantidade deve ser um número inteiro positivo entre 1 e 15.")
